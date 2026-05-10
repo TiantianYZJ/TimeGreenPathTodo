@@ -1,11 +1,30 @@
+const app = getApp();
+// 引入echarts
+import * as echarts from '../../miniprogram_npm/ec-canvas/echarts';
+
 Page({
   data: {
     total: 0,
     completed: 0,
     progress: 0,
+    avgCompletionTime: '0h',
     categoryStats: [],
     lastUpdated: "",
-    locationStats: []
+    locationStats: [],
+    locationTotal: 0,
+    locationMarkers: [],
+    locationPoints: [],
+    mapCenter: { latitude: 39.90403, longitude: 116.407526 },
+    overviewChart: {
+      lazyLoad: true
+    },
+    trendChart: {
+      lazyLoad: true
+    },
+    timeChart: {
+      lazyLoad: true
+    },
+    timeOfDayStats: []
   },
 
   onShareAppMessage() {
@@ -29,41 +48,306 @@ Page({
     this.updateStats(todos);
   },
 
-  // 在 updateStats 方法中添加百分比计算
-  // 在updateStats方法中添加位置统计
   updateStats(todos) {
     const completed = todos.filter(item => item.completed).length;
     const total = todos.length;
     const progress = total ? Math.min((completed / total * 100), 100).toFixed(0) : 0;
+    
+    // 计算平均完成时间
+    const avgCompletionTime = this.calculateAvgCompletionTime(todos);
+    
+    // 分析位置数据
     const { markers, points, center } = this.analyzeMapMarkers(todos);
     
     // 分类统计
-    const categoryStats = this.calculateCategoryStats(todos).map(item => ({
-      ...item,
-      percent: (item.completed / item.total * 100).toFixed(0) + '%' // 新增百分比计算
-    }));
+    const categoryStats = this.calculateCategoryStats(todos);
     
     // 最近更新时间
     const lastUpdated = this.getLastUpdatedTime(todos);
 
-    // 新增位置统计
+    // 位置统计
     const locationStats = this.analyzeLocations(todos);
     const locationTotal = locationStats.reduce((sum, item) => sum + item.count, 0);
+    
+    // 时间分布统计
+    const timeOfDayStats = this.analyzeTimeOfDay(todos);
+    
+    // 准备图表数据
+    this.initOverviewChart(total, completed);
+    this.initTrendChart(todos);
+    this.initTimeChart(timeOfDayStats);
 
     this.setData({
       total,
       completed,
       progress,
+      avgCompletionTime,
       categoryStats,
       lastUpdated,
       locationStats,
-      locationTotal,  // 新增总次数字段
+      locationTotal,
       locationMarkers: markers,
       locationPoints: points,
-      mapCenter: center
+      mapCenter: center,
+      timeOfDayStats
     });
   },
 
+  // 计算平均完成时间
+  calculateAvgCompletionTime(todos) {
+    const completedTodos = todos.filter(item => item.completed && item.time && item.completed);
+    if (completedTodos.length === 0) return '0h';
+    
+    const totalTimeDiff = completedTodos.reduce((sum, todo) => {
+      const createTime = new Date(todo.time).getTime();
+      const completeTime = new Date(todo.completed).getTime();
+      return sum + (completeTime - createTime);
+    }, 0);
+    
+    const avgHours = (totalTimeDiff / (completedTodos.length * 1000 * 60 * 60)).toFixed(1);
+    return `${avgHours}h`;
+  },
+
+  // 分析每日待办趋势
+  analyzeDailyTrend(todos) {
+    const dailyMap = {};
+    todos.forEach(todo => {
+      const date = new Date(todo.time).toISOString().split('T')[0];
+      if (!dailyMap[date]) {
+        dailyMap[date] = { create: 0, complete: 0 };
+      }
+      dailyMap[date].create++;
+      if (todo.completed) {
+        dailyMap[date].complete++;
+      }
+    });
+    
+    // 按日期排序
+    const sortedDates = Object.keys(dailyMap).sort();
+    const dates = [];
+    const createData = [];
+    const completeData = [];
+    
+    sortedDates.forEach(date => {
+      dates.push(date);
+      createData.push(dailyMap[date].create);
+      completeData.push(dailyMap[date].complete);
+    });
+    
+    return { dates, createData, completeData };
+  },
+
+  // 分析一天中的时间分布
+  analyzeTimeOfDay(todos) {
+    const hourMap = {};
+    // 初始化24小时
+    for (let i = 0; i < 24; i++) {
+      hourMap[i] = 0;
+    }
+    
+    todos.forEach(todo => {
+      const hour = new Date(todo.time).getHours();
+      hourMap[hour]++;
+    });
+    
+    return Object.keys(hourMap).map(hour => ({
+      hour: parseInt(hour),
+      count: hourMap[hour]
+    }));
+  },
+
+  // 初始化概览图表
+  initOverviewChart(total, completed) {
+    const option = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        right: 10,
+        top: 'center',
+        textStyle: {
+          fontSize: 12
+        }
+      },
+      color: ['#00B26A', '#E8F5E9'],
+      series: [
+        {
+          name: '待办完成情况',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '16',
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: completed, name: '已完成' },
+            { value: total - completed, name: '未完成' }
+          ]
+        }
+      ]
+    };
+    
+    // 使用ec-canvas组件的方式初始化图表
+    this.selectComponent('#overviewChart').init((canvas, width, height) => {
+      // 使用echarts.init方法初始化图表
+      const chart = echarts.init(canvas, null, {
+        width: width,
+        height: height
+      });
+      
+      chart.setOption(option);
+      return chart;
+    });
+  },
+
+  // 初始化趋势图表
+  initTrendChart(todos) {
+    const { dates, createData, completeData } = this.analyzeDailyTrend(todos);
+    
+    // 使用ec-canvas组件的方式初始化图表
+    this.selectComponent('#trendChart').init((canvas, width, height) => {
+      // 使用echarts.init方法初始化图表
+      const chart = echarts.init(canvas, null, {
+        width: width,
+        height: height
+      });
+      
+      const option = {
+        tooltip: {
+          trigger: 'axis'
+        },
+        legend: {
+          data: ['创建', '完成'],
+          bottom: 0,
+          textStyle: {
+            fontSize: 12
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: dates,
+          axisLabel: {
+            fontSize: 10,
+            rotate: 45
+          }
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            name: '创建',
+            type: 'line',
+            data: createData,
+            smooth: true,
+            lineStyle: {
+              color: '#26c6da'
+            },
+            // 避免使用LinearGradient，直接使用颜色字符串
+            areaStyle: {
+              color: 'rgba(38, 198, 218, 0.3)'
+            }
+          },
+          {
+            name: '完成',
+            type: 'line',
+            data: completeData,
+            smooth: true,
+            lineStyle: {
+              color: '#00b26a'
+            },
+            areaStyle: {
+              color: 'rgba(0, 178, 106, 0.3)'
+            }
+          }
+        ]
+      };
+      
+      chart.setOption(option);
+      return chart;
+    });
+  },
+
+  // 初始化时间分布图表
+  initTimeChart(timeOfDayStats) {
+    const hours = timeOfDayStats.map(item => item.hour + ':00');
+    const counts = timeOfDayStats.map(item => item.count);
+    
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: hours,
+        axisLabel: {
+          fontSize: 10
+        }
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '待办数量',
+          type: 'bar',
+          data: counts,
+          itemStyle: {
+            // 避免使用LinearGradient，直接使用颜色字符串
+            color: '#00B26A'
+          }
+        }
+      ]
+    };
+    
+    // 使用ec-canvas组件的方式初始化图表
+    this.selectComponent('#timeChart').init((canvas, width, height) => {
+      // 使用echarts.init方法初始化图表
+      const chart = echarts.init(canvas, null, {
+        width: width,
+        height: height
+      });
+      
+      chart.setOption(option);
+      return chart;
+    });
+  },
+
+  // 分类统计
   calculateCategoryStats(todos) {
     const categoryMap = {};
     todos.forEach(todo => {
@@ -76,17 +360,37 @@ Page({
     });
     return Object.keys(categoryMap).map(category => ({
       category,
-      ...categoryMap[category]
+      ...categoryMap[category],
+      percent: (categoryMap[category].completed / categoryMap[category].total * 100).toFixed(0) + '%'
     }));
   },
 
+  // 最近更新时间
   getLastUpdatedTime(todos) {
     const lastDate = new Date();
-    // 确保分钟数始终是两位数
     return `${lastDate.getMonth() + 1}月${lastDate.getDate()}日 ${lastDate.getHours()}:${lastDate.getMinutes().toString().padStart(2, '0')}`;
   },
   
-  // 新增分析方法
+  // 分析一天中的时间分布
+  analyzeTimeOfDay(todos) {
+    const hourMap = {};
+    // 初始化24小时
+    for (let i = 0; i < 24; i++) {
+      hourMap[i] = 0;
+    }
+    
+    todos.forEach(todo => {
+      const hour = new Date(todo.time).getHours();
+      hourMap[hour]++;
+    });
+    
+    return Object.keys(hourMap).map(hour => ({
+      hour: parseInt(hour),
+      count: hourMap[hour]
+    }));
+  },
+
+  // 分析位置数据
   analyzeLocations(todos) {
     const locations = todos
       .filter(t => t.location)
@@ -101,8 +405,7 @@ Page({
     ).map(([name, count]) => ({ name, count }));
   },
 
-  // 新增地图标记分析方法
-  // 修改analyzeMapMarkers方法
+  // 分析地图标记
   analyzeMapMarkers(todos) {
     const locations = todos
       .filter(t => t.location?.latitude && t.location?.longitude)
@@ -135,12 +438,12 @@ Page({
   
     return { 
       markers,
-      points: locations, // 直接使用原始坐标数组
+      points: locations,
       center 
     };
   },
 
-  // 在现有代码中添加生成分享图片方法
+  // 生成分享图片
   generateShareImage() {
     const that = this;
     wx.showLoading({ title: '生成中...' });
@@ -153,6 +456,7 @@ Page({
       const canvas = res[0].node;
       const ctx = canvas.getContext('2d');
       const dpr = wx.getWindowInfo().pixelRatio;
+      
       function drawRoundRect(x, y, width, height, radius) {
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
@@ -164,19 +468,19 @@ Page({
       }
         
       canvas.width = 750 * dpr;
-      canvas.height = 1000 * dpr;
+      canvas.height = 1200 * dpr;
       ctx.scale(dpr, dpr);
 
-      // 新版 Canvas 绘制逻辑
+      // 绘制逻辑
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 750, 1000);
+      ctx.fillRect(0, 0, 750, 1200);
       
       // 添加渐变背景
       const gradient = ctx.createLinearGradient(0, 0, 750, 0);
       gradient.addColorStop(0, '#f0faf5');
       gradient.addColorStop(1, '#ffffff');
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 750, 180);
+      ctx.fillRect(0, 0, 750, 200);
 
       // 标题样式优化
       ctx.font = 'bold 36px "PingFang SC"';
@@ -191,76 +495,23 @@ Page({
 
       // 核心指标面板美化
       ctx.beginPath();
-      drawRoundRect(40, 140, 670, 100, 16);
+      drawRoundRect(40, 140, 670, 120, 16);
       ctx.fillStyle = 'rgba(0,178,106,0.1)';
       ctx.fill();
       
-      ctx.font = '28px sans-serif';
+      ctx.font = '24px sans-serif';
       ctx.fillStyle = '#00B26A';
       ctx.fillText('✅ 总待办', 60, 180);
-      ctx.fillText('🎯 已完成', 280, 180);
-      ctx.fillText('📈 完成率', 500, 180);
+      ctx.fillText('🎯 已完成', 230, 180);
+      ctx.fillText('📈 完成率', 400, 180);
+      ctx.fillText('⏱️ 平均完成时间', 530, 180);
       
       ctx.font = 'bold 32px sans-serif';
       ctx.fillStyle = '#2d3436';
       ctx.fillText(this.data.total, 60, 220);
-      ctx.fillText(this.data.completed, 280, 220); 
-      ctx.fillText(`${this.data.progress}%`, 500, 220);
-
-      // 分类统计美化（添加图标和阴影）
-      let yPos = 280;
-      ctx.font = 'bold 30px sans-serif';
-      ctx.fillStyle = '#2d3436';
-      ctx.fillText('📋 分类完成率', 50, yPos);
-      yPos += 40;
-
-      this.data.categoryStats.forEach((item, index) => {
-        // 带圆角的进度条
-        ctx.beginPath();
-        drawRoundRect(50, yPos, 650, 30, 15);
-        ctx.fillStyle = 'rgba(76,175,80,0.15)';
-        ctx.fill();
-        
-        ctx.beginPath();
-        drawRoundRect(50, yPos, 650 * (item.completed / item.total), 30, 15);
-        ctx.fillStyle = '#00B26A';
-        ctx.fill();
-        
-        // 文字添加阴影
-        ctx.shadowColor = 'rgba(0,0,0,0.1)';
-        ctx.shadowBlur = 4;
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '24px sans-serif';
-        ctx.fillText(`${item.completed}/${item.total} (${item.percent})`, 60, yPos + 20);
-        ctx.shadowBlur = 0; // 重置阴影
-        
-        yPos += 50;
-      });
-
-      // 位置分布优化（添加图标）
-      yPos += 40;
-      ctx.font = 'bold 30px sans-serif';
-      ctx.fillStyle = '#2d3436';
-      ctx.fillText('📍 高频地点', 50, yPos);
-      yPos += 40;
-
-      this.data.locationStats.slice(0,5).forEach((item, index) => {
-        // 圆形图标
-        ctx.beginPath();
-        ctx.arc(60, yPos-7, 12, 0, Math.PI * 2);
-        ctx.fillStyle = '#00B26A';
-        ctx.fill();
-        
-        ctx.fillStyle = '#666';
-        ctx.font = '28px sans-serif';
-        ctx.fillText(`${item.name}: ${item.count}次（${(item.count/this.data.locationTotal*100).toFixed(1)}%）`, 80, yPos + 4);
-        yPos += 40;
-      });
-
-      // 更新时间样式优化
-      ctx.fillStyle = '#999';
-      ctx.font = 'italic 24px sans-serif';
-      ctx.fillText(`⏰ 数据更新于：${this.data.lastUpdated}`, 50, 980);
+      ctx.fillText(this.data.completed, 230, 220); 
+      ctx.fillText(`${this.data.progress}%`, 400, 220);
+      ctx.fillText(this.data.avgCompletionTime, 530, 220);
 
       // 生成图片
       wx.canvasToTempFilePath({
@@ -289,4 +540,4 @@ Page({
       });
     });
   },
-})
+});

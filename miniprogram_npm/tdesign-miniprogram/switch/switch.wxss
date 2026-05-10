@@ -45,13 +45,13 @@
   overflow: hidden;
 }
 .t-switch__label--checked {
-  color: var(--td-switch-label-checked-color, var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a))));
+  color: var(--td-switch-label-checked-color, var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A))));
 }
 .t-switch__label--disabled {
   color: var(--td-switch-unchecked-disabled-color, var(--td-bg-color-component-disabled, var(--td-gray-color-2, #eeeeee)));
 }
 .t-switch__label--checked.t-switch__label--disabled {
-  color: var(--td-switch-checked-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #00b26a88)));
+  color: var(--td-switch-checked-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #b5c7ff)));
 }
 .t-switch__label--large {
   font-size: var(--td-switch-label-large-font-size, 32rpx);
@@ -72,7 +72,7 @@
   font-size: var(--td-switch-icon-small-size, 32rpx);
 }
 .t-switch__loading {
-  color: var(--td-switch-label-checked-color, var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a))));
+  color: var(--td-switch-label-checked-color, var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A))));
 }
 .t-switch__body {
   vertical-align: middle;
@@ -85,13 +85,13 @@
   overflow: hidden;
 }
 .t-switch__body--checked {
-  background-color: var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background-color: var(--td-switch-checked-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-switch__body--disabled {
   background-color: var(--td-switch-unchecked-disabled-color, var(--td-bg-color-component-disabled, var(--td-gray-color-2, #eeeeee)));
 }
 .t-switch__body--checked.t-switch__body--disabled {
-  background-color: var(--td-switch-checked-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #00b26a88)));
+  background-color: var(--td-switch-checked-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #b5c7ff)));
 }
 .t-switch__body--large {
   width: var(--td-switch-large-width, 104rpx);

@@ -1,3 +1,8 @@
+<view style="height:170rpx;">
+  <text class="title">日历</text>
+</view>
+
+
 <view>
   <calendar
     id="calendar"
@@ -8,12 +13,12 @@
     bindload="handleLoad"
     bindchange="handleConfirm"
     vibrate="{{false}}"
-    style="--wc-primary: #00B26A;--wc-bg-light: #E3F5EB;--wc-checked-bg-light: #CCEDDC;--wc-dot-color-light: #ff8800;--wc-annual-bg-light: #CCEDDC;"
+    style="--wc-primary: #00b26a;--wc-bg-light: #E3F5EB;--wc-checked-bg-light: #CCEDDC;--wc-dot-color-light: #ff8800;--wc-annual-bg-light: #CCEDDC;"
   />
 </view>
 
 <view class="todo-list" wx:if="{{selectedDate}}">
-  <text class="todo-text">{{selectedDate}}的待办</text>
+  <text class="todo-text">{{selectedDate}} 的待办（按截止时间排序）</text>
   
   <block wx:if="{{selectedTodos.length > 0}}">
     <t-swipe-cell 
@@ -24,15 +29,14 @@
     >
       <t-cell
         class="{{item.completed ? 'completed' : ''}}"
-        title="{{item.text}}"
-        description="{{item.remarks}}"
+        title="{{item.isStar ? '⭐ ' + item.text: item.text}}"
+        description="{{item.location ? (item.remarks ? '📍' + item.location.name + '｜' + item.remarks : '📍' + item.location.name) : item.remarks}}"
         note="{{item.setTime}}"
         bordered="{{false}}"
         custom-style="width:100%"
         bindtap="navigateToDetail"
         data-index="{{index}}"
       >
-        <!-- bindtap="navigateToDetail" -->
         <view slot="right-icon">
           <checkbox 
             checked="{{item.completed}}" 
@@ -54,3 +58,10 @@
     </view>
   </block>
 </view>
+
+<t-fab
+  text="今"
+  bind:click="handleBackToToday" 
+  style="right: 32rpx; bottom: 150rpx;"
+/>
+<t-fab icon="add" bind:click="navigateToAdd" style="right: 32rpx; bottom: 32rpx;"/>

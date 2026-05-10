@@ -1,3 +1,13 @@
+.title {
+  font-size: 50rpx;
+  font-weight: 600;
+  color: #2d3436;
+  flex: 1;
+  position: relative;
+  left: 30rpx;
+  top: 100rpx
+}
+
 .container {
   padding: 0;
 }

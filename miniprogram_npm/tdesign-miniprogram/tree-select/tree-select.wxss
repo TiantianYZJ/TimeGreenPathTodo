@@ -58,7 +58,7 @@
 }
 .t-tree-select__item--active {
   font-weight: 600;
-  color: var(--td-tree-item-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-tree-item-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-tree-select-column {
   width: 100%;

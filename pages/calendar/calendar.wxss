@@ -1,3 +1,13 @@
+.title {
+  font-size: 50rpx;
+  font-weight: 600;
+  color: #2d3436;
+  flex: 1;
+  position: relative;
+  left: 30rpx;
+  top: 100rpx
+}
+
 .todo-list {
   padding-bottom: 10rpx;
 }
@@ -110,7 +120,7 @@
              0 4rpx 16rpx rgba(76,175,80,0.15);
 }
 .completed .t-cell__title {
-  color: #008550 !important;
+  color: #00b26a !important;
   text-decoration: line-through;
 }
 .completed-decorate {

@@ -52,7 +52,7 @@
   max-width: 100%;
   max-height: 100%;
   animation: rotate 0.8s linear infinite;
-  color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-loading__spinner.reverse {
   animation-name: rotateReverse;
@@ -73,7 +73,7 @@
   width: 5rpx;
   height: 25%;
   margin: 0 auto;
-  background-color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background-color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   border-radius: 40%;
   content: ' ';
 }
@@ -96,7 +96,7 @@
   width: 20%;
   height: 20%;
   border-radius: 50%;
-  background-color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background-color: var(--td-loading-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   animation-duration: 1.8s;
   animation-name: dotting;
   animation-timing-function: linear;

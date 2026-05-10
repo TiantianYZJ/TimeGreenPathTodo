@@ -101,6 +101,13 @@
   border-radius: 50%;
 }
 
+/* 添加链接样式 */
+.link {
+  color: #00B26A;
+  text-decoration: underline;
+  padding: 0 4rpx;
+}
+
 .address {
   display: block;
   font-size: 28rpx;

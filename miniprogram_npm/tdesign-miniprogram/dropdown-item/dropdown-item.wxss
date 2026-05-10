@@ -125,7 +125,7 @@
   padding-left: 32rpx;
 }
 .t-dropdown-item__tree-item--active {
-  color: var(--td-tree-item-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-tree-item-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-dropdown-item__mask {
   position: fixed;

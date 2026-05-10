@@ -1,45 +1,76 @@
-<!-- 顶部导航栏 -->
-<view class="header">
-  <text class="title">我的待办（{{todos.length}}）</text>
-  <image 
-    src="../../images/clear.png" 
-    class="clear-btn" 
-    bindtap="showClearConfirm"
-    wx:if="{{todos.length > 0}}"
-  />
-</view>
+<!-- 顶部栏 -->
+<view class="top">
+  <view class="header" style="padding-top:{{navBarHeight-44}}px;padding-left:{{menuRight+20}}rpx">
+    <text class="title">我的待办（{{todos.length}}）</text>
+    <view class="action-group" style="right:0rpx">
+      <t-icon 
+        name="clear"
+        class="clear-btn"
+        size="40rpx"
+        color="#000"
+        bindtap="showClearOptions"
+        wx:if="{{todos.length > 0}}"
+      />
+    </view>
+  </view>
 
-<view class="custom-notice" bindtap="navigateToNotice">
-  <view class="notice-content">
-    <text class="notice-icon" >📢</text>
-    <text class="notice-text">{{latestNoticeTitle}}</text>
-    <view class="notice-action" catchtap="showLatestNotice">
-      <text class="action-text">详情</text>
-      <image src="/images/arrow-right.png" class="action-icon" />
+  <!-- 新增搜索框 -->
+  <view class="search-container">
+    <view class="search-box">
+      <t-icon class="search-icon" name="search" size="36rpx" color="#999" />
+      <input 
+        class="search-input" 
+        placeholder="搜索待办事项（空格分隔关键词）" 
+        placeholder-class="placeholder-style"
+        confirm-type="search"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
     </view>
   </view>
 </view>
 
-<!-- 天气卡片 -->
-<view class="weather-card card-style" wx:if="{{!isLoading && weather}}" bindtap="showWeather">
-  <view class="weather-header">
-    <text class="temperature">{{weather.temperature || '--'}}℃</text>
-    <text class="weather-title">{{weather.city || '位置获取中'}} · {{weather.text || ''}}</text>
+<view class="container" style="margin-top: 270rpx;">
+  <!-- 天气卡片 wx:if="{{!isLoading && weather}}"-->
+  <view
+    wx:if="{{!isLoading && weather}}"
+    class="weather-card card-style"
+    bindtap="showWeather"
+  >
+    <view class="weather-header">
+      <text class="temperature">{{weather.temperature || '--'}}℃</text>
+      <text class="weather-title">{{weather.city || '未知'}} · {{weather.text || ''}}</text>
+    </view>
+    <!-- 添加更新时间信息 -->
+    <text class="weather-update-time">更新时间：{{weather.last_update || '未知'}}</text>
   </view>
-</view>
+      
+  <view class="custom-notice" bindtap="navigateToNotice">
+    <view class="notice-content">
+      <text class="notice-icon" >📢</text>
+      <text class="notice-text">{{latestNoticeTitle}}</text>
+      <view class="notice-action" catchtap="showLatestNotice">
+        <text class="action-text">详情</text>
+        <image src="/images/arrow-right.png" class="action-icon" />
+      </view>
+    </view>
+  </view>
 
-<view class="container">
   <view class="todo-list">
     <t-swipe-cell 
-      class="todo-item {{item._animate || ''}}"
+      class="todo-item {{item._animate || ''}} {{isDragging && currentIndex === index ? 'dragging' : ''}}"
       wx:for="{{todos}}"
       wx:key="index"
       data-index="{{index}}"
+      bind:touchmove="handleTouchMove"
+      bind:touchend="handleTouchEnd"
+      bindlongpress="startDrag"
+      catch:touchcancel="cancelDrag"
     >
       <t-cell
         class="{{item.completed ? 'completed' : ''}}"
-        title="{{item.text}}"
-        description="{{item.remarks}}"
+        title="{{item.isStar ? '⭐ ' + item.text: item.text}}"
+        description="{{item.location ? (item.remarks ? '📍' + item.location.name + '｜' + item.remarks : '📍' + item.location.name) : item.remarks}}"
         note="{{item.setDate}}"
         bordered="{{false}}"
         custom-style="width:100%"
@@ -70,7 +101,7 @@
           bind:tap="handleSwipeAction" 
           data-type="edit"
         >
-          <t-icon class="padding-bottom" name="edit" size="32rpx"></t-icon>
+          <!-- <t-icon class="padding-bottom" name="edit" size="32rpx"></t-icon> -->
           编辑
         </view>
         <view 
@@ -79,7 +110,7 @@
           bind:tap="handleSwipeAction" 
           data-type="delete"
         >
-          <t-icon class="padding-bottom" name="delete" size="32rpx"></t-icon>
+          <!-- <t-icon class="padding-bottom" name="delete" size="32rpx"></t-icon> -->
           删除
         </view>
       </view>
@@ -88,10 +119,17 @@
   </view>
 </view>
 
-<t-fab icon="add" bind:click="navigateToAdd" style="right: 32rpx; bottom: 32rpx;"/>
-<!-- <t-fab 
+<t-fab 
+  wx:if="{{showBackTop}}"
+  icon="arrow-up" 
+  bind:click="onToTop"
+  style="right: 32rpx; bottom: 268rpx;"
+/>
+
+<t-fab 
   icon="microphone-1" 
   bind:touchstart="touchStart" 
   bind:touchend="touchEnd"
   style="right: 32rpx; bottom: 150rpx;"
-/> -->
+/>
+<t-fab icon="add" bind:click="navigateToAdd" style="right: 32rpx; bottom: 32rpx;"/>

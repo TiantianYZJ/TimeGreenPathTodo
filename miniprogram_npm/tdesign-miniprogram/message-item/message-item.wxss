@@ -59,7 +59,7 @@
   white-space: nowrap;
 }
 .t-message--info {
-  color: var(--td-message-info-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-message-info-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-message--success {
   color: var(--td-message-success-color, var(--td-success-color, var(--td-success-color-5, #2ba471)));

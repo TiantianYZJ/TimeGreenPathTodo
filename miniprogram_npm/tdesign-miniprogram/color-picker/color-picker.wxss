@@ -45,7 +45,7 @@
   height: var(--td-color-picker-slider-thumb-size, 48rpx);
   border-radius: var(--td-color-picker-border-radius-circle, 50%);
   box-shadow: var(--td-shadow-1, 0 1px 10px rgba(0, 0, 0, 0.05), 0 4px 5px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.12));
-  color: var(--td-text-color-brand, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-text-color-brand, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   box-sizing: border-box;
 }
 .t-color-picker__thumb::before,

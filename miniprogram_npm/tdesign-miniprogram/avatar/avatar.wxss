@@ -31,7 +31,7 @@
   justify-content: center;
   box-sizing: border-box;
   background-color: var(--td-avatar-bg-color, var(--td-brand-color-light-active, var(--td-primary-color-2, #d9e1ff)));
-  color: var(--td-avatar-content-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-avatar-content-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-avatar__wrapper {
   display: inline-flex;

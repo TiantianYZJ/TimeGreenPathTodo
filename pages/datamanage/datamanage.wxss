@@ -1,3 +1,9 @@
+.container {
+  padding-bottom: 20rpx;
+  /* margin-top: 300rpx; */
+  overflow-y: auto;
+}
+
 .section-title {
   font-size: 32rpx;
   font-weight: 600;

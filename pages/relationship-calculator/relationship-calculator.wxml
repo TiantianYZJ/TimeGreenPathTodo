@@ -1,0 +1,42 @@
+<view class="container">
+  <!-- 显示区域 -->
+  <view class="card-style">
+    <view class="display-area">
+      <text class="chain-text">{{currentChain.join('的')}}</text>
+      <text class="result-text" wx:if="{{result}}">{{result}}</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮区域 -->
+  <view class="keypad">
+    <!-- 第一行：夫、妻、C、回退 -->
+    <view class="row">
+      <t-button data-relation="husband" bindtap="tapRelation" theme="primary" size="medium">夫</t-button>
+      <t-button data-relation="wife" bindtap="tapRelation" theme="primary" size="medium">妻</t-button>
+      <t-button bindtap="clearAll" theme="warning" size="medium">C</t-button>
+      <t-button bindtap="deleteLastRelation" theme="warning" size="medium">⌫</t-button>
+    </view>
+
+    <!-- 第二行：父、母、子、女 -->
+    <view class="row">
+      <t-button data-relation="father" bindtap="tapRelation" theme="primary" size="medium">父</t-button>
+      <t-button data-relation="mother" bindtap="tapRelation" theme="primary" size="medium">母</t-button>
+      <t-button data-relation="son" bindtap="tapRelation" theme="primary" size="medium">子</t-button>
+      <t-button data-relation="daughter" bindtap="tapRelation" theme="primary" size="medium">女</t-button>
+    </view>
+
+    <!-- 第三行：兄、弟、姐、妹 -->
+    <view class="row">
+      <t-button data-relation="elderBrother" bindtap="tapRelation" theme="primary" size="medium">兄</t-button>
+      <t-button data-relation="youngerBrother" bindtap="tapRelation" theme="primary" size="medium">弟</t-button>
+      <t-button data-relation="elderSister" bindtap="tapRelation" theme="primary" size="medium">姐</t-button>
+      <t-button data-relation="youngerSister" bindtap="tapRelation" theme="primary" size="medium">妹</t-button>
+    </view>
+
+    <!-- 第四行：互查、= -->
+    <view class="row">
+      <t-button bindtap="toggleReverse" theme="secondary" size="medium" class="mutual-btn">互查</t-button>
+      <t-button bindtap="calculate" theme="success" size="medium" class="equal-btn">=</t-button>
+    </view>
+  </view>
+</view>

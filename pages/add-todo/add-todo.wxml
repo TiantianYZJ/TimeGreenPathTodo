@@ -1,6 +1,6 @@
 <view wx:if="{{isVoiceMode}}" class="voice-tip">
   <image src="../../images/todo-active.png" class="voice-icon"/>
-  <text class="tip-text">已通过语音输入待办内容，请继续编辑其他信息</text>
+  <text class="tip-text">语音识别完成，可继续完善其他信息</text>
 </view>
 
 <view class="container">

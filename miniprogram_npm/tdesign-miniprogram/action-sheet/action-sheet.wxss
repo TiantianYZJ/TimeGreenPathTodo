@@ -165,5 +165,5 @@
   transition: all 0.4s ease-in;
 }
 .t-action-sheet__dots-item.t-is-active {
-  background-color: #00b26a;
+  background-color: #00B26A;
 }

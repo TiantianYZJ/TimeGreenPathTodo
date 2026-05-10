@@ -4,11 +4,14 @@
   style="width: 750rpx; height: 1800rpx; position: absolute; left: -9999rpx">
 </canvas>
 
+<view style="height:170rpx;">
+  <text class="title">统计</text>
+</view>
+
 <view class="capture-area">
+  <!-- 核心指标卡片 -->
   <view class="container card-style">
-    <!-- 数据面板结构 -->
     <view class="dashboard">
-      <!-- 核心指标 -->
       <view class="stats-grid">
         <view class="metric-card">
           <text class="metric-value">{{total}}</text>
@@ -18,32 +21,49 @@
           <text class="metric-value">{{completed}}</text>
           <text class="metric-label">已完成</text>
         </view>
-      </view>
-    </view>
-  </view>
-  <view class="container card-style">
-    <!-- 可视化图表区 -->
-    <view class="visualization-section">
-      <text class="chart-title">待办完成比例</text>
-      <view class="bar-chart">
-        <view 
-          wx:for="{{categoryStats}}"
-          wx:key="category"
-          class="bar-item"
-        >
-          <!-- 修改 data-percent 的绑定方式 -->
-          <view class="bar-container" data-percent="{{item.percent}}">
-            <view 
-              class="bar completed" 
-              style="width: {{item.percent}};"
-            ></view>
-          </view>
+        <view class="metric-card">
+          <text class="metric-value">{{progress}}%</text>
+          <text class="metric-label">完成率</text>
+        </view>
+        <view class="metric-card">
+          <text class="metric-value">{{avgCompletionTime}}</text>
+          <text class="metric-label">平均完成时间</text>
         </view>
       </view>
     </view>
   </view>
-  <!-- 在现有图表下方添加 -->
-  <!-- 优化后的位置分布卡片 -->
+  
+  <!-- 完成情况概览图表 -->
+  <view class="container card-style">
+    <view class="visualization-section">
+      <text class="chart-title">完成情况概览</text>
+      <view class="chart-container">
+        <ec-canvas id="overviewChart" ec="{{overviewChart}}" canvas-id="overviewCanvas"></ec-canvas>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 每日待办趋势图表 -->
+  <view class="container card-style">
+    <view class="visualization-section">
+      <text class="chart-title">每日待办趋势</text>
+      <view class="chart-container">
+        <ec-canvas id="trendChart" ec="{{trendChart}}" canvas-id="trendCanvas"></ec-canvas>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 完成时间分布图表 -->
+  <view class="container card-style">
+    <view class="visualization-section">
+      <text class="chart-title">完成时间分布</text>
+      <view class="chart-container">
+        <ec-canvas id="timeChart" ec="{{timeChart}}" canvas-id="timeCanvas"></ec-canvas>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 位置分布统计 -->
   <view class="container card-style">
     <view class="visualization-section">
       <text class="chart-title">位置分布</text>
@@ -63,9 +83,11 @@
           </view>
         </view>
       </view>
-      <text wx:if="{{!locationStats.length}}" class="empty-tip">暂无位置数据</text>
+      <text wx:if="{{!locationMarkers.length}}" class="empty-tip">暂无位置数据</text>
     </view>
   </view>
+  
+  <!-- 地图可视化 -->
   <view class="container card-style">
     <view class="visualization-section">
       <text class="chart-title">地点分布图</text>
@@ -85,6 +107,7 @@
 <t-fab 
   wx:if="{{!isShare}}"
   icon="share" 
-  bind:click="generateShareImage" 
+  bind:click="generateShareImage"
+  style="right: 32rpx; bottom: 32rpx;"
   text="生成报告"
 />

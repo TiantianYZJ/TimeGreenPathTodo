@@ -7,7 +7,7 @@ isComponent: true
 
 <div style="background: #ecf2fe; display: flex; align-items: center; line-height: 20px; padding: 14px 24px; border-radius: 3px; color: #555a65">
   <svg fill="none" viewBox="0 0 16 16" width="16px" height="16px" style="margin-right: 5px">
-    <path fill="#00b26a" d="M8 15A7 7 0 108 1a7 7 0 000 14zM7.4 4h1.2v1.2H7.4V4zm.1 2.5h1V12h-1V6.5z" fillOpacity="0.9"></path>
+    <path fill="#00B26A" d="M8 15A7 7 0 108 1a7 7 0 000 14zM7.4 4h1.2v1.2H7.4V4zm.1 2.5h1V12h-1V6.5z" fillOpacity="0.9"></path>
   </svg>
   该组件于 0.23.0 版本上线，请留意版本。
 </div>
@@ -26,7 +26,7 @@ isComponent: true
 
 <a href="https://developers.weixin.qq.com/s/i75I6imI7TSh" title="在开发者工具中预览效果" target="_blank" rel="noopener noreferrer"> 在开发者工具中预览效果 </a>
 
-<blockquote style="background-color: #d9e1ff; font-size: 15px; line-height: 26px;margin: 16px 0 0;padding: 16px; border-radius: 6px; color: #00b26a" >
+<blockquote style="background-color: #d9e1ff; font-size: 15px; line-height: 26px;margin: 16px 0 0;padding: 16px; border-radius: 6px; color: #00B26A" >
 <p>Tips: 请确保开发者工具为打开状态。导入开发者工具后，依次执行：npm i > 构建npm包 > 勾选 "将JS编译成ES5"</p>
 </blockquote>
 

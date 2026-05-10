@@ -97,7 +97,7 @@
 .t-search__search-action {
   margin-left: 30rpx;
   font-size: var(--td-search-font-size, var(--td-font-size-m, 32rpx));
-  color: var(--td-search-action-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-search-action-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-search__placeholder {
   color: var(--td-search-placeholder-color, var(--td-text-color-placeholder, var(--td-font-gray-3, rgba(0, 0, 0, 0.4))));
@@ -106,7 +106,7 @@
   text-align: center;
 }
 .t-search__result-item--highLight {
-  color: var(--td-search-result-high-light-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-search-result-high-light-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-search__result-list .t-search__result-item {
   padding-left: 0;

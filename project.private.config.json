@@ -1,75 +1,34 @@
 {
   "description": "项目私有配置文件。此文件中的内容将覆盖 project.config.json 中的相同字段。项目的改动优先同步到此文件中。详见文档：https://developers.weixin.qq.com/miniprogram/dev/devtools/projectconfig.html",
-  "projectname": "test",
+  "projectname": "TimeGreen%20Path%20Todo",
   "setting": {
-    "compileHotReLoad": true
+    "compileHotReLoad": true,
+    "autoAudits": false,
+    "urlCheck": true,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "useApiHook": true,
+    "useApiHostProcess": true,
+    "showShadowRootInWxmlPanel": true,
+    "useStaticServer": false,
+    "useLanDebug": false,
+    "showES6CompileOption": false,
+    "checkInvalidKey": true,
+    "ignoreDevUnusedFiles": true,
+    "bigPackageSizeSupport": false
   },
-  "libVersion": "trial",
+  "libVersion": "3.12.1",
   "condition": {
     "miniprogram": {
       "list": [
         {
-          "name": "pages/star/star",
-          "pathName": "pages/star/star",
+          "name": "pages/stats/stats",
+          "pathName": "pages/stats/stats",
           "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/eating/eating",
-          "pathName": "pages/eating/eating",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/accounting/accounting",
-          "pathName": "pages/accounting/accounting",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/more/more",
-          "pathName": "pages/more/more",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/user-center/user-center",
-          "pathName": "pages/user-center/user-center",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/acknowledge/acknowledge",
-          "pathName": "pages/acknowledge/acknowledge",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/changelog/changelog",
-          "pathName": "pages/changelog/changelog",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/notice/notice",
-          "pathName": "pages/notice/notice",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
-        },
-        {
-          "name": "pages/calendar/calendar",
-          "pathName": "pages/calendar/calendar",
-          "query": "",
-          "launchMode": "default",
-          "scene": null
+          "scene": null,
+          "launchMode": "default"
         }
       ]
     }

@@ -1,0 +1,93 @@
+.container {
+  padding: 20rpx;
+}
+
+.picker {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.picker-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+
+.method-picker {
+  flex: 1;
+  padding-left: 10rpx;
+}
+
+.picker-arrow {
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: 20rpx;
+}
+
+.algorithm-intro {
+  padding: 20rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.text-area {
+  margin-bottom: 20rpx;
+  border-radius: 16rpx;
+}
+
+.input-area {
+  flex: 1;
+  border-radius: 16rpx;
+  /* width: 300rpx; */
+}
+
+.key-group {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.key-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 10rpx;
+  margin-bottom: 20rpx;
+}
+
+.operation-btn {
+  flex: 1;
+  border-radius: 16rpx;
+}
+
+.share-btn {
+  border-radius: 16rpx;
+}
+
+.message {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  text-align: center;
+  font-size: 28rpx;
+}
+
+.message.success {
+  background-color: #e3f9e9;
+  color: #2ba471;
+}
+
+.message.error {
+  background-color: #fff0ed;
+  color: #d54941;
+}

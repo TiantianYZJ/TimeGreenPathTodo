@@ -33,7 +33,7 @@
 }
 .t-guide__reference--nonoverlay {
   box-shadow: none;
-  border: var(--td-guide-reference-border, 4rpx solid var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  border: var(--td-guide-reference-border, 4rpx solid var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-guide__container {
   display: inline-block;

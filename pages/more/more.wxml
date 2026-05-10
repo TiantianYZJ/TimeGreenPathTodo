@@ -1,3 +1,7 @@
+<view style="height:170rpx;">
+  <text class="title">更多</text>
+</view>
+
 <!-- 新增用户信息栏 -->
 <view class="user-info">
   <image 
@@ -19,7 +23,9 @@
   <t-grid column="{{4}}" hover="{{true}}" theme="card">
     <!-- <t-grid-item t-class-image="image" text="记账本" image="/images/accounting.png" url="/pages/accounting/accounting"/> -->
     <t-grid-item t-class-image="image" text="今天吃什么" image="/images/eating.png" url="/pages/eating/eating"/>
+    <t-grid-item t-class-image="image" text="文本加密解密" image="/images/lock.png" url="/pages/text-encryptor/text-encryptor"/>
+    <t-grid-item t-class-image="image" text="密码生成器" image="/images/password.png" url="/pages/password-generator/password-generator"/>
   </t-grid>
 </view>
 
-<t-fab icon="service" button-props="{{serviceFab}}" />
+<t-fab icon="service" style="right: 32rpx; bottom: 32rpx;" button-props="{{serviceFab}}" />

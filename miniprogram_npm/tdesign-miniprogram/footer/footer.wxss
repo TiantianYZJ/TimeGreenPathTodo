@@ -45,7 +45,7 @@
   align-items: center;
 }
 .t-footer__link-item {
-  color: var(--td-footer-link-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-footer-link-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   font-size: var(--td-footer-link-font-size, var(--td-font-size-s, 24rpx));
   line-height: var(--td-footer-link-line-height, 40rpx);
   text-decoration: underline;

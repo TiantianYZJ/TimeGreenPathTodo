@@ -126,7 +126,6 @@
 .meal-tab.active {
   background: #00b26a;
   color: #fff;
-  transform: scale(1.05);
 }
 
 .result-card {

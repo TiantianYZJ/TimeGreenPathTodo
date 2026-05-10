@@ -63,7 +63,7 @@
   color: var(--td-picker-cancel-color, var(--td-text-color-secondary, var(--td-font-gray-2, rgba(0, 0, 0, 0.6))));
 }
 .t-picker__confirm {
-  color: var(--td-picker-confirm-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-picker-confirm-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-picker__main {
   position: relative;

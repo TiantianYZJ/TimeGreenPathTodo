@@ -1,34 +1,54 @@
 <view class="container">
   <!-- 新增操作栏 -->
-  <view class="action-bar" wx:if="{{!isShare}}">
+  <!-- <view class="action-bar" wx:if="{{!isShare}}">
     <image src="/images/edit.png" class="action-icon" bindtap="editTodo" />
     <image src="/images/delete.png" class="action-icon" bindtap="deleteTodo" />
-  </view>
+  </view> -->
+  <!-- class="{{isShare ? 'todo-title-share' : 'todo-title'}}"  -->
 
   <view class="form-item">
-    <!-- 修改标题部分 -->
+    <!-- 标题部分 -->
     <text 
-      class="{{isShare ? 'todo-title-share' : 'todo-title'}}" 
+      class="todo-title-share" 
       bindlongpress="copyTitle"
     >{{todo.text}}</text>
-    
-    <!-- 修改日期显示部分 -->
+
+    <!-- 添加时间显示部分 -->
     <view class="date-info">
-      <text class="label">时间：</text>
+      <text class="label">创建：</text>
+      <text class="value" bindlongpress="copyDate">{{formatDateTime}}</text>
+    </view>
+    
+    <!-- 日期显示部分 -->
+    <view class="date-info">
+      <text class="label">截止：</text>
       <text class="value" bindlongpress="copyDate">{{formattedDate}}</text>
     </view>
+
+    <!-- 完成时间显示部分 -->
+    <view wx:if="{{todo.completed}}" class="date-info">
+      <text class="label">完成：</text>
+      <text class="value" bindlongpress="copyDate">{{formatCompletedTime}}</text>
+    </view>
     
-    <!-- 修改备注部分 -->
+    <!-- 备注部分 -->
     <view wx:if="{{todo.remarks}}" class="remarks">
       <text class="label">备注：</text>
-      <text class="value" bindlongpress="copyRemarks">{{todo.remarks}}</text>
+      <view class="value">
+        <rich-text 
+          nodes="{{remarksHtml}}"
+          bindtap="onRemarksTap"
+        ></rich-text>
+      </view>
     </view>
+
+
     <view wx:if="{{todo.location}}" class="location-info">
       <text class="label">位置：</text>
       <view class="value" bindlongpress="copyLocation">
         <text class="name">{{todo.location.name}}</text>
         <text class="address">{{todo.location.address}}</text>
-        <!-- 新增地图组件 -->
+        <!-- 地图组件 -->
         <view class="map-container">
           <map 
             id="locationMap" 
@@ -49,6 +69,12 @@
   </view>
 </view>
 
-<t-fab wx:if="{{!isShare}}" icon="share" button-props="{{shareButton}}" bind:click="onShareAppMessage" text="分享给朋友" />
 
-<t-fab wx:if="{{isShare}}" icon="add"  bind:click="addToMyTodos" text="添加到我的待办" />
+<!-- <t-fab wx:if="{{!isShare}}" icon="edit" text="" style="right: 32rpx; bottom: 386rpx;" bind:click="editTodo"/> -->
+<t-fab wx:if="{{!isShare}}" icon="edit" text="" style="right: 150rpx; bottom: 268rpx;" bind:click="editTodo"/>
+<t-fab wx:if="{{!isShare}}" icon="delete" text="" style="right: 32rpx; bottom: 268rpx;" bind:click="deleteTodo"/>
+<t-fab wx:if="{{!isShare}}" icon="{{todo.isStar ? 'star-filled' : 'star'}}" text="{{todo.isStar ? '已收藏' : '收藏'}}" style="right: 32rpx; bottom: 150rpx;" bind:click="toggleStar"/>
+<t-fab wx:if="{{!isShare}}" icon="share" style="right: 32rpx; bottom: 32rpx;" button-props="{{shareButton}}" bind:click="onShareAppMessage" text="分享给朋友" />
+<!-- <t-fab wx:if="{{!isShare}}" icon="notification" text="创建提醒" bind:click="createReminder" style="right: 32rpx; bottom: 150rpx;"/> -->
+
+<t-fab wx:if="{{isShare}}" icon="add" text="分享给朋友" style="right: 32rpx; bottom: 32rpx;" bind:click="addToMyTodos" text="添加到我的待办" />

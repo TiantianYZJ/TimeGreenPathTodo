@@ -50,13 +50,13 @@
   font-size: 36rpx;
 }
 .t-link--primary {
-  color: var(--td-link-primary-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-link-primary-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-link--primary.t-link--underline::after {
-  border-color: var(--td-link-primary-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  border-color: var(--td-link-primary-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-link--primary.t-link--disabled {
-  color: var(--td-link-primary-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #00b26a88)));
+  color: var(--td-link-primary-disabled-color, var(--td-brand-color-disabled, var(--td-primary-color-3, #b5c7ff)));
 }
 .t-link--primary.t-link--hover {
   color: var(--td-link-primary-active-color, var(--td-brand-color-active, var(--td-primary-color-8, #008550)));

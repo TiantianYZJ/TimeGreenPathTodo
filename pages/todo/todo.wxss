@@ -1,3 +1,12 @@
+.top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #e3f5eb;
+}
+
 /* 自定义公告栏样式 */
 .custom-notice {
   background: #abd4bb;
@@ -45,7 +54,7 @@
 }
 
 /* 天气卡片样式 */
-.weather-card {
+/* .weather-card {
   background: #f0f9ff;
 }
 
@@ -65,26 +74,103 @@
   font-size: 47rpx;
   font-weight: 600;
   color: #2196f3;
+} */
+
+/* 优化天气卡片样式 */
+.weather-card {
+  background: linear-gradient(135deg, #fefaba 0%, #6b99d1 100%); /* 渐变背景 */
+  border-radius: 24rpx; /* 增大圆角 */
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.15); /* 增强阴影 */
+  padding: 20rpx;
 }
 
-/* 新增头部样式 */
-.header {
-  padding: 20rpx 30rpx;
-  /* box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1); */
-  position: relative; /* 新增 */
+.weather-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.temperature {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #2c3e50; /* 深色字体 */
+}
+
+.weather-title {
+  font-size: 40rpx;
+  color: #34495e; /* 深色字体 */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.weather-update-time {
+  font-size: 28rpx;
+  color: #7f8c8d; /* 灰色字体 */
+  text-align: right;
+}
+
+/* 新增头部样式 */
+.header {
+  padding: 0 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 88rpx;
+}
+
 .title {
-  font-size: 44rpx;
+  font-size: 50rpx;
   font-weight: 600;
   color: #2d3436;
+  flex: 1;
+}
+
+.action-group {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
 .container {
   padding-bottom: 20rpx;
+  /* margin-top: 300rpx; */
+  overflow-y: auto;
+}
+
+/* 新增搜索框样式 */
+.search-container {
+  padding-top: 10rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  height: 72rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.search-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.placeholder-style {
+  color: #999;
+  font-size: 28rpx;
 }
 
 /* 卡片式列表项 */
@@ -119,7 +205,7 @@
              0 4rpx 16rpx rgba(76,175,80,0.15);
 }
 .completed .t-cell__title {
-  color: #008550 !important;
+  color: #00b26a !important;
   text-decoration: line-through;
 }
 .completed-decorate {
@@ -183,17 +269,34 @@
   align-items: center;
 }
 
+/* 拖动样式 */
+.todo-item.dragging {
+  z-index: 999;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 0 30rpx rgba(0,0,0,0.4);
+}
+
+.todo-item.dragging .t-cell {
+  transition: background-color 0.1s ease; /* 添加颜色过渡效果 */
+}
+
 /* 在header样式后添加 */
 .clear-btn {
-  width: 40rpx;
-  height: 40rpx;
-  opacity: 0.7;
-  margin-right: 22rpx;
-  transition: opacity 0.3s;
+  margin-right: 250rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #F3FBF6;
+  /* box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08); */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .clear-btn:active {
-  opacity: 0.5;
+  background: #f5f5f5;
+  transform: scale(0.95);
 }
 
 .btn-wrapper {

@@ -2,6 +2,7 @@
   "usingComponents": {},
   "pages": [
     "pages/todo/todo",
+    "pages/todo-search/todo-search",
     "pages/calendar/calendar",
     "pages/stats/stats",
     "pages/more/more",
@@ -13,16 +14,18 @@
     "pages/user-center/user-center",
     "pages/notice/notice",
     "pages/acknowledge/acknowledge",
-    "pages/accounting/accounting",
-    "pages/accounting-add/accounting-add",
-    "pages/accounting-stats/accounting-stats",
     "pages/eating/eating",
-    "pages/star/star"
+    "pages/text-encryptor/text-encryptor",
+    "pages/star/star",
+    "pages/password-generator/password-generator",
+    "pages/relationship-calculator/relationship-calculator"
   ],
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "时光绿径待办",
-    "navigationBarBackgroundColor": "#e3f5eb"
+    "navigationBarBackgroundColor": "#e3f5eb",
+    "backgroundColorTop": "#e3f5eb",
+    "backgroundColorBottom": "#e3f5eb"
   },
   "tabBar": {
     "color": "#666",

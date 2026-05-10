@@ -41,8 +41,8 @@
 .t-side-bar-item--active {
   font-weight: 600;
   background: var(--td-bg-color-container, var(--td-font-white-1, #ffffff));
-  color: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
-  --td-badge-content-text-color: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
+  --td-badge-content-text-color: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-side-bar-item__icon {
   font-size: var(--td-side-bar-icon-size, 40rpx);
@@ -88,6 +88,6 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background: var(--td-side-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   border-radius: 8rpx;
 }

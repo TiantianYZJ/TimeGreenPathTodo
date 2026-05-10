@@ -72,6 +72,6 @@
   z-index: 1;
 }
 .t-indexes-anchor__wrapper--active {
-  color: var(--td-indexes-anchor-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-indexes-anchor-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   font-weight: var(--td-indexes-anchor-active-font-weight, 600);
 }

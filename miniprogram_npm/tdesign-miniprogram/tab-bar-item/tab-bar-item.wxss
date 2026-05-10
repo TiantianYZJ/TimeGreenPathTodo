@@ -71,7 +71,7 @@
   color: var(--td-tab-bar-color, var(--td-text-color-primary, var(--td-font-gray-1, rgba(0, 0, 0, 0.9))));
 }
 .t-tab-bar-item__content--checked {
-  color: var(--td-tab-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-tab-bar-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   font-weight: 600;
 }
 .t-tab-bar-item__content--tag {

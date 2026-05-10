@@ -52,7 +52,7 @@
   margin-top: var(--td-result-description-margin-top, var(--td-spacer, 16rpx));
 }
 .t-result--theme-default {
-  color: var(--td-result-icon-default-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-result-icon-default-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-result--theme-success {
   color: var(--td-result-icon-success-color, var(--td-success-color, var(--td-success-color-5, #2ba471)));

@@ -48,7 +48,7 @@
   text-align: center;
 }
 .t-indexes__sidebar-item--active {
-  background-color: var(--td-indexes-sidebar-active-bg-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background-color: var(--td-indexes-sidebar-active-bg-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   color: var(--td-indexes-sidebar-active-color, var(--td-text-color-anti, var(--td-font-white-1, #ffffff)));
 }
 .t-indexes__sidebar-item + .t-indexes__sidebar-item {
@@ -67,7 +67,7 @@
   text-align: center;
   font-size: var(--td-indexes-sidebar-tips-font-size, 40rpx);
   font-weight: 700;
-  color: var(--td-indexes-sidebar-tips-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-indexes-sidebar-tips-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   background-color: var(--td-indexes-sidebar-tips-bg-color, var(--td-brand-color-light, var(--td-primary-color-1, #f2f3ff)));
   border-radius: var(--td-indexes-sidebar-tips-size, 96rpx);
   position: absolute;

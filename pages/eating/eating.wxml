@@ -18,7 +18,7 @@
     <t-icon name="help-circle" class="help-icon" bindtap="showStatsHelp" />
   </view>
 
-  <!-- 餐时选择器改为按钮组 -->
+  <!-- 餐时选择器按钮组 -->
   <scroll-view class="meal-selector" scroll-x enhanced>
     <view 
       wx:for="{{mealTypes}}" 
@@ -34,7 +34,7 @@
   <!-- 结果展示区域 -->
   <view class="result-card" wx:if="{{todayFood}}" animation="{{animation}}">
     <view class="result-header">
-      <text class="result-title">今日{{selectedMeal}}推荐</text>
+      <!-- <text class="result-title">今日{{selectedMeal}}推荐</text> -->
       <t-icon name="refresh" class="refresh-icon" bindtap="pickRandomFood" />
     </view>
     <view class="food-card">

@@ -45,7 +45,7 @@ const props = {
     },
     cursorColor: {
         type: String,
-        value: '#00b26a',
+        value: '#00B26A',
     },
     cursorSpacing: {
         type: Number,

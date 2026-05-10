@@ -45,14 +45,16 @@ Page({
   // 生成导出数据
   generateExport() {
     const todos = wx.getStorageSync('todos') || []
-    // 新字段顺序：[text, setDate, setTime, completed, remarks, location]
+    // 新字段顺序：[text, setDate, setTime, completed, remarks, location, isStar, time]
     const compressed = todos.map(t => [
       t.text,
       t.setDate,
       t.setTime || '12:00', // 新增时间字段
       t.completed,
       t.remarks || null,
-      t.location || null
+      t.location || null,
+      t.isStar || false,
+      t.time || null
     ])
     this.setData({ exportData: JSON.stringify(compressed) })
   },
@@ -88,10 +90,11 @@ Page({
               text: arr[0] || '',
               setDate: arr[1],
               setTime: arr[2] || '12:00', // 新增时间解析
-              completed: !!arr[3],
+              completed: arr[3],
               remarks: arr[4] || '',
               location: arr[5] || null,
-              time: new Date().toLocaleString()
+              isStar: arr[6] || false,
+              time: arr[7] || null
             }))
             
             const oldData = wx.getStorageSync('todos') || []

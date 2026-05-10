@@ -1,0 +1,30 @@
+@import "../todo/todo.wxss";
+
+.empty-tips {
+  text-align: center;
+  color: #999;
+  padding: 40rpx;
+  font-size: 28rpx;
+}
+
+.search-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #e3f5eb;
+}
+
+.search-count {
+  display: block;
+  font-size: 27rpx;
+  color: #666;
+  padding: 16rpx 24rpx 8rpx;
+  text-align: left;
+}
+
+.highlight {
+  color: #e64340;
+  font-weight: 500;
+}

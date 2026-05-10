@@ -1,8 +1,14 @@
+const app = getApp()
 Page({
   data: {
     serviceFab: {
       openType: 'contact'
     },
+
+    navBarHeight: app.globalData.navBarHeight,
+    menuRight: app.globalData.menuRight,
+    menuTop: app.globalData.menuTop,
+    menuHeight: app.globalData.menuHeight,
   },
 
   onShareAppMessage() {

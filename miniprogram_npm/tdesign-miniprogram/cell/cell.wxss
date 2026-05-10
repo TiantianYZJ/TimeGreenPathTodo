@@ -92,7 +92,7 @@
   margin-right: var(--td-spacer-1, 24rpx);
 }
 .t-cell__left-icon {
-  color: var(--td-cell-left-icon-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-cell-left-icon-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   font-size: var(--td-cell-left-icon-font-size, 48rpx);
 }
 .t-cell__left-image {

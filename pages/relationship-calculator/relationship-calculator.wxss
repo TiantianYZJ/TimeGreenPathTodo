@@ -1,0 +1,46 @@
+/* 继承主容器样式 */
+.container {
+  padding: 20rpx;
+  background: #e3f5eb;
+  min-height: 100vh;
+}
+
+/* 显示区域 */
+.display-area {
+  padding: 30rpx;
+  min-height: 120rpx;
+}
+
+.chain-text {
+  font-size: 32rpx;
+  color: #2ba471;
+  word-break: break-all;
+}
+
+.result-text {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #00b26a;
+}
+
+/* 按键布局 */
+.keypad {
+  margin: 40rpx 20rpx;
+}
+
+.mutual-btn {
+  flex: 2;
+  margin-right: 20rpx;
+}
+
+.equal-btn {
+  flex: 2;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin: 20rpx 0;
+}

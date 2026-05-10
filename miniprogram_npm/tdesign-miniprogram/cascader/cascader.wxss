@@ -31,9 +31,9 @@
   background-color: var(--td-cascader-bg-color, var(--td-bg-color-container, var(--td-font-white-1, #ffffff)));
   color: var(--td-cascader-title-color, var(--td-text-color-primary, var(--td-font-gray-1, rgba(0, 0, 0, 0.9))));
   border-radius: var(--td-radius-extra-large, 24rpx) var(--td-radius-extra-large, 24rpx) 0 0;
-  --td-radio-icon-checked-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
-  --td-tab-item-active-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
-  --td-tab-track-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  --td-radio-icon-checked-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
+  --td-tab-item-active-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
+  --td-tab-track-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-cascader__close-btn {
   right: 32rpx;
@@ -100,7 +100,7 @@
   width: var(--td-cascader-step-dot-size, 16rpx);
   height: var(--td-cascader-step-dot-size, 16rpx);
   border-radius: 50%;
-  border: 2rpx solid var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  border: 2rpx solid var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   box-sizing: border-box;
 }
 .t-cascader__step-dot:not(.t-cascader__step-dot--last)::after {
@@ -111,19 +111,19 @@
   top: calc(var(--td-cascader-step-dot-size, 16rpx) + 14rpx);
   height: 36rpx;
   width: 2rpx;
-  background: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   transform: translateX(-50%);
 }
 .t-cascader__step-dot--active {
-  background: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
-  border-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  background: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
+  border-color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
 }
 .t-cascader__step-label {
   padding-left: var(--td-spacer-2, 32rpx);
   font-size: var(--td-font-size-m, 32rpx);
 }
 .t-cascader__step-label--active {
-  color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00b26a)));
+  color: var(--td-cascader-active-color, var(--td-brand-color, var(--td-primary-color-7, #00B26A)));
   font-weight: 600;
 }
 .t-cascader__step-arrow {
