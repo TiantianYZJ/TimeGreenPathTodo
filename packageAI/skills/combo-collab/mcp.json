@@ -1,0 +1,78 @@
+{
+  "apis": [
+    {
+      "name": "listCombos",
+      "description": "获取用户的组合列表，支持筛选私有或共享。用户问『我的组合』『共享组合』时调用",
+      "_meta": {
+        "ui": { "componentPath": "components/combo-card" }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["private", "shared"],
+            "description": "筛选类型：private=私有组合，shared=共享组合。不传返回全部"
+          }
+        }
+      },
+      "outputSchema": {}
+    },
+    {
+      "name": "getComboDetail",
+      "description": "查看指定组合的详情，包含组合内的共享待办列表",
+      "_meta": {
+        "ui": { "componentPath": "components/shared-todo-card" }
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "comboId": {
+            "type": "number",
+            "description": "组合ID，取自 listCombos 返回的 id"
+          }
+        },
+        "required": ["comboId"]
+      },
+      "outputSchema": {}
+    },
+    {
+      "name": "completeSharedTodo",
+      "description": "完成或取消完成共享组合中的待办",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "comboId": {
+            "type": "number",
+            "description": "组合ID"
+          },
+          "todoId": {
+            "type": "number",
+            "description": "共享待办ID，取自 getComboDetail 返回的 id"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "true=完成，false=取消完成"
+          }
+        },
+        "required": ["comboId", "todoId", "completed"]
+      },
+      "outputSchema": {}
+    },
+    {
+      "name": "listMembers",
+      "description": "查看共享组合的成员列表",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "comboId": {
+            "type": "number",
+            "description": "组合ID"
+          }
+        },
+        "required": ["comboId"]
+      },
+      "outputSchema": {}
+    }
+  ]
+}

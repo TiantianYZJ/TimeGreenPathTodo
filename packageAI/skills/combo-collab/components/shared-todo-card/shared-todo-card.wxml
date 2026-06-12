@@ -1,0 +1,7 @@
+<view class="shared-todo-list" wx:if="{{name}}">
+  <view class="combo-name">{{name}}</view>
+  <view wx:for="{{shared_todos}}" wx:key="id" class="todo-item">
+    <view class="todo-text">{{item.text}}</view>
+    <view class="todo-meta">{{item.set_date}} {{item.set_time}}</view>
+  </view>
+</view>

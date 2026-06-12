@@ -1,0 +1,5 @@
+.shared-todo-list { padding: 16rpx; }
+.combo-name { font-size: 32rpx; color: #333; font-weight: 500; margin-bottom: 16rpx; }
+.todo-item { padding: 16rpx 0; border-bottom: 1rpx solid #eee; }
+.todo-text { font-size: 28rpx; color: #333; }
+.todo-meta { font-size: 24rpx; color: #999; margin-top: 4rpx; }

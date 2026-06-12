@@ -1,3 +1,8 @@
+const listCombos = require('./apis/listCombos')
+const getComboDetail = require('./apis/getComboDetail')
+const completeSharedTodo = require('./apis/completeSharedTodo')
+const listMembers = require('./apis/listMembers')
+
 const skill = wx.modelContext.createSkill('/packageAI/skills/combo-collab')
 
 skill.use(async (ctx, next) => {
@@ -13,8 +18,12 @@ skill.use(async (ctx, next) => {
       wx.setStorageSync('token', res.data.token)
     }
   }
-  console.log(`[AI Skill] Executing: ${ctx.name}`)
   await next()
 })
+
+skill.registerAPI('listCombos', listCombos)
+skill.registerAPI('getComboDetail', getComboDetail)
+skill.registerAPI('completeSharedTodo', completeSharedTodo)
+skill.registerAPI('listMembers', listMembers)
 
 module.exports = { skill }

@@ -1,0 +1,4 @@
+.combo-list { padding: 16rpx; }
+.combo-item { padding: 20rpx 0; border-bottom: 1rpx solid #eee; }
+.combo-name { font-size: 30rpx; color: #333; }
+.combo-desc { font-size: 24rpx; color: #999; margin-top: 8rpx; }

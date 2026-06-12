@@ -1,0 +1,6 @@
+<view class="combo-list">
+  <view wx:for="{{combos}}" wx:key="id" class="combo-item">
+    <view class="combo-name">{{item.name}}</view>
+    <view class="combo-desc">{{item.is_shared ? '共享' : '私有'}} · {{item.todo_count || 0}} 条待办</view>
+  </view>
+</view>
