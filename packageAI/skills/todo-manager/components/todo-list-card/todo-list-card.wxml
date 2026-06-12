@@ -1,0 +1,7 @@
+<view class="todo-list">
+  <view class="summary">共 {{total}} 条，已完成 {{completedCount}} 条</view>
+  <view wx:for="{{todos}}" wx:key="id" class="todo-item">
+    <view class="todo-text {{item.completed ? 'completed' : ''}}">{{item.text}}</view>
+    <view class="todo-meta">{{item.setDate}} {{item.setTime}}</view>
+  </view>
+</view>

@@ -1,0 +1,4 @@
+.todo-form { padding: 24rpx; }
+.form-text { font-size: 32rpx; color: #333; }
+.form-meta { font-size: 26rpx; color: #999; margin-top: 12rpx; }
+.form-hint { font-size: 24rpx; color: #00b26a; margin-top: 16rpx; }

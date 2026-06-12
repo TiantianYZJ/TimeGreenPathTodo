@@ -1,0 +1,6 @@
+.todo-list { padding: 16rpx; }
+.summary { font-size: 28rpx; color: #666; margin-bottom: 16rpx; }
+.todo-item { padding: 20rpx 0; border-bottom: 1rpx solid #eee; }
+.todo-text { font-size: 30rpx; color: #333; }
+.todo-text.completed { text-decoration: line-through; color: #999; }
+.todo-meta { font-size: 24rpx; color: #999; margin-top: 8rpx; }

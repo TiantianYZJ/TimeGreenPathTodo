@@ -1,0 +1,8 @@
+<view class="todo-detail" wx:if="{{id}}">
+  <view class="todo-text {{completed ? 'completed' : ''}}">{{text}}</view>
+  <view class="todo-meta">{{setDate}} {{setTime}}</view>
+  <view class="todo-remarks" wx:if="{{remarks}}">{{remarks}}</view>
+  <view class="todo-tags" wx:if="{{tags && tags.length}}">
+    <text wx:for="{{tags}}" wx:key="this" class="tag">#{{item}}</text>
+  </view>
+</view>

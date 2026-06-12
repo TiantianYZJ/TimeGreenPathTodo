@@ -1,0 +1,7 @@
+.todo-detail { padding: 24rpx; }
+.todo-text { font-size: 32rpx; color: #333; font-weight: 500; }
+.todo-text.completed { text-decoration: line-through; color: #999; }
+.todo-meta { font-size: 26rpx; color: #999; margin-top: 12rpx; }
+.todo-remarks { font-size: 28rpx; color: #666; margin-top: 16rpx; }
+.todo-tags { margin-top: 12rpx; }
+.tag { font-size: 24rpx; color: #00b26a; margin-right: 12rpx; }

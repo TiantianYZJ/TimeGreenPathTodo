@@ -1,0 +1,5 @@
+<view class="todo-form" wx:if="{{text}}">
+  <view class="form-text">{{text}}</view>
+  <view class="form-meta" wx:if="{{setDate}}">{{setDate}} {{setTime}}</view>
+  <view class="form-hint">确认后即可创建</view>
+</view>
