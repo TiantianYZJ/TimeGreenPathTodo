@@ -30,13 +30,13 @@ async function createTodo({ text, setDate, setTime, remarks, tags }) {
     wx.setStorageSync('todos', todos)
     return {
       isError: false,
-      content: [{ type: 'text', text: `已创建待办：${text.trim()}` }],
+      content: [{ type: 'text', text: `已为您创建待办「${text.trim()}」，日期 ${newTodo.setDate} ${newTodo.setTime}。请告知用户创建成功，并询问是否需要继续添加其他待办。` }],
       structuredContent: newTodo
     }
   } catch (err) {
     return {
       isError: true,
-      content: [{ type: 'text', text: '创建待办失败，请稍后重试' }]
+      content: [{ type: 'text', text: '创建待办失败，可能是网络问题。请先告诉用户创建失败，引导用户稍后重试，不要再以相同数据重复调用本接口。' }]
     }
   }
 }

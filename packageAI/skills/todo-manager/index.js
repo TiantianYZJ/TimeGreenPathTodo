@@ -8,6 +8,7 @@ const searchTodos = require('./apis/searchTodos')
 const skill = wx.modelContext.createSkill('/packageAI/skills/todo-manager')
 
 skill.use(async (ctx, next) => {
+  const start = Date.now()
   try {
     const token = wx.getStorageSync('token')
     if (!token) {
@@ -26,7 +27,13 @@ skill.use(async (ctx, next) => {
   } catch (e) {
     console.warn(`[AI Skill] Auth skipped for ${ctx.name}: ${e.message}`)
   }
-  await next()
+  try {
+    await next()
+    console.log(`[AI Skill] ${ctx.name} OK (${Date.now() - start}ms)`)
+  } catch (err) {
+    console.error(`[AI Skill] ${ctx.name} FAILED (${Date.now() - start}ms): ${err.message}`)
+    throw err
+  }
 })
 
 skill.registerAPI('createTodo', createTodo)

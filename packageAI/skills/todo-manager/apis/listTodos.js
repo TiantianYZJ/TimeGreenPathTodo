@@ -14,7 +14,7 @@ async function listTodos({ date, completed, tagId, isStar, keyword }) {
   const completedCount = todos.filter(t => t.completed).length
   return {
     isError: false,
-    content: [{ type: 'text', text: `找到 ${total} 条待办，已完成 ${completedCount} 条` }],
+    content: [{ type: 'text', text: `当前共有 ${total} 条待办，已完成 ${completedCount} 条。请向用户展示待办列表卡片，并引导用户选择需要操作的待办。` }],
     structuredContent: { todos: todos.slice(0, 20), total, completedCount }
   }
 }

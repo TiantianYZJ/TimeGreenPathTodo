@@ -12,7 +12,7 @@ async function searchTodos({ keyword }) {
   )
   return {
     isError: false,
-    content: [{ type: 'text', text: `搜索「${keyword}」找到 ${results.length} 条结果` }],
+    content: [{ type: 'text', text: `已搜索「${keyword}」，找到 ${results.length} 条匹配的待办。请向用户展示搜索结果，并告知可以输入更精确的关键词重新搜索。` }],
     structuredContent: { keyword, todos: results.slice(0, 20), total: results.length }
   }
 }

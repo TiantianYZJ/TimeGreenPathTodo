@@ -1,7 +1,8 @@
 Component({
   lifetimes: {
     created() {
-      wx.modelContext.getContext(this).on(wx.modelContext.NotificationType.Result, (data) => {
+      const modelCtx = wx.modelContext.getContext(this)
+      modelCtx.on(wx.modelContext.NotificationType.Result, (data) => {
         this.setData(data.result.structuredContent || {})
       })
     }
