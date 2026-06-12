@@ -3,7 +3,7 @@
     {
       "name": "getCalendar",
       "description": "查询某个月份的日历数据，展示每天有多少待办。用户问『日历』『这个月』『某月的安排』时调用",
-      "_meta": { "ui": { "componentPath": "components/calendar-card" } },
+      "_meta": { "ui": { "componentPath": "components/calendar-card/index" } },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -26,7 +26,7 @@
     {
       "name": "getStats",
       "description": "获取待办完成情况的统计数据。用户问『统计』『完成率』『进度』『最近怎么样』时调用",
-      "_meta": { "ui": { "componentPath": "components/stats-card" } },
+      "_meta": { "ui": { "componentPath": "components/stats-card/index" } },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -64,7 +64,7 @@
     {
       "name": "getDeletedTodos",
       "description": "获取回收站中的已删除待办列表。用户问『回收站』『已删除的』『最近删了什么』时调用",
-      "_meta": { "ui": { "componentPath": "components/trash-list" } },
+      "_meta": { "ui": { "componentPath": "components/trash-list/index" } },
       "inputSchema": { "type": "object", "properties": {} },
       "outputSchema": {
         "type": "object",
@@ -125,15 +125,15 @@
   ],
   "components": [
     {
-      "path": "components/calendar-card",
+      "path": "components/calendar-card/index",
       "relatedPage": "/pages/calendar/calendar"
     },
     {
-      "path": "components/stats-card",
+      "path": "components/stats-card/index",
       "relatedPage": "/pages/stats/stats"
     },
     {
-      "path": "components/trash-list",
+      "path": "components/trash-list/index",
       "relatedPage": "/packageTools/trash/trash"
     }
   ]

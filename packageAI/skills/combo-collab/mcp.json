@@ -4,7 +4,7 @@
       "name": "listCombos",
       "description": "获取用户的组合列表，支持筛选私有或共享。用户问『我的组合』『共享组合』『文件夹』时调用",
       "_meta": {
-        "ui": { "componentPath": "components/combo-card" }
+        "ui": { "componentPath": "components/combo-card/index" }
       },
       "inputSchema": {
         "type": "object",
@@ -38,7 +38,7 @@
       "name": "getComboDetail",
       "description": "查看指定组合的详情，包含组合内的共享待办列表。用户说『查看xx组合』时调用。需先调用 listCombos 获取 comboId",
       "_meta": {
-        "ui": { "componentPath": "components/shared-todo-card" }
+        "ui": { "componentPath": "components/shared-todo-card/index" }
       },
       "inputSchema": {
         "type": "object",
@@ -126,11 +126,11 @@
   ],
   "components": [
     {
-      "path": "components/combo-card",
+      "path": "components/combo-card/index",
       "relatedPage": "/packageCombo/combo-detail/combo-detail"
     },
     {
-      "path": "components/shared-todo-card",
+      "path": "components/shared-todo-card/index",
       "relatedPage": "/packageCombo/combo-detail/combo-detail"
     }
   ]

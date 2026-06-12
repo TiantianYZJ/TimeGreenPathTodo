@@ -4,7 +4,7 @@
       "name": "createTodo",
       "description": "创建一条新的待办事项。用户表达『添加』『新建』『创建』『记一下』等意图时调用",
       "_meta": {
-        "ui": { "componentPath": "components/todo-form-card" }
+        "ui": { "componentPath": "components/todo-form-card/index" }
       },
       "inputSchema": {
         "type": "object",
@@ -49,7 +49,7 @@
       "name": "listTodos",
       "description": "查询待办列表，支持按条件筛选。用户问『我的待办』『今天有什么』『未完成的』等时调用",
       "_meta": {
-        "ui": { "componentPath": "components/todo-list-card" }
+        "ui": { "componentPath": "components/todo-list-card/index" }
       },
       "inputSchema": {
         "type": "object",
@@ -198,15 +198,15 @@
   ],
   "components": [
     {
-      "path": "components/todo-list-card",
+      "path": "components/todo-list-card/index",
       "relatedPage": "/pages/todo/todo"
     },
     {
-      "path": "components/todo-card",
+      "path": "components/todo-card/index",
       "relatedPage": "/pages/todo-detail/todo-detail"
     },
     {
-      "path": "components/todo-form-card",
+      "path": "components/todo-form-card/index",
       "relatedPage": "/pages/add-todo/add-todo"
     }
   ]
