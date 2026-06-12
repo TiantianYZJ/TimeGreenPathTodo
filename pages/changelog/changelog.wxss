@@ -4,8 +4,8 @@
 
 /* 优化日志卡片样式 */
 .log-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f8faf9 100%);
-  border-radius: 24rpx;
+  background: linear-gradient(145deg, #ffffff 0%, #EEFBEF 100%);
+  border-radius: 32rpx;
   margin: 24rpx;
   padding: 32rpx;
   box-shadow: 0 8rpx 40rpx rgba(76, 175, 80, 0.08);

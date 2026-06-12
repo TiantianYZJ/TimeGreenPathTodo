@@ -4,8 +4,8 @@
 
 /* 与changelog保持一致的卡片样式 */
 .notice-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f8faf9 100%);
-  border-radius: 24rpx;
+  background: linear-gradient(105deg, #ffffff 0%, #EEFBEF 100%);
+  border-radius: 32rpx;
   margin: 24rpx;
   padding: 32rpx;
   box-shadow: 0 8rpx 40rpx rgba(76, 175, 80, 0.08);
@@ -20,7 +20,7 @@
   top: 0;
   width: 8rpx;
   height: 100%;
-  background: var(--primary-color);
+  background: #31ca80;
 }
 
 .notice-header {
@@ -61,7 +61,15 @@
   font-size: 30rpx;
   line-height: 1.5;
   text-align: start;
-  white-space: pre-line; /* 支持换行显示 */
+}
+
+.notice-content .t-chat-md__p {
+  margin: 0 0 16rpx 0;
+}
+
+.notice-content .t-chat-md__a {
+  color: #00b26a;
+  text-decoration: underline;
 }
 
 /* 添加动态效果 */

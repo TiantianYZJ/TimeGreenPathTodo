@@ -1,5 +1,9 @@
 import { LoadingProps } from '../loading/index';
 export interface TdButtonProps {
+    activityType?: {
+        type: NumberConstructor;
+        value?: number;
+    };
     appParameter?: {
         type: StringConstructor;
         value?: string;
@@ -19,6 +23,10 @@ export interface TdButtonProps {
     disabled?: {
         type: BooleanConstructor;
         value?: boolean;
+    };
+    entrancePath?: {
+        type: StringConstructor;
+        value?: string;
     };
     ghost?: {
         type: BooleanConstructor;
@@ -56,6 +64,10 @@ export interface TdButtonProps {
         type: ObjectConstructor;
         value?: LoadingProps;
     };
+    needShowEntrance?: {
+        type: BooleanConstructor;
+        value?: boolean;
+    };
     openType?: {
         type: StringConstructor;
         value?: 'contact' | 'share' | 'getPhoneNumber' | 'getUserInfo' | 'launchApp' | 'openSetting' | 'feedback' | 'chooseAvatar' | 'agreePrivacyAuthorization';
@@ -91,10 +103,6 @@ export interface TdButtonProps {
     size?: {
         type: StringConstructor;
         value?: 'extra-small' | 'small' | 'medium' | 'large';
-    };
-    style?: {
-        type: StringConstructor;
-        value?: string;
     };
     tId?: {
         type: StringConstructor;

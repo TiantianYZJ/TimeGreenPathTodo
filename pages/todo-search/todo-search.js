@@ -1,32 +1,18 @@
 const app = getApp();
+const { formatFriendlyDate } = require('../../utils/util.js');
 
 Page({
   data: {
     keywords: [],
-    keywordsStr: '', // 用于显示的空格分隔关键词
+    keywordsStr: '',
     searchResults: [],
-    currentSwipeIndex: null, // 滑动操作索引
-
     scrollTop: 0,
-    showBackTop: false, // 新增显示控制
-  },
-
-  onLoad(options) {
-    const keywords = decodeURIComponent(options.keywords || '').split(',');
-    this.setData({
-      keywords,
-      keywordsStr: keywords.join(' ') // 将逗号转换为空格显示
-    }, this.searchTodos);
-  },
-
-  onShow() {
-    // 当返回页面时刷新数据
-    this.searchTodos();
+    showBackTop: false,
   },
 
   // 修改后的搜索提交方法
   onSearchConfirm(e) {
-    const value = e.detail.value.trim();
+    const value = e.detail.value;
     const keywords = value.split(/\s+/).filter(k => k);
     
     if (keywords.length === 0) return;
@@ -44,87 +30,118 @@ Page({
   },
 
   onSearchInput(e) {
+    const value = e.detail.value;
+    const keywords = value.split(/\s+/).filter(k => k);
+    
     this.setData({
-      keywordsStr: e.detail.value
+      keywords,
+      keywordsStr: value
+    }, () => {
+      this.searchTodos();
     });
   },
 
   searchTodos() {
     const todos = wx.getStorageSync('todos') || [];
-    const results = todos
-      .map((todo, originalIndex) => ({ ...todo, originalIndex })) // 保留原始索引
-      .filter(todo => 
-        this.data.keywords.some(kw =>
-          todo.text.toLowerCase().includes(kw.toLowerCase()) ||
-          (todo.remarks && todo.remarks.toLowerCase().includes(kw.toLowerCase()))
-        )
-      );
+    const results = todos.filter(todo => 
+      this.data.keywords.some(kw =>
+        todo.text.toLowerCase().includes(kw.toLowerCase()) ||
+        (todo.remarks && todo.remarks.toLowerCase().includes(kw.toLowerCase()))
+      )
+    ).map(todo => ({
+      ...todo,
+      friendlyDate: formatFriendlyDate(todo.setDate)
+    }));
     
     this.setData({ searchResults: results });
   },
 
-  // 新增切换完成状态方法
   toggleTodo(e) {
-    const originalIndex = this.data.searchResults[e.currentTarget.dataset.index].originalIndex;
+    const todoId = this.data.searchResults[e.currentTarget.dataset.index].id;
     const todos = wx.getStorageSync('todos');
-    todos[originalIndex].completed = !todos[originalIndex].completed;
+    const todoIndex = todos.findIndex(t => t.id === todoId);
     
-    wx.setStorageSync('todos', todos);
-    app.updateCalendarCache(todos);
-    this.searchTodos(); // 刷新搜索结果
+    if (todoIndex !== -1) {
+      const now = Date.now();
+      todos[todoIndex].completed = !todos[todoIndex].completed ? now : false;
+      todos[todoIndex].version = (todos[todoIndex].version || 1) + 1;
+      todos[todoIndex].updatedAt = now;
+      wx.setStorageSync('todos', todos);
+      app.updateCalendarCache(todos);
+      this.searchTodos();
+    }
   },
 
 
-  // 复用滑动操作逻辑
   handleSwipeAction(e) {
     const index = parseInt(e.currentTarget.dataset.index);
     const actionType = e.currentTarget.dataset.type;
-    const originalIndex = this.data.searchResults[index].originalIndex;
+    const todoId = this.data.searchResults[index].id;
     
     switch(actionType) {
       case 'delete':
-        this.deleteTodo(originalIndex);
+        this.deleteTodo(todoId);
         break;
       case 'edit':
-        this.editTodo(originalIndex);
+        this.editTodo(todoId);
         break;
     }
   },
 
-  // 复用删除逻辑
-  deleteTodo(originalIndex) {
+  deleteTodo(todoId) {
     const that = this;
     wx.showModal({
       title: '删除确认',
-      content: '该操作不可撤销，确定继续吗？',
+      content: '删除后保留 30 天，可在"更多-回收站"找回，确定删除吗？',
       confirmText: '删除',
       confirmColor: '#ff4d4f',
       success(res) {
         if (res.confirm) {
+          const now = Date.now();
           const todos = wx.getStorageSync('todos');
-          todos.splice(originalIndex, 1);
-          wx.setStorageSync('todos', todos);
-          app.updateCalendarCache(todos);
-          that.searchTodos(); // 刷新搜索结果
-          wx.showToast({ title: '删除成功' });
+          const todoIndex = todos.findIndex(t => t.id === todoId);
+          
+          if (todoIndex !== -1) {
+            todos[todoIndex].isDeleted = true;
+            todos[todoIndex].deletedAt = now;
+            todos[todoIndex].updatedAt = now;
+            todos[todoIndex].version = (todos[todoIndex].version || 1) + 1;
+            wx.setStorageSync('todos', todos);
+            app.updateCalendarCache(todos.filter(t => !t.isDeleted));
+            that.searchTodos();
+            wx.showToast({ title: '删除成功' });
+          }
         }
       }
     });
   },
 
-  // 复用编辑逻辑
-  editTodo(originalIndex) {
-    const todo = wx.getStorageSync('todos')[originalIndex];
+  editTodo(todoId) {
+    const todos = wx.getStorageSync('todos');
+    const todoIndex = todos.findIndex(t => t.id === todoId);
+    
+    if (todoIndex === -1) return;
+    
+    const todo = todos[todoIndex];
+    const locationStr = todo.location ? encodeURIComponent(JSON.stringify(todo.location)) : '';
+    const tagsStr = todo.tags ? encodeURIComponent(JSON.stringify(todo.tags)) : '';
+    
+    const app = getApp();
+    app.globalData.editTodoImages = todo.images || [];
+    
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${originalIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${encodeURIComponent(JSON.stringify(todo.location))}`
+      url: `/pages/add-todo/add-todo?edit=1&index=${todoIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
-  // 保持原有详情跳转
   navigateToDetail(e) {
-    const originalIndex = this.data.searchResults[e.currentTarget.dataset.index].originalIndex;
+    if (e.target.dataset.component === 't-radio') {
+      return;
+    }
+    
+    const todoId = this.data.searchResults[e.currentTarget.dataset.index].id;
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?index=${originalIndex}`
+      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(todoId)}`
     });
   },
 

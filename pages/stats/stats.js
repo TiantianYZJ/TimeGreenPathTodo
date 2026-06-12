@@ -4,6 +4,14 @@ import * as echarts from '../../miniprogram_npm/ec-canvas/echarts';
 
 Page({
   data: {
+    // 导航栏相关
+    navBarHeight: app.globalData.navBarHeight,
+    menuRight: app.globalData.menuRight,
+    menuTop: app.globalData.menuTop,
+    menuHeight: app.globalData.menuHeight,
+    menuWidth: app.globalData.menuWidth,
+    menuLeft: app.globalData.menuLeft,
+
     total: 0,
     completed: 0,
     progress: 0,
@@ -24,6 +32,9 @@ Page({
     timeChart: {
       lazyLoad: true
     },
+    completeTimeChart: {
+      lazyLoad: true
+    },
     timeOfDayStats: []
   },
 
@@ -31,15 +42,21 @@ Page({
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
+  },
+
+  navigateToDailyStats() {
+    wx.navigateTo({
+      url: '/pages/daily-stats/daily-stats'
+    });
   },
 
   onShareTimeline() {
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
 
@@ -71,11 +88,13 @@ Page({
     
     // 时间分布统计
     const timeOfDayStats = this.analyzeTimeOfDay(todos);
+    const completeTimeOfDayStats = this.analyzeCompleteTimeOfDay(todos);
     
     // 准备图表数据
     this.initOverviewChart(total, completed);
     this.initTrendChart(todos);
     this.initTimeChart(timeOfDayStats);
+    this.initCompleteTimeChart(completeTimeOfDayStats);
 
     this.setData({
       total,
@@ -95,7 +114,25 @@ Page({
 
   // 计算平均完成时间
   calculateAvgCompletionTime(todos) {
-    const completedTodos = todos.filter(item => item.completed && item.time && item.completed);
+    // 只筛选出已完成且包含有效时间戳的待办
+    const completedTodos = todos.filter(item => {
+      // 检查是否已完成且有创建时间
+      if (!item.time) return false;
+      
+      // 检查 completed 字段是否为有效日期
+      const completedDate = new Date(item.completed);
+      const createDate = new Date(item.time);
+      
+      // 排除无效日期和布尔值 true
+      return (
+        item.completed && 
+        item.completed !== true && // 排除布尔值 true
+        !isNaN(completedDate.getTime()) && // 确保是有效日期
+        !isNaN(createDate.getTime()) && // 确保创建时间有效
+        completedDate.getTime() > createDate.getTime() // 完成时间应晚于创建时间
+      );
+    });
+    
     if (completedTodos.length === 0) return '0h';
     
     const totalTimeDiff = completedTodos.reduce((sum, todo) => {
@@ -112,7 +149,10 @@ Page({
   analyzeDailyTrend(todos) {
     const dailyMap = {};
     todos.forEach(todo => {
-      const date = new Date(todo.time).toISOString().split('T')[0];
+      const createDate = new Date(todo.time);
+      if (isNaN(createDate.getTime())) return;
+
+      const date = createDate.toISOString().split('T')[0];
       if (!dailyMap[date]) {
         dailyMap[date] = { create: 0, complete: 0 };
       }
@@ -146,7 +186,41 @@ Page({
     }
     
     todos.forEach(todo => {
-      const hour = new Date(todo.time).getHours();
+      const date = new Date(todo.time);
+      if (isNaN(date.getTime())) return;
+
+      const hour = date.getHours();
+      hourMap[hour]++;
+    });
+    
+    return Object.keys(hourMap).map(hour => ({
+      hour: parseInt(hour),
+      count: hourMap[hour]
+    }));
+  },
+
+  analyzeCompleteTimeOfDay(todos) {
+    const hourMap = {};
+    // 初始化24小时
+    for (let i = 0; i < 24; i++) {
+      hourMap[i] = 0;
+    }
+    
+    // 只统计有效完成的待办
+    const completedTodos = todos.filter(item => {
+      if (!item.completed) return false;
+      
+      // 排除布尔值 true 和无效日期
+      const completedDate = new Date(item.completed);
+      return (
+        item.completed !== true && 
+        !isNaN(completedDate.getTime())
+      );
+    });
+    
+    completedTodos.forEach(todo => {
+      // 使用完成时间，而不是创建时间
+      const hour = new Date(todo.completed).getHours();
       hourMap[hour]++;
     });
     
@@ -347,6 +421,59 @@ Page({
     });
   },
 
+  initCompleteTimeChart(completeTimeOfDayStats) {
+    const hours = completeTimeOfDayStats.map(item => item.hour + ':00');
+    const counts = completeTimeOfDayStats.map(item => item.count);
+    
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: hours,
+        axisLabel: {
+          fontSize: 10
+        }
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '完成数量',
+          type: 'bar',
+          data: counts,
+          itemStyle: {
+            // 避免使用LinearGradient，直接使用颜色字符串
+            color: '#26C6DA'
+          }
+        }
+      ]
+    };
+    
+    // 使用ec-canvas组件的方式初始化图表
+    this.selectComponent('#completeTimeChart').init((canvas, width, height) => {
+      // 使用echarts.init方法初始化图表
+      const chart = echarts.init(canvas, null, {
+        width: width,
+        height: height
+      });
+      
+      chart.setOption(option);
+      return chart;
+    });
+  },
+
   // 分类统计
   calculateCategoryStats(todos) {
     const categoryMap = {};
@@ -367,27 +494,22 @@ Page({
 
   // 最近更新时间
   getLastUpdatedTime(todos) {
-    const lastDate = new Date();
-    return `${lastDate.getMonth() + 1}月${lastDate.getDate()}日 ${lastDate.getHours()}:${lastDate.getMinutes().toString().padStart(2, '0')}`;
-  },
-  
-  // 分析一天中的时间分布
-  analyzeTimeOfDay(todos) {
-    const hourMap = {};
-    // 初始化24小时
-    for (let i = 0; i < 24; i++) {
-      hourMap[i] = 0;
-    }
-    
+    let maxTs = 0;
+
     todos.forEach(todo => {
-      const hour = new Date(todo.time).getHours();
-      hourMap[hour]++;
+      const createDate = new Date(todo.time);
+      if (!isNaN(createDate.getTime())) {
+        maxTs = Math.max(maxTs, createDate.getTime());
+      }
+
+      const completedDate = new Date(todo.completed);
+      if (todo.completed && todo.completed !== true && !isNaN(completedDate.getTime())) {
+        maxTs = Math.max(maxTs, completedDate.getTime());
+      }
     });
-    
-    return Object.keys(hourMap).map(hour => ({
-      hour: parseInt(hour),
-      count: hourMap[hour]
-    }));
+
+    const lastDate = maxTs ? new Date(maxTs) : new Date();
+    return `${lastDate.getMonth() + 1}月${lastDate.getDate()}日 ${lastDate.getHours()}:${lastDate.getMinutes().toString().padStart(2, '0')}`;
   },
 
   // 分析位置数据
@@ -445,99 +567,449 @@ Page({
 
   // 生成分享图片
   generateShareImage() {
-    const that = this;
     wx.showLoading({ title: '生成中...' });
-    
-    // 新版 Canvas API
+
     wx.createSelectorQuery()
-    .select('#shareCanvas')
-    .fields({ node: true, size: true })
-    .exec(async (res) => {
-      const canvas = res[0].node;
-      const ctx = canvas.getContext('2d');
-      const dpr = wx.getWindowInfo().pixelRatio;
-      
-      function drawRoundRect(x, y, width, height, radius) {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.arcTo(x + width, y, x + width, y + height, radius);
-        ctx.arcTo(x + width, y + height, x, y + height, radius);
-        ctx.arcTo(x, y + height, x, y, radius);
-        ctx.arcTo(x, y, x + width, y, radius);
-        ctx.closePath();
-      }
-        
-      canvas.width = 750 * dpr;
-      canvas.height = 1200 * dpr;
-      ctx.scale(dpr, dpr);
+      .select('#shareCanvas')
+      .fields({ node: true, size: true })
+      .exec(async (res) => {
+        const canvas = res[0].node;
+        const ctx = canvas.getContext('2d');
+        const dpr = wx.getWindowInfo().pixelRatio;
 
-      // 绘制逻辑
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 750, 1200);
-      
-      // 添加渐变背景
-      const gradient = ctx.createLinearGradient(0, 0, 750, 0);
-      gradient.addColorStop(0, '#f0faf5');
-      gradient.addColorStop(1, '#ffffff');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 750, 200);
+        function drawRoundRect(x, y, width, height, radius) {
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.arcTo(x + width, y, x + width, y + height, radius);
+          ctx.arcTo(x + width, y + height, x, y + height, radius);
+          ctx.arcTo(x, y + height, x, y, radius);
+          ctx.arcTo(x, y, x + width, y, radius);
+          ctx.closePath();
+        }
 
-      // 标题样式优化
-      ctx.font = 'bold 36px "PingFang SC"';
-      ctx.fillStyle = '#2d3436';
-      ctx.fillText('📊 待办统计报告', 50, 100);
-      ctx.beginPath();
-      ctx.moveTo(50, 120);
-      ctx.lineTo(220, 120);
-      ctx.strokeStyle = '#00B26A';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // 核心指标面板美化
-      ctx.beginPath();
-      drawRoundRect(40, 140, 670, 120, 16);
-      ctx.fillStyle = 'rgba(0,178,106,0.1)';
-      ctx.fill();
-      
-      ctx.font = '24px sans-serif';
-      ctx.fillStyle = '#00B26A';
-      ctx.fillText('✅ 总待办', 60, 180);
-      ctx.fillText('🎯 已完成', 230, 180);
-      ctx.fillText('📈 完成率', 400, 180);
-      ctx.fillText('⏱️ 平均完成时间', 530, 180);
-      
-      ctx.font = 'bold 32px sans-serif';
-      ctx.fillStyle = '#2d3436';
-      ctx.fillText(this.data.total, 60, 220);
-      ctx.fillText(this.data.completed, 230, 220); 
-      ctx.fillText(`${this.data.progress}%`, 400, 220);
-      ctx.fillText(this.data.avgCompletionTime, 530, 220);
-
-      // 生成图片
-      wx.canvasToTempFilePath({
-        canvas,
-        success: res => {
-          wx.hideLoading();
-          wx.shareFileMessage({
-            filePath: res.tempFilePath,
-            fileName: '待办统计报告.png'
+        function loadLogo(imgUrl) {
+          return new Promise((resolve, reject) => {
+            const logoImg = canvas.createImage();
+            logoImg.onload = () => resolve(logoImg);
+            logoImg.onerror = reject;
+            logoImg.src = imgUrl;
           });
-          // 弹出分享菜单
-          wx.showShareImageMenu({
-            path: res.tempFilePath,
-            success: () => {
-              wx.shareFileMessage({
-                filePath: res.tempFilePath,
-                fileName: '待办统计报告.png'
-              });
+        }
+
+        canvas.width = 750 * dpr;
+        canvas.height = 2200 * dpr;
+        ctx.scale(dpr, dpr);
+
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, 750, 2200);
+
+        const gradient = ctx.createLinearGradient(0, 0, 750, 0);
+        gradient.addColorStop(0, '#00B26A');
+        gradient.addColorStop(1, '#52f099');
+        ctx.fillStyle = gradient;
+        drawRoundRect(0, 0, 750, 280, 0);
+        ctx.fill();
+
+        try {
+          const logoImg = await loadLogo('https://api.yzjtiantian.cn/uploads/logo/logo.png');
+          ctx.drawImage(logoImg, 50, 30, 80, 80);
+        } catch (e) {
+          console.log('Logo加载失败', e);
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 52px "PingFang SC"';
+        ctx.fillText('时光绿径待办统计', 150, 80);
+
+        ctx.font = '26px "PingFang SC"';
+        ctx.globalAlpha = 0.9;
+        ctx.fillText(`生成于 ${this.data.lastUpdated}`, 150, 130);
+        ctx.globalAlpha = 1.0;
+
+        const todos = wx.getStorageSync('todos') || [];
+        const starCount = todos.filter(t => t.isStar && !t.isDeleted).length;
+        const imageCount = todos.filter(t => {
+          if (!t.images || t.isDeleted) return false;
+          if (Array.isArray(t.images) && t.images.length > 0) return true;
+          if (typeof t.images === 'string') {
+            try {
+              const parsed = JSON.parse(t.images);
+              return Array.isArray(parsed) && parsed.length > 0;
+            } catch (e) { return false; }
+          }
+          return false;
+        }).length;
+        const locationCount = todos.filter(t => t.location && !t.isDeleted).length;
+
+        const tagMap = {};
+        todos.filter(t => !t.isDeleted && t.tags && t.tags.length > 0).forEach(t => {
+          t.tags.forEach(tagId => {
+            tagMap[tagId] = (tagMap[tagId] || 0) + 1;
+          });
+        });
+        const tagStats = Object.entries(tagMap)
+          .map(([id, count]) => ({ id, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        const data = this.data;
+        const cardY = 320;
+
+        drawRoundRect(30, cardY, 690, 200, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+        ctx.shadowColor = 'transparent';
+
+        const metrics = [
+          { label: '总待办', value: data.total, x: 65, color: '#2d3436' },
+          { label: '已完成', value: data.completed, x: 215, color: '#00B26A' },
+          { label: '完成率', value: `${data.progress}%`, x: 365, color: '#26c6da' },
+          { label: '平均耗时', value: data.avgCompletionTime, x: 515, color: '#f5a623' }
+        ];
+
+        metrics.forEach(m => {
+          ctx.font = '22px "PingFang SC"';
+          ctx.fillStyle = '#888888';
+          ctx.fillText(m.label, m.x, cardY + 55);
+
+          ctx.font = 'bold 44px "PingFang SC"';
+          ctx.fillStyle = m.color;
+          ctx.fillText(String(m.value), m.x, cardY + 110);
+        });
+
+        const extraMetrics = [
+          { label: '收藏', value: starCount, icon: '★', x: 65 },
+          { label: '带图', value: imageCount, icon: '🖼', x: 215 },
+          { label: '定位', value: locationCount, icon: '📍', x: 365 }
+        ];
+
+        extraMetrics.forEach(m => {
+          ctx.font = '20px "PingFang SC"';
+          ctx.fillStyle = '#888888';
+          ctx.fillText(m.label, m.x, cardY + 155);
+
+          ctx.font = 'bold 32px "PingFang SC"';
+          ctx.fillStyle = '#00B26A';
+          ctx.fillText(String(m.value), m.x, cardY + 190);
+        });
+
+        let nextY = cardY + 240;
+
+        const locationSectionY = nextY;
+        drawRoundRect(30, locationSectionY, 690, 220, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+        ctx.shadowColor = 'transparent';
+
+        ctx.font = 'bold 30px "PingFang SC"';
+        ctx.fillStyle = '#2d3436';
+        ctx.fillText('📍 位置分布', 50, locationSectionY + 50);
+
+        if (data.locationStats.length > 0) {
+          const maxCount = Math.max(...data.locationStats.map(s => s.count));
+          const barHeight = 28;
+          const startY = locationSectionY + 80;
+          const maxItems = Math.min(data.locationStats.length, 5);
+          const maxBarWidth = 560;
+
+          for (let i = 0; i < maxItems; i++) {
+            const item = data.locationStats[i];
+            const barWidth = maxCount > 0 ? (item.count / maxCount) * maxBarWidth : 0;
+            const itemY = startY + i * (barHeight + 14);
+
+            ctx.fillStyle = '#f0f4f8';
+            drawRoundRect(50, itemY, maxBarWidth, barHeight, 14);
+            ctx.fill();
+
+            const barGradient = ctx.createLinearGradient(50, 0, 50 + barWidth, 0);
+            barGradient.addColorStop(0, '#00B26A');
+            barGradient.addColorStop(1, '#52f099');
+            ctx.fillStyle = barGradient;
+            drawRoundRect(50, itemY, barWidth, barHeight, 14);
+            ctx.fill();
+
+            ctx.font = '20px "PingFang SC"';
+            ctx.fillStyle = '#2d3436';
+            const name = item.name.length > 14 ? item.name.substring(0, 14) + '...' : item.name;
+            ctx.fillText(name, 65, itemY + 20);
+
+            ctx.font = 'bold 20px "PingFang SC"';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(item.count.toString(), 50 + maxBarWidth + 20, itemY + 20);
+          }
+        } else {
+          ctx.font = '20px "PingFang SC"';
+          ctx.fillStyle = '#aaaaaa';
+          ctx.fillText('暂无位置数据', 50, locationSectionY + 120);
+        }
+
+        nextY = locationSectionY + 260;
+
+        const tagSectionY = nextY;
+        drawRoundRect(30, tagSectionY, 690, 220, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+        ctx.shadowColor = 'transparent';
+
+        ctx.font = 'bold 30px "PingFang SC"';
+        ctx.fillStyle = '#2d3436';
+        ctx.fillText('🏷 标签分布', 50, tagSectionY + 50);
+
+        if (tagStats.length > 0) {
+          const maxCount = Math.max(...tagStats.map(s => s.count));
+          const barHeight = 28;
+          const startY = tagSectionY + 80;
+          const maxBarWidth = 560;
+
+          for (let i = 0; i < tagStats.length; i++) {
+            const item = tagStats[i];
+            const barWidth = maxCount > 0 ? (item.count / maxCount) * maxBarWidth : 0;
+            const itemY = startY + i * (barHeight + 14);
+
+            ctx.fillStyle = '#f0f4f8';
+            drawRoundRect(50, itemY, maxBarWidth, barHeight, 14);
+            ctx.fill();
+
+            const barGradient = ctx.createLinearGradient(50, 0, 50 + barWidth, 0);
+            barGradient.addColorStop(0, '#26c6da');
+            barGradient.addColorStop(1, '#00B26A');
+            ctx.fillStyle = barGradient;
+            drawRoundRect(50, itemY, barWidth, barHeight, 14);
+            ctx.fill();
+
+            ctx.font = '20px "PingFang SC"';
+            ctx.fillStyle = '#2d3436';
+            const tagName = `标签 ${item.id}`;
+            ctx.fillText(tagName, 65, itemY + 20);
+
+            ctx.font = 'bold 20px "PingFang SC"';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(item.count.toString(), 50 + maxBarWidth + 20, itemY + 20);
+          }
+        } else {
+          ctx.font = '20px "PingFang SC"';
+          ctx.fillStyle = '#aaaaaa';
+          ctx.fillText('暂无标签数据', 50, tagSectionY + 120);
+        }
+
+        nextY = tagSectionY + 260;
+
+        const trendSectionY = nextY;
+        drawRoundRect(30, trendSectionY, 690, 300, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+        ctx.shadowColor = 'transparent';
+
+        ctx.font = 'bold 30px "PingFang SC"';
+        ctx.fillStyle = '#2d3436';
+        ctx.fillText('📈 每日趋势', 50, trendSectionY + 50);
+
+        const dailyData = this.analyzeDailyTrend(todos);
+
+        if (dailyData.dates.length > 0) {
+          const chartHeight = 180;
+          const chartWidth = 610;
+          const chartX = 70;
+          const chartY = trendSectionY + 80;
+          const maxVal = Math.max(...dailyData.createData, ...dailyData.completeData, 1);
+          const showDays = Math.min(dailyData.dates.length, 7);
+          const stepX = chartWidth / (showDays - 1 || 1);
+
+          ctx.strokeStyle = '#f0f4f8';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 5; i++) {
+            const y = chartY + chartHeight - (i / 5) * chartHeight;
+            ctx.beginPath();
+            ctx.moveTo(chartX, y);
+            ctx.lineTo(chartX + chartWidth, y);
+            ctx.stroke();
+          }
+
+          const lastDays = dailyData.dates.slice(-showDays);
+          const lastCreate = dailyData.createData.slice(-showDays);
+          const lastComplete = dailyData.completeData.slice(-showDays);
+
+          ctx.strokeStyle = '#26c6da';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          lastCreate.forEach((val, i) => {
+            const x = chartX + i * stepX;
+            const y = chartY + chartHeight - (val / maxVal) * chartHeight;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          ctx.strokeStyle = '#00B26A';
+          ctx.beginPath();
+          lastComplete.forEach((val, i) => {
+            const x = chartX + i * stepX;
+            const y = chartY + chartHeight - (val / maxVal) * chartHeight;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          lastDays.forEach((date, i) => {
+            const shortDate = date.substring(5);
+            ctx.font = '18px "PingFang SC"';
+            ctx.fillStyle = '#999999';
+            ctx.fillText(shortDate, chartX + i * stepX - 20, chartY + chartHeight + 30);
+          });
+
+          ctx.fillStyle = '#26c6da';
+          ctx.beginPath();
+          ctx.arc(chartX + (showDays - 1) * stepX, chartY + chartHeight - (lastCreate[lastCreate.length - 1] / maxVal) * chartHeight, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#00B26A';
+          ctx.beginPath();
+          ctx.arc(chartX + (showDays - 1) * stepX, chartY + chartHeight - (lastComplete[lastComplete.length - 1] / maxVal) * chartHeight, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.font = '18px "PingFang SC"';
+          ctx.fillStyle = '#26c6da';
+          ctx.fillText('● 创建', 50, trendSectionY + 265);
+          ctx.fillStyle = '#00B26A';
+          ctx.fillText('● 完成', 150, trendSectionY + 265);
+        } else {
+          ctx.font = '20px "PingFang SC"';
+          ctx.fillStyle = '#aaaaaa';
+          ctx.fillText('暂无趋势数据', 50, trendSectionY + 150);
+        }
+
+        nextY = trendSectionY + 340;
+
+        const timeSectionY = nextY;
+        drawRoundRect(30, timeSectionY, 690, 220, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 6;
+        ctx.shadowColor = 'transparent';
+
+        ctx.font = 'bold 30px "PingFang SC"';
+        ctx.fillStyle = '#2d3436';
+        ctx.fillText('⏰ 时间分布', 50, timeSectionY + 50);
+
+        if (data.timeOfDayStats && data.timeOfDayStats.length > 0) {
+          const chartHeight = 120;
+          const chartWidth = 610;
+          const chartX = 70;
+          const chartY = timeSectionY + 80;
+          const maxVal = Math.max(...data.timeOfDayStats.map(t => t.count), 1);
+          const stepX = chartWidth / 24;
+
+          ctx.strokeStyle = '#f0f4f8';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 5; i++) {
+            const y = chartY + chartHeight - (i / 5) * chartHeight;
+            ctx.beginPath();
+            ctx.moveTo(chartX, y);
+            ctx.lineTo(chartX + chartWidth, y);
+            ctx.stroke();
+          }
+
+          data.timeOfDayStats.forEach((item, i) => {
+            if (item.count > 0) {
+              const x = chartX + i * stepX;
+              const barHeight = (item.count / maxVal) * chartHeight;
+              const y = chartY + chartHeight - barHeight;
+
+              const gradient = ctx.createLinearGradient(0, y, 0, chartY + chartHeight);
+              gradient.addColorStop(0, '#00B26A');
+              gradient.addColorStop(1, '#26c6da');
+              ctx.fillStyle = gradient;
+
+              drawRoundRect(x, y, Math.max(stepX - 2, 4), barHeight, 2);
+              ctx.fill();
             }
           });
-        },
-        fail: () => {
-          wx.hideLoading();
-          wx.showToast({ title: '生成失败', icon: 'none' });
+
+          ctx.font = '18px "PingFang SC"';
+          ctx.fillStyle = '#999999';
+          ctx.fillText('0:00', chartX, chartY + chartHeight + 30);
+          ctx.fillText('6:00', chartX + 6 * stepX - 10, chartY + chartHeight + 30);
+          ctx.fillText('12:00', chartX + 12 * stepX - 10, chartY + chartHeight + 30);
+          ctx.fillText('18:00', chartX + 18 * stepX - 10, chartY + chartHeight + 30);
+          ctx.fillText('24:00', chartX + chartWidth - 25, chartY + chartHeight + 30);
+        } else {
+          ctx.font = '20px "PingFang SC"';
+          ctx.fillStyle = '#aaaaaa';
+          ctx.fillText('暂无时间数据', 50, timeSectionY + 120);
         }
+
+        ctx.fillStyle = '#e8f5e9';
+        drawRoundRect(0, 2100, 750, 100, 0);
+        ctx.fill();
+
+        ctx.font = '22px "PingFang SC"';
+        ctx.fillStyle = '#00B26A';
+        ctx.textAlign = 'center';
+        ctx.fillText('时光绿径待办 · 让每一天更有序', 375, 2150);
+        ctx.textAlign = 'left';
+
+        wx.canvasToTempFilePath({
+          canvas,
+          success: res => {
+            wx.hideLoading();
+            wx.showShareImageMenu({
+              path: res.tempFilePath,
+              success: () => {
+                wx.shareFileMessage({
+                  filePath: res.tempFilePath,
+                  fileName: '待办统计报告.png'
+                });
+              }
+            });
+          },
+          fail: () => {
+            wx.hideLoading();
+            wx.showToast({ title: '生成失败', icon: 'none' });
+          }
+        });
       });
-    });
   },
+
+  // ===========================
+  // 广告事件处理
+  // ===========================
+
+  /**
+   * 广告加载成功
+   */
+  onAdLoad() {
+  },
+
+  /**
+   * 广告加载失败
+   */
+  onAdError(err) {
+    console.error('原生模板广告加载失败', err);
+  },
+
+  /**
+   * 广告关闭
+   */
+  onAdClose() {
+  },
+
+  /**
+   * 广告隐藏
+   */
+  onAdHide() {
+  }
 });

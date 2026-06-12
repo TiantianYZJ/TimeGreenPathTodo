@@ -1,10 +1,11 @@
 {
   "usingComponents": {
     "t-calendar": "tdesign-miniprogram/calendar/calendar",
-    "t-swipe-cell": "/miniprogram_npm/tdesign-miniprogram/swipe-cell/swipe-cell",
-    "t-cell": "/miniprogram_npm/tdesign-miniprogram/cell/cell",
+    "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
+    "t-radio": "tdesign-miniprogram/radio/radio",
+    "t-cell": "tdesign-miniprogram/cell/cell",
     "t-fab": "tdesign-miniprogram/fab/fab",
-    "t-icon": "/miniprogram_npm/tdesign-miniprogram/icon/icon",
+    "t-icon": "tdesign-miniprogram/icon/icon",
     "calendar": "@lspriv/wx-calendar"
   },
   "navigationStyle": "custom"

@@ -1,31 +1,103 @@
-<view style="height:170rpx;">
-  <text class="title">更多</text>
+<view class="top">
+  <view class="header" style="padding-top:{{navBarHeight-44}}px;padding-left:{{menuRight+20}}rpx">
+    <text class="title">更多</text>
+  </view>
 </view>
 
-<!-- 新增用户信息栏 -->
-<view class="user-info">
-  <image 
-    class="user-avatar" 
-    src="../../images/avatar.png"
-  />
-  <view class="user-name">时光绿径用户</view>
+<view class="container">
+  <view class="user-info" bindtap="handleUserTap">
+    <image 
+      class="user-avatar" 
+      src="{{isLoggedIn && avatarUrl ? avatarUrl : '../../images/avatar.png'}}"
+    />
+    <view class="user-text">
+      <view class="user-name-row">
+        <text class="user-name">{{isLoggedIn ? (nickname || '时光绿径用户') : '点击登录'}}</text>
+        <text wx:if="{{isLoggedIn}}" class="logged-in-badge">已登录</text>
+      </view>
+      <view class="user-status">
+        <text wx:if="{{isLoggedIn}}" class="user-id">ID: {{userId || '-'}}</text>
+        <text wx:else class="not-logged">登录后可同步数据</text>
+      </view>
+    </view>
+    <t-icon name="chevron-right" size="40rpx" color="#ccc" />
+  </view>
+
+  <view class="card">
+    <t-cell-group theme="card">
+      <t-cell 
+        wx:if="{{isAdmin}}"
+        title="后台管理" 
+        url="/packageAdmin/index/index" 
+        leftIcon="setting-1" hover arrow 
+      />
+    </t-cell-group>
+  </view>
+
+  <view class="card">
+    <t-cell-group theme="card">
+      <t-cell 
+        title="加入协作" 
+        bindtap="navigateToJoinCollab"
+        leftIcon="user-add" hover arrow 
+      />
+      <t-cell 
+        title="标签管理" 
+        url="/packageTools/tag-manage/tag-manage" 
+        leftIcon="hashtag" hover arrow 
+      />
+      <t-cell 
+        title="数据管理" 
+        url="/packageTools/datamanage/datamanage" 
+        leftIcon="data" hover arrow 
+      />
+      <t-cell 
+        title="容量扩展" 
+        url="/packageTools/motivation/motivation" 
+        leftIcon="folder-add" hover arrow 
+      />
+      <t-cell 
+        title="回收站"
+        url="/packageTools/trash/trash"
+        leftIcon="delete" hover arrow
+        note="{{deletedCount > 0 ? deletedCount + ' 项' : ''}}"
+      />
+    </t-cell-group>
+  </view>
+
+  <view class="card">
+    <t-cell-group theme="card">
+      <t-cell 
+        title="使用指南" 
+        url="/pages/guide/guide" 
+        leftIcon="book-open" hover arrow 
+      />
+      <t-cell 
+        title="更新日志" 
+        url="/pages/changelog/changelog" 
+        leftIcon="bulletpoint" hover arrow 
+        note="{{latestVersion ? 'V' + latestVersion : ''}}"
+      />
+      <t-cell 
+        title="鸣谢" 
+        url="/packageTools/acknowledge/acknowledge" 
+        leftIcon="heart" hover arrow 
+      />
+      <t-cell 
+        title="推广给朋友" 
+        url="/packageTools/star/star" 
+        leftIcon="share-1" hover arrow 
+      />
+    </t-cell-group>
+  </view>
+
+  <view class="tools-card">
+    <t-grid column="{{4}}" hover="{{true}}" theme="card">
+      <t-grid-item t-class-image="image" text="今天吃什么" icon="rice" url="/packageTools/eating/eating"/>
+      <t-grid-item t-class-image="image" text="密码生成器" icon="lock-on" url="/packageTools/password-generator/password-generator"/>
+      <!-- <t-grid-item t-class-image="image" text="智能助手" image="/images/ai.png" url="/pages/ai-chat/ai-chat"/> -->
+    </t-grid>
+  </view>
+
+  <t-fab icon="service" style="right: 32rpx; bottom: 32rpx;" button-props="{{serviceFab}}" />
 </view>
-
-<t-cell-group theme="card">
-  <t-cell title="数据管理" url="/pages/datamanage/datamanage" leftIcon="/images/data.png" hover arrow />
-  <!-- <t-cell title="订阅管理" url="/pages/datamanage/datamanage" leftIcon="/images/subscribe.png" hover arrow /> -->
-  <t-cell title="更新日志" url="/pages/changelog/changelog" leftIcon="/images/changelog.png" hover arrow />
-  <t-cell title="鸣谢" url="/pages/acknowledge/acknowledge" leftIcon="/images/thanks.png" hover arrow />
-  <t-cell title="推广给朋友" url="/pages/star/star" leftIcon="/images/star.png" hover arrow />
-</t-cell-group>
-
-<view class="block">
-  <t-grid column="{{4}}" hover="{{true}}" theme="card">
-    <!-- <t-grid-item t-class-image="image" text="记账本" image="/images/accounting.png" url="/pages/accounting/accounting"/> -->
-    <t-grid-item t-class-image="image" text="今天吃什么" image="/images/eating.png" url="/pages/eating/eating"/>
-    <t-grid-item t-class-image="image" text="文本加密解密" image="/images/lock.png" url="/pages/text-encryptor/text-encryptor"/>
-    <t-grid-item t-class-image="image" text="密码生成器" image="/images/password.png" url="/pages/password-generator/password-generator"/>
-  </t-grid>
-</view>
-
-<t-fab icon="service" style="right: 32rpx; bottom: 32rpx;" button-props="{{serviceFab}}" />

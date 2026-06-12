@@ -5,21 +5,67 @@
     "pages/todo-search/todo-search",
     "pages/calendar/calendar",
     "pages/stats/stats",
+    "pages/daily-stats/daily-stats",
     "pages/more/more",
+    "pages/guide/guide",
     "pages/add-todo/add-todo",
     "pages/todo-detail/todo-detail",
-    "pages/datamanage/datamanage",
     "pages/changelog/changelog",
     "pages/day-todos/day-todos",
     "pages/user-center/user-center",
-    "pages/notice/notice",
-    "pages/acknowledge/acknowledge",
-    "pages/eating/eating",
-    "pages/text-encryptor/text-encryptor",
-    "pages/star/star",
-    "pages/password-generator/password-generator",
-    "pages/relationship-calculator/relationship-calculator"
+    "pages/login/login",
+    "pages/notice/notice"
   ],
+  "subPackages": [
+    {
+      "root": "packageAdmin",
+      "name": "admin",
+      "pages": [
+        "index/index",
+        "users/users",
+        "user-detail/user-detail",
+        "notices/notices",
+        "notice-edit/notice-edit",
+        "changelog/changelog",
+        "changelog-edit/changelog-edit"
+      ]
+    },
+    {
+      "root": "packageCombo",
+      "name": "combo",
+      "pages": [
+        "combo-edit/combo-edit",
+        "combo-detail/combo-detail",
+        "collaboration/collaboration",
+        "combo-stats/combo-stats"
+      ]
+    },
+    {
+      "root": "packageTools",
+      "name": "tools",
+      "pages": [
+        "eating/eating",
+        "password-generator/password-generator",
+        "motivation/motivation",
+        "star/star",
+        "acknowledge/acknowledge",
+        "join-collab/join-collab",
+        "trash/trash",
+        "datamanage/datamanage",
+        "tag-manage/tag-manage"
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/todo/todo": {
+      "network": "all",
+      "packages": ["combo"]
+    },
+    "pages/more/more": {
+      "network": "all",
+      "packages": ["tools"]
+    }
+  },
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "时光绿径待办",
@@ -60,7 +106,6 @@
   },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
-
   "permission": {
     "scope.userLocation": {
       "desc": "需要获取您的位置以选择待办地点、获取当地天气信息"
@@ -72,20 +117,20 @@
       "desc": "需要保存图片到相册的权限"
     }
   },
-  
-  "requiredPrivateInfos": ["chooseLocation", "getLocation"],
+  "requiredPrivateInfos": [
+    "chooseLocation",
+    "getLocation"
+  ],
   "useExtendedLib": {
     "weui": true
   },
-
   "compilerOptions": {
     "paths": {
       "@lspriv/wx-calendar/*": [
-          "./node_modules/@lspriv/wx-calendar/dist/*"
-        ]
+        "./node_modules/@lspriv/wx-calendar/dist/*"
+      ]
     }
   },
-
   "plugins": {
     "WechatSI": {
       "version": "0.3.6",

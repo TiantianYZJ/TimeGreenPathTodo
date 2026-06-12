@@ -54,7 +54,9 @@ export interface TdDateTimePickerProps {
     };
     steps?: {
         type: ObjectConstructor;
-        value?: object;
+        value?: {
+            [key in TimeModeValues]?: number;
+        };
     };
     title?: {
         type: StringConstructor;

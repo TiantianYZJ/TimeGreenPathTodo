@@ -11,4 +11,5 @@ export interface TdPickerItemProps {
 export interface PickerItemOption {
     label: string;
     value: string | number;
+    icon?: string;
 }

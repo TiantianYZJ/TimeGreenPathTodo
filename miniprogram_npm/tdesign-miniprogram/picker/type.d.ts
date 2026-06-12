@@ -53,5 +53,9 @@ export interface TdPickerProps {
         type: BooleanConstructor;
         value?: boolean;
     };
+    visibleItemCount?: {
+        type: NumberConstructor;
+        value?: number;
+    };
 }
 export declare type PickerValue = string | number;

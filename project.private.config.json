@@ -19,16 +19,58 @@
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false
   },
-  "libVersion": "3.12.1",
+  "libVersion": "3.15.2",
   "condition": {
     "miniprogram": {
       "list": [
         {
-          "name": "pages/stats/stats",
-          "pathName": "pages/stats/stats",
+          "name": "pages/trash/trash",
+          "pathName": "pages/trash/trash",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "pages/login/login",
+          "pathName": "pages/login/login",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/motivation/motivation",
+          "pathName": "pages/motivation/motivation",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/ai-chat/ai-chat",
+          "pathName": "pages/ai-chat/ai-chat",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/stats/stats",
+          "pathName": "pages/stats/stats",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/relationship-calculator/relationship-calculator",
+          "pathName": "pages/relationship-calculator/relationship-calculator",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/stats/stats",
+          "pathName": "pages/stats/stats",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         }
       ]
     }

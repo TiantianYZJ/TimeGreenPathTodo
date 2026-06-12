@@ -1,9 +1,109 @@
-<view class="container-voice">
-  <!-- maxlength最大输入长度，设置为-1时不限制最大长度 -->
-  <textarea class="content" maxlength="-1" placeholder='等待说话' value="{{content}}" bindinput="conInput"/>
-  <!-- <view class="content">识别的内容：{{content}}</view> -->
-  <button class="btn" type="primary" bind:touchstart="touchStart" bind:touchend="touchEnd">
-    <text wx:if="{{recordState == false}}">按住说话</text>
-    <text wx:else>松开结束</text>
-  </button>
+<view class="container">
+  <view wx:if="{{!isLoggedIn}}" class="login-section">
+    <view class="login-card">
+      <image class="login-avatar" src="/images/avatar.png" />
+      <text class="login-title">欢迎使用时光绿径待办</text>
+      <text class="login-desc">登录后可同步数据、参与协作</text>
+      <button class="login-btn" bindtap="handleLogin">
+        <t-icon name="wechat" size="40rpx" color="#fff" />
+        <text>微信一键登录</text>
+      </button>
+    </view>
+  </view>
+
+  <view wx:else class="user-section">
+    <view class="user-card">
+      <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="chooseAvatar">
+        <image class="user-avatar" src="{{avatarUrl || '/images/avatar.png'}}" />
+        <view class="avatar-edit">
+          <t-icon name="edit" size="32rpx" color="#fff" />
+        </view>
+      </button>
+      
+      <view class="nickname-wrapper">
+        <view wx:if="{{!isEditing}}" class="nickname-display" bindtap="startEditNickname">
+          <text class="user-nickname">{{nickname || '点击设置昵称'}}</text>
+        </view>
+        <view wx:else class="nickname-edit">
+          <input 
+            class="nickname-input"
+            type="nickname"
+            value="{{tempNickname}}"
+            bindinput="onNicknameInput"
+            bindblur="onNicknameBlur"
+            placeholder="请输入昵称或选择微信昵称"
+            maxlength="16"
+            focus="{{true}}"
+          />
+          <view class="edit-actions">
+            <text class="edit-btn cancel" bindtap="cancelEdit">取消</text>
+            <text class="edit-btn confirm" bindtap="confirmEdit">确定</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="info-card">
+      <view class="info-item">
+        <text class="info-label">用户ID</text>
+        <text class="info-value" bindtap="copyUserId" data-value="{{userId}}">{{userId || '未获取'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">OPENID</text>
+        <text class="info-value openid" bindtap="copyOpenid" data-value="{{openid}}">{{openid || '未获取'}}</text>
+      </view>
+    </view>
+
+    <view class="stats-card">
+      <view class="stat-item">
+        <text class="stat-value">{{todoCount}}</text>
+        <text class="stat-label">待办数量</text>
+        <text class="stat-limit">/ {{todoLimit}}</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{comboCount}}</text>
+        <text class="stat-label">我的组合</text>
+        <text class="stat-limit">/ {{comboLimit}}</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{collabCount}}</text>
+        <text class="stat-label">协作组合</text>
+        <text class="stat-limit">/ {{collabLimit}}</text>
+      </view>
+    </view>
+
+    <t-cell-group class="menu-card" theme="card">
+      <t-cell 
+        title="数据管理" 
+        description="导出或恢复待办数据"
+        data-url="/packageTools/datamanage/datamanage"
+        bind:click="navigateTo"
+        arrow
+      >
+      </t-cell>
+      <t-cell 
+        title="标签管理" 
+        description="管理待办分类标签"
+        data-url="/packageTools/tag-manage/tag-manage"
+        bind:click="navigateTo"
+        arrow
+      >
+      </t-cell>
+      <t-cell 
+        title="加入协作" 
+        description="输入邀请码加入共享组"
+        data-url="/packageTools/join-collab/join-collab"
+        bind:click="navigateTo"
+        arrow
+      >
+      </t-cell>
+    </t-cell-group>
+
+    <view class="logout-btn" bindtap="handleLogout">
+      <t-icon name="logout" size="36rpx" color="#ff4d4f" />
+      <text>退出登录</text>
+    </view>
+  </view>
 </view>

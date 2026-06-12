@@ -8,10 +8,6 @@ export interface TdTabsProps {
         type: StringConstructor;
         value?: 'fixed' | 'auto' | 'full';
     };
-    externalClasses?: {
-        type: ArrayConstructor;
-        value?: ['t-class', 't-class-item', 't-class-active', 't-class-track'];
-    };
     showBottomLine?: {
         type: BooleanConstructor;
         value?: boolean;

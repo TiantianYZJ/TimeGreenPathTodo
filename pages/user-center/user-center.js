@@ -1,143 +1,284 @@
-//引入插件：微信同声传译
-const plugin = requirePlugin('WechatSI');
-//获取全局唯一的语音识别管理器recordRecoManager
-const manager = plugin.getRecordRecognitionManager();
- 
+const app = getApp();
+const { authApi, isLoggedIn, setToken, getToken } = require('../../utils/api.js');
+
 Page({
   data: {
-    //语音
-    recordState: false, //录音状态
-    content:'',//识别的内容
-  },
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad: function (options) {
-    console.log('load');
-    //识别语音
-    this.initRecord();
+    isLoggedIn: false,
+    userInfo: null,
+    
+    nickname: '',
+    avatarUrl: '',
+    userId: '',
+    openid: '',
+    todoCount: 0,
+    todoLimit: 100,
+    comboCount: 0,
+    comboLimit: 50,
+    collabLimit: 5,
+    collabCount: 0,
+    
+    isEditing: false,
+    tempNickname: '',
+    
+    navBarHeight: app.globalData.navBarHeight,
+    menuRight: app.globalData.menuRight
   },
 
-  onShow(){
-    // 获取录音授权
-    this.getRecordAuth()
+  onLoad() {
+    this.checkLoginStatus();
   },
 
-  // 权限询问
-  getRecordAuth: function() {
-    wx.getSetting({
-      success: (res) => {
-        if (!res.authSetting['scope.record']) {
-          wx.authorize({
-            scope: 'scope.record',
-            success() {
-                // 用户已经同意小程序使用录音功能，后续调用 wx.startRecord 接口不会弹窗询问
-                console.log("succ auth")
-            }, fail: () => {
-                console.log("fail auth")
-                this.userAuthFail('scope.record', '请授权录音服务，用于获取语音识别').then(authRecordRes => {
-                  console.log(authRecordRes);
-                }).catch(authRecordErr => {
-                  console.log(authRecordErr);
-                  wx.showToast({
-                    title: authRecordErr,
-                    icon: 'none',
-                    duration: 2000,
-                  })
-                })
-            }
-          })
-        } else {
-          console.log("record has been authed")
-        }
-      }, fail(res) {
-          console.log("fail")
-          console.log(res)
+  onShow() {
+    this.checkLoginStatus();
+    this.loadLocalData();
+  },
+
+  async onPullDownRefresh() {
+    if (this.data.isLoggedIn) {
+      await this.loadUserInfo();
+    }
+    this.loadLocalData();
+    wx.stopPullDownRefresh();
+  },
+
+  checkLoginStatus() {
+    const loggedIn = isLoggedIn();
+    this.setData({ isLoggedIn: loggedIn });
+    
+    if (loggedIn) {
+      this.loadUserInfo();
+    }
+  },
+
+  loadLocalData() {
+    const todos = wx.getStorageSync('todos') || [];
+    const activeTodos = todos.filter(t => !t.isDeleted);
+    const combos = app.globalData.combos || [];
+    const sharedCombos = app.globalData.sharedCombos || [];
+    const ownerSharedCombos = sharedCombos.filter(c => c.role === 'owner' || c.userRole === 'owner');
+    
+    this.setData({
+      todoCount: activeTodos.length,
+      comboCount: combos.length,
+      collabCount: ownerSharedCombos.length
+    });
+  },
+
+  async loadUserInfo() {
+    try {
+      const result = await authApi.getUserInfo();
+      if (result.success && result.user) {
+        this.setData({
+          userInfo: result.user,
+          nickname: result.user.nickname || '',
+          avatarUrl: result.user.avatarUrl || '',
+          userId: result.user.id || '',
+          openid: result.user.openid || '',
+          todoLimit: result.user.todoLimit || 100,
+          comboLimit: result.user.comboLimit || 50,
+          collabLimit: result.user.collabLimit || 5
+        });
+        app.setUserInfo(result.user);
       }
-    })
+    } catch (err) {
+      console.error('加载用户信息失败:', err);
+    }
   },
 
-    /**
-  * 用户拒绝授权
-  * @param {string} scope 需授权的权限
-  * @param {string} tip 权限对应的提示
-  */
-  userAuthFail(scope, tip) {
-    return new Promise((resolve, reject) => {
-      wx.showModal({
-        title: '提示',
-        content: tip,
-        confirmText: '去授权',
-        cancelText: '不授权',
-        success(res) {
-          if (res.confirm) {
-            wx.openSetting({
-              success: (res) => {
-                resolve(res.authSetting[scope])
-              }
-            })
-          }
-          if (res.cancel) {
-            reject('您拒绝了授权')
-          }
-        },
-      })
-    })
+  async handleLogin() {
+    wx.showLoading({ title: '登录中...' });
+    
+    try {
+      const loginRes = await new Promise((resolve, reject) => {
+        wx.login({
+          success: resolve,
+          fail: reject
+        });
+      });
+      
+      const result = await authApi.login(loginRes.code);
+      
+      if (result.success) {
+        setToken(result.token);
+        this.setData({
+          isLoggedIn: true,
+          userInfo: result.user,
+          nickname: result.user.nickname || '',
+          avatarUrl: result.user.avatarUrl || '',
+          todoLimit: result.user.todoLimit || 500,
+          collabLimit: result.user.collabLimit || 5
+        });
+        
+        wx.showToast({ title: '登录成功', icon: 'success' });
+      } else {
+        throw new Error(result.message || '登录失败');
+      }
+    } catch (err) {
+      console.error('登录失败:', err);
+      wx.showToast({ title: err.message || '登录失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 
-  // 手动输入内容
-  conInput: function (e) {
-    this.setData({
-      content:e.detail.value,
-    })
-  },
-  //识别语音 -- 初始化
-  initRecord: function () {
-    const that = this;
-    // 有新的识别内容返回，则会调用此事件
-    manager.onRecognize = function (res) {
-      console.log(res)
-      if (res.result === '') return
-      const text = that.data.content + res.result
-      that.setData({
-        content: text
-      })
-    }
-    // 正常开始录音识别时会调用此事件
-    manager.onStart = function (res) {
-      console.log("成功开始识别", res)
-    }
-    // 识别错误事件
-    manager.onError = function (res) {
-      console.error("error msg", res)
-    }
-    //识别结束事件
-    manager.onStop = function (res) {
-      var text = that.data.content + res.result;
-      that.setData({
-        content: text
-      })
-    }
-  },
-  //语音  --按住说话
-  touchStart: function (e) {
-    console.log('start');
-    this.setData({
-      recordState: true  //录音状态
-    })
-    // 语音开始识别
-    manager.start({
-      lang: 'zh_CN',// 识别的语言
-    })
-  },
-  //语音  --松开结束
-  touchEnd: function (e) {
-    console.log('end');
-    this.setData({
-      recordState: false
-    })
-    // 语音结束识别
-    manager.stop();
+  handleLogout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '确定要退出登录吗？',
+      confirmColor: '#ff4d4f',
+      success: (res) => {
+        if (res.confirm) {
+          const { clearToken } = require('../../utils/api.js');
+          clearToken();
+          app.globalData.userInfo = null;
+          app.globalData.isLoggedIn = false;
+          
+          wx.showToast({ title: '已退出登录', icon: 'success' });
+          
+          setTimeout(() => {
+            wx.navigateBack();
+          }, 500);
+        }
+      }
+    });
   },
 
-})
+  chooseAvatar(e) {
+    if (!this.data.isLoggedIn) {
+      this.handleLogin();
+      return;
+    }
+    
+    const { avatarUrl } = e.detail;
+    this.uploadAvatar(avatarUrl);
+  },
+
+  async uploadAvatar(tempFilePath) {
+    wx.showLoading({ title: '上传中...' });
+    
+    try {
+      const result = await authApi.uploadAvatar(tempFilePath);
+      
+      if (result.success && result.avatarUrl) {
+        this.setData({ avatarUrl: result.avatarUrl });
+        const updatedUserInfo = { ...this.data.userInfo, avatarUrl: result.avatarUrl };
+        this.setData({ userInfo: updatedUserInfo });
+        app.setUserInfo(updatedUserInfo);
+        wx.showToast({ title: '头像已更新', icon: 'success' });
+      } else {
+        throw new Error(result.message || '上传失败');
+      }
+    } catch (err) {
+      console.error('上传头像失败:', err);
+      wx.showToast({ title: err.message || '上传失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  startEditNickname() {
+    if (!this.data.isLoggedIn) return;
+    
+    this.setData({
+      isEditing: true,
+      tempNickname: this.data.nickname
+    });
+  },
+
+  onNicknameInput(e) {
+    this.setData({ tempNickname: e.detail.value });
+  },
+
+  onNicknameBlur(e) {
+    const value = e.detail.value;
+    if (value && value !== this.data.nickname) {
+      this.setData({ tempNickname: value });
+    }
+  },
+
+  cancelEdit() {
+    this.setData({
+      isEditing: false,
+      tempNickname: ''
+    });
+  },
+
+  confirmEdit() {
+    const nickname = this.data.tempNickname.trim();
+    if (!nickname) {
+      wx.showToast({ title: '昵称不能为空', icon: 'none' });
+      return;
+    }
+    
+    if (nickname.length > 20) {
+      const exceed = nickname.length - 20;
+      wx.showToast({
+        title: `用户名已超过20字上限，当前${nickname.length}字，需删除${exceed}字`,
+        icon: 'none',
+        duration: 3000
+      });
+      return;
+    }
+    
+    this.setData({
+      nickname,
+      isEditing: false
+    });
+    this.saveUserInfo();
+  },
+
+  async saveUserInfo() {
+    const { nickname, avatarUrl } = this.data;
+    
+    try {
+      await authApi.updateUserInfo({
+        nickname,
+        avatarUrl
+      });
+      
+      wx.showToast({ title: '保存成功', icon: 'success' });
+    } catch (err) {
+      console.error('保存用户信息失败:', err);
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    }
+  },
+
+  navigateTo(e) {
+    const url = e.currentTarget.dataset.url;
+    if (url) {
+      wx.navigateTo({ url });
+    }
+  },
+
+  copyUserId(e) {
+    const value = e.currentTarget.dataset.value;
+    if (value) {
+      wx.setClipboardData({
+        data: value,
+        success: () => {
+          wx.showToast({ title: '已复制用户ID', icon: 'success' });
+        }
+      });
+    }
+  },
+
+  copyOpenid(e) {
+    const value = e.currentTarget.dataset.value;
+    if (value) {
+      wx.setClipboardData({
+        data: value,
+        success: () => {
+          wx.showToast({ title: '已复制OPENID', icon: 'success' });
+        }
+      });
+    }
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '时光绿径待办-您的每日任务足迹管家',
+      path: '/pages/todo/todo',
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
+    };
+  }
+});

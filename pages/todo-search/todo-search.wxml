@@ -10,6 +10,7 @@
       placeholder-class="placeholder-style"
       confirm-type="search"
       value="{{keywordsStr}}"
+      focus="{{true}}"
       bindinput="onSearchInput"
       bindconfirm="onSearchConfirm"
     />
@@ -18,61 +19,65 @@
 </view>
 
 <!-- 搜索结果列表 -->
-<view class="container"  style="margin-top: 150rpx;">
+<view class="container">
   <view class="todo-list">
     <block wx:if="{{searchResults.length > 0}}">
       <!-- 复用todo页的列表样式 -->
-      <t-swipe-cell 
-        wx:for="{{searchResults}}"
-        wx:key="originalIndex"
-        class="todo-item"
-        data-index="{{index}}"
+      <block wx:for="{{searchResults}}" wx:key="originalIndex" wx:for-item="todo">
+        <t-swipe-cell
+          class="todo-item {{todo.completed ? 'completed' : ''}}"
+          data-index="{{index}}"
         >
-        <t-cell
-            class="{{item.completed ? 'completed' : ''}}"
-            title="{{item.isStar ? '⭐ ' + hl.highlight(item.text, keywordsStr): hl.highlight(item.text, keywordsStr)}}"
-            description="{{item.location ? '📍' + item.location.name + '｜' + item.remarks : item.remarks}}"
-            note="{{item.setDate}}"
+          <!-- 收藏角标 -->
+          <view wx:if="{{todo.isStar}}" class="star-badge">
+            <t-icon name="star-filled" size="26rpx" color="#ffffff" />
+          </view>
+
+          <t-cell
+            title="{{hl.highlight(todo.text, keywordsStr)}}"
+            description="{{todo.location ? (todo.remarks ? '📍' + todo.location.name + '｜' + todo.remarks : '📍' + todo.location.name) : todo.remarks}}"
+            note="{{todo.friendlyDate || todo.setDate}}"
             bordered="{{false}}"
             custom-style="width:100%"
             bindtap="navigateToDetail"
             data-index="{{index}}"
-        >
-            <view 
-            wx:if="{{item.completed}}"
+          >
+            <view
+            wx:if="{{todo.completed}}"
             class="completed-decorate"
             ></view>
-            <view 
+            <view
             slot="right-icon"
             style="position:relative;z-index:1000;background:inherit;padding-left:20rpx"
             >
-            <checkbox 
-                slot="right-icon"
-                checked="{{item.completed}}" 
-                catchtap="toggleTodo" 
+              <t-radio
+                checked="{{todo.completed}}"
+                catch:change="toggleTodo"
+                block="{{false}}"
                 data-index="{{index}}"
-            />
+                data-component="t-radio"
+                custom-style="--td-radio-bg-color: transparent;"
+              />
             </view>
-        </t-cell>
+          </t-cell>
 
-        
-        <view slot="right" class="btn-wrapper">
-            <view class="btn edit-btn column" 
-            data-index="{{index}}" 
-            bind:tap="handleSwipeAction" 
+
+          <view slot="right" class="btn-wrapper">
+            <view class="btn edit-btn column"
+            data-index="{{index}}"
+            bind:tap="handleSwipeAction"
             data-type="edit">
-            <!-- <t-icon name="edit" size="32rpx"></t-icon> -->
             编辑
             </view>
-            <view class="btn delete-btn column" 
-            data-index="{{index}}" 
-            bind:tap="handleSwipeAction" 
+            <view class="btn delete-btn column"
+            data-index="{{index}}"
+            bind:tap="handleSwipeAction"
             data-type="delete">
-            <!-- <t-icon name="delete" size="32rpx"></t-icon> -->
             删除
             </view>
-        </view>
+          </view>
         </t-swipe-cell>
+      </block>
     </block>
     <view wx:else class="empty-tips">没有找到相关待办</view>
   </view>

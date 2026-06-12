@@ -1,27 +1,64 @@
 const app = getApp();
 const weatherKey = 'SdnJZGqS_c7zVlCnj';
+const { isLoggedIn, combosApi, collabApi, todosApi, configApi, notifyApi } = require('../../utils/api.js');
+const { addDeletedTodo, incrementalSync, getLocalTodos, setLocalTodos, checkSyncDiff, syncWithCloud } = require('../../utils/sync.js');
+const { formatFriendlyDate, formatDateTime } = require('../../utils/util.js');
 
-// 引入微信同声传译插件
 const plugin = requirePlugin('WechatSI');
-// 获取全局唯一的语音识别管理器
 const manager = plugin.getRecordRecognitionManager();
+
+function generateTodoId() {
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `todo_${Date.now()}_${randomStr}`;
+}
+
+import ActionSheet, { ActionSheetTheme } from 'tdesign-miniprogram/action-sheet';
 
 Page({
   // ===========================
   // 数据定义
   // ===========================
   data: {
-    inputValue: '',
     todos: [],
-    searchKeywords: '', // 搜索关键词
+    allTodos: [],
+    allTags: [],
+    currentTagFilter: 'all',
+    currentTagName: '全部待办',
+    showTagDropdown: false,
+    dropdownTop: 0,
 
     latestNoticeTitle: "",  // 最新公告标题
     latestNoticeContent: "", // 最新公告内容
 
+    currentTab: 'all',
+    tabs: [
+      { key: 'all', name: '全部待办' },
+      { key: 'combos', name: '我的组合' },
+      { key: 'shared', name: '共享组合' }
+    ],
+
+    combos: [],
+    sharedCombos: [],
+
     isDragging: false,
-    currentIndex: -1,
-    startY: 0,
-    offsetY: 0,
+    dragIndex: -1,
+    placeholderIndex: -1,
+    dragItem: null,
+    dragX: 0,
+    dragY: 0,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
+    dragItemWidth: 0,
+    dragItemHeight: 0,
+    touchStartX: 0,
+    touchStartY: 0,
+    listScrollTop: 0,
+    scrollEnabled: true,    // 控制列表滚动
+    _originalTodos: [],     // 备份数据用于取消拖拽
+    _longPressTimer: null,  // 长按定时器
+    _isLongPress: false,    // 是否触发长按
+    _touchStartIndex: -1,   // 触摸开始的项索引
+    _preventTap: false,     // 防止长按后的误点击
 
     // 语音相关
     recordState: false, // 录音状态
@@ -29,12 +66,30 @@ Page({
 
     scrollTop: 0,
     showBackTop: false, // 返回顶部按钮显示控制
+    showClearActionSheet: false,
 
     // 导航栏相关
     navBarHeight: app.globalData.navBarHeight,
     menuRight: app.globalData.menuRight,
     menuTop: app.globalData.menuTop,
     menuHeight: app.globalData.menuHeight,
+
+    menuWidth: app.globalData.menuWidth,
+    menuLeft: app.globalData.menuLeft,
+
+    showLoginPopup: false,
+    pendingShareData: null,
+    showInvitePopup: false,
+    inviteComboInfo: null,
+    inviteAutoJoin: false,
+    isJoining: false,
+
+    showApprovalPopup: false,
+    approvalGroups: [],
+    approvalLoading: false,
+    totalApprovalCount: 0,
+
+    _togglingIds: {}
   },
 
   // ===========================
@@ -44,21 +99,26 @@ Page({
   /**
    * 页面加载
    */
-  onLoad() {
-    // 加载待办事项数据
-    const todos = wx.getStorageSync('todos');
+  onLoad(options) {
+    if (options && options.type) {
+      this.handleShareParams(options);
+    } else if (options && options.scene) {
+      this.handleSceneParams(options);
+    }
     
-    // 首次使用时初始化默认数据
-    if (!todos || todos.length === 0) {
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted));
+    const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
+    
+    const hasInitialized = wx.getStorageSync('hasInitializedDefaultTodos');
+    if (!hasInitialized && todos.length === 0) {
       this.initDefaultTodos();
     } else {
-      this.setData({ todos });
+      this.setData({ todos, allTodos: todos, allTags });
     }
 
-    // 初始化语音识别
     this.initRecord();
     
-    // 加载最新公告
     const notices = app.globalData.notices || [];
     if (notices.length > 0) {
       this.setData({
@@ -66,9 +126,10 @@ Page({
         latestNoticeContent: notices[0].content,
         weather: getApp().globalData.weather 
       });
+    } else {
+      this.loadNotices();
     }
 
-    // 强制刷新天气数据
     this.loadWeather();
   },
 
@@ -76,17 +137,315 @@ Page({
    * 页面显示
    */
   onShow() {
-    // 从本地存储加载最新待办数据
-    const todos = wx.getStorageSync('todos') || [];
-    this.setData({ 
-      todos,
-      isLoading: true  // 确保初始状态为加载中
+    this.checkPendingShareData();
+    
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted));
+    const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
+    
+    this.setData({
+      allTodos: todos,
+      allTags,
+      isLoading: true,
+      combos: app.globalData.combos || [],
+      sharedCombos: app.globalData.sharedCombos || []
     });
     
-    // 检查位置权限
+    this.applyTagFilter();
+
     this.checkLocationPermission();
-    // 获取录音授权（当前已注释，仅在需要时调用）
-    // this.getRecordAuth();
+    this.initRecord();
+    
+    if (isLoggedIn()) {
+      this.performSync();
+      this.loadCombosFromCloud();
+      this.checkPendingApprovals();
+    } else {
+      this.refreshLocalComboCounts();
+    }
+  },
+
+  async performSync() {
+    if (!isLoggedIn()) {
+      return;
+    }
+
+    try {
+      const diffResult = await checkSyncDiff();
+      
+      if (!diffResult.hasDiff) {
+        return;
+      }
+      
+      const hasLocalChanges = diffResult.localChangesCount > 0 || diffResult.localDeletedCount > 0;
+      const hasCloudChanges = diffResult.cloudChangesCount > 0 || diffResult.cloudDeletedCount > 0;
+      
+      if (hasLocalChanges && hasCloudChanges) {
+        await syncWithCloud('merge');
+      } else if (hasCloudChanges) {
+        await syncWithCloud('cloud');
+      } else if (hasLocalChanges) {
+        await syncWithCloud('local');
+      }
+      
+      const mergedTodos = getLocalTodos();
+      const sortedTodos = mergedTodos.filter(t => !t.isDeleted).sort((a, b) => (b.time || 0) - (a.time || 0));
+      const formattedTodos = this.formatAllTodos(sortedTodos);
+      this.setData({ allTodos: formattedTodos });
+      this.applyTagFilter();
+      app.updateCalendarCache(formattedTodos);
+    } catch (err) {
+      console.error('同步失败:', err);
+    }
+  },
+
+  async autoSyncToCloud() {
+    try {
+      await syncWithCloud('local');
+    } catch (err) {
+      console.error('自动同步失败:', err);
+    }
+  },
+
+  async onPullDownRefresh() {
+    const tasks = [];
+    
+    if (isLoggedIn()) {
+      tasks.push(this.performSync());
+    }
+    
+    tasks.push(this.loadWeather());
+    tasks.push(this.loadNotices());
+    
+    try {
+      await Promise.all(tasks);
+    } catch (err) {
+      console.error('下拉刷新失败:', err);
+    } finally {
+      wx.stopPullDownRefresh();
+    }
+  },
+
+  async loadNotices() {
+    try {
+      const result = await configApi.getNotices();
+      if (result.success && result.notices) {
+        app.globalData.notices = result.notices;
+        const latestNotice = result.notices.find(n => n.title);
+        if (latestNotice) {
+          this.setData({
+            latestNoticeTitle: latestNotice.title,
+            latestNoticeContent: latestNotice.content
+          });
+        }
+      }
+    } catch (err) {
+      console.error('获取公告失败:', err);
+    }
+  },
+
+  refreshLocalComboCounts() {
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todos = allTodos.filter(item => !item.isDeleted);
+    const combos = (app.globalData.combos || []).map(combo => ({
+      ...combo,
+      todoCount: todos.filter(t => String(t.comboId) === String(combo.id)).length
+    }));
+    const sharedCombos = (app.globalData.sharedCombos || []).map(combo => ({
+      ...combo,
+      todoCount: todos.filter(t => String(t.comboId) === String(combo.id)).length
+    }));
+    this.setData({ combos, sharedCombos });
+  },
+
+  async loadCombosFromCloud() {
+    try {
+      const combosResult = await combosApi.getList();
+      const cloudCombos = combosResult.combos || combosResult || [];
+      
+      const combos = cloudCombos.map(combo => {
+        return {
+          ...combo,
+          todoCount: combo.todoCount || 0
+        };
+      });
+      
+      this.setData({ combos });
+      app.setCombos(combos);
+      
+      const sharedResult = await collabApi.getSharedList();
+      const cloudSharedCombos = sharedResult.sharedCombos || sharedResult || [];
+      
+      const sharedCombos = cloudSharedCombos.map(combo => {
+        return {
+          ...combo,
+          todoCount: combo.todoCount || 0
+        };
+      });
+      
+      this.setData({ sharedCombos });
+      app.setSharedCombos(sharedCombos);
+    } catch (err) {
+      console.error('加载组合数据失败:', err);
+    }
+  },
+
+  switchTab(e) {
+    const tab = e.currentTarget.dataset.tab;
+    
+    if ((tab === 'combos' || tab === 'shared') && !isLoggedIn()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '该功能需要登录后才能使用，是否前往登录？',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/login/login' });
+          }
+        }
+      });
+      return;
+    }
+    
+    this.setData({ currentTab: tab, showTagDropdown: false });
+  },
+
+  toggleTagDropdown() {
+    if (this.data.currentTab !== 'all') {
+      this.setData({ 
+        currentTab: 'all',
+        showTagDropdown: false
+      });
+      return;
+    }
+    
+    const query = wx.createSelectorQuery();
+    query.select('.dropdown-trigger').boundingClientRect((rect) => {
+      if (rect) {
+        this.setData({
+          showTagDropdown: !this.data.showTagDropdown,
+          dropdownTop: rect.bottom + 8
+        });
+      }
+    }).exec();
+  },
+
+  selectTagFilter(e) {
+    const filter = e.currentTarget.dataset.filter;
+    const allTags = app.getAllTags();
+    
+    let tagName = '全部待办';
+    if (filter === 'completed') {
+      tagName = '已完成';
+    } else if (filter === 'uncompleted') {
+      tagName = '待完成';
+    } else if (filter === 'none') {
+      tagName = '未分类';
+    } else if (filter !== 'all') {
+      const tag = allTags.find(t => String(t.id) === String(filter));
+      if (tag) tagName = tag.name;
+    }
+    
+    this.setData({
+      currentTagFilter: filter,
+      currentTagName: tagName,
+      showTagDropdown: false
+    });
+    
+    this.applyTagFilter();
+  },
+
+  applyTagFilter() {
+    const { allTodos, currentTagFilter } = this.data;
+    
+    let filteredTodos = allTodos;
+    
+    if (currentTagFilter === 'completed') {
+      filteredTodos = allTodos.filter(todo => todo.completed);
+    } else if (currentTagFilter === 'uncompleted') {
+      filteredTodos = allTodos.filter(todo => !todo.completed);
+    } else if (currentTagFilter === 'none') {
+      filteredTodos = allTodos.filter(todo => !todo.tags || todo.tags.length === 0);
+    } else if (currentTagFilter !== 'all') {
+      filteredTodos = allTodos.filter(todo => {
+        if (!todo.tags || todo.tags.length === 0) return false;
+        return todo.tags.some(t => String(t) === String(currentTagFilter));
+      });
+    }
+    
+    this.setData({ todos: filteredTodos });
+  },
+
+  hideTagDropdown() {
+    if (this.data.showTagDropdown) {
+      this.setData({ showTagDropdown: false });
+    }
+  },
+
+  preventTouchMove() {
+  },
+
+
+
+  navigateToCombo(e) {
+    const comboId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/packageCombo/combo-detail/combo-detail?id=${comboId}`
+    });
+  },
+
+  navigateToSharedCombo(e) {
+    const comboId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/packageCombo/combo-detail/combo-detail?id=${comboId}&shared=1`
+    });
+  },
+
+  createNewCombo() {
+    if (!isLoggedIn()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '创建组合需要登录后才能使用，是否前往登录？',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/login/login' });
+          }
+        }
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: '/packageCombo/combo-edit/combo-edit'
+    });
+  },
+
+  createNewSharedCombo() {
+    if (!isLoggedIn()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '创建共享组合需要登录后才能使用，是否前往登录？',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/login/login' });
+          }
+        }
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: '/packageCombo/combo-edit/combo-edit?isShared=1'
+    });
+  },
+
+  navigateToJoinCollab() {
+    wx.navigateTo({
+      url: '/packageTools/join-collab/join-collab'
+    });
   },
 
   // ===========================
@@ -100,7 +459,7 @@ Page({
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     };
   },
 
@@ -111,7 +470,7 @@ Page({
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     };
   },
 
@@ -120,23 +479,11 @@ Page({
   // ===========================
   
   /**
-   * 搜索输入处理
-   */
-  onSearchInput(e) {
-    this.setData({
-      searchKeywords: e.detail.value.trim()
-    });
-  },
-
-  /**
    * 搜索提交
    */
   onSearchConfirm() {
-    const keywords = this.data.searchKeywords.split(' ').filter(k => k);
-    if (keywords.length === 0) return;
-
     wx.navigateTo({
-      url: `/pages/todo-search/todo-search?keywords=${encodeURIComponent(keywords.join(','))}`
+      url: `/pages/todo-search/todo-search`
     });
   },
 
@@ -148,70 +495,112 @@ Page({
    * 初始化默认待办数据
    */
   initDefaultTodos() {
+    const baseTime = Date.now();
+    const today = new Date().toISOString().split('T')[0];
     const defaultTodos = [
       {
-        text: '欢迎使用时光绿径待办！',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: '您的每日任务足迹管家',
+        id: generateTodoId(),
+        text: '👋 欢迎使用时光绿径待办',
+        setDate: today,
+        setTime: '09:00',
+        remarks: '💡 小提示：点击这条待办试试看！\n\n感谢您选择时光绿径待办！这是一款简洁高效的待办管理工具。\n\n**快速上手指南：**\n\n1️⃣ 点击右下角 **+** 按钮创建新待办\n2️⃣ 点击待办卡片查看详情\n3️⃣ 左滑待办可编辑或删除\n4️⃣ 点击右上角可批量清空',
         completed: false,
-        time: Date.now()
+        time: baseTime,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime
       },
       {
-        text: '点击右下角“+”按钮',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: '创建你的第一个待办',
+        id: generateTodoId(),
+        text: '⭕ 点击右侧圆框完成待办',
+        setDate: today,
+        setTime: '10:00',
+        remarks: '💡 小提示：试试点击右侧圆框完成这条待办！\n\n**完成待办操作：**\n\n✅ 点击待办右侧的圆框即可标记完成\n🔄 再次点击可取消完成状态\n\n**完成后的效果：**\n\n• 待办卡片变为绿色渐变背景\n• 标题显示删除线\n• 视觉上清晰区分已完成/未完成',
         completed: false,
-        time: Date.now()
+        time: baseTime + 1,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 1
       },
       {
-        text: '试试语音快速创建待办',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: '按下底部麦克风按钮后说话，松手结束',
+        id: generateTodoId(),
+        text: '← 左滑待办可编辑或删除',
+        setDate: today,
+        setTime: '11:00',
+        remarks: '💡 小提示：试试左滑这条待办！\n\n**滑动操作指南：**\n\n← 向左滑动待办卡片，会出现两个按钮：\n\n🟠 **编辑** - 修改待办内容、时间、地点等\n🔴 **删除** - 删除待办（可在回收站恢复）\n\n**删除保护机制：**\n\n• 删除的待办会保留 **30天**\n• 前往 **更多 → 回收站** 可恢复\n• 回收站支持永久删除',
         completed: false,
-        time: Date.now()
+        time: baseTime + 2,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 2
       },
       {
-        text: '点击︎待办卡片可查看待办详情',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: `◆ 高效管理，一步到位
-✅ 待办事项支持多种附加信息，支持一键地点导航（医院/写字楼/社区一键直达）
-✅ 可视化数据看板，待办完成情况进度条+地理位置图，数据看得见
- 
-◆ 匠心设计，持续进化
-✅ 清爽绿意界面，缓解事务焦虑
-✅ 每周迭代升级，已更新数十项实用功能（位置显示/长按复制/数据分析等）
-
-◆数据安全，保驾护航
-✅ 数据本地储存不上云，有效防止数据泄露
-✅ 数据随时导出分享，可转发分享好友
-✅ 数据支持一键恢复，重要事务永不遗漏`,
+        id: generateTodoId(),
+        text: '📍 待办可以添加地点',
+        setDate: today,
+        setTime: '14:00',
+        remarks: '**地点功能：**\n\n为待办添加地点信息，方便记录和导航。\n\n**如何添加地点：**\n\n1. 创建或编辑待办时点击"添加地点"\n2. 搜索或选择目标位置\n3. 保存后地点会显示在待办卡片上\n\n**一键导航：**\n\n在待办详情页点击地点，可直接调用地图导航！\n\n**适用场景：**\n\n• 🏢 会议地点提醒\n• 🛒 购物清单定位\n• 🎯 约会地点记录',
+        location: {
+          name: '示例地点',
+          address: '点击右下方编辑按钮添加实际地点',
+          latitude: 0,
+          longitude: 0
+        },
         completed: false,
-        time: Date.now()
+        time: baseTime + 3,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 3
       },
       {
-        text: '点击右侧方框即可完成待办',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: '再次点击取消完成',
+        id: generateTodoId(),
+        text: '🏷️ 使用标签分类管理',
+        setDate: today,
+        setTime: '16:00',
+        remarks: '💡 小提示：这条待办已标记"工作"标签\n\n**标签系统：**\n\n使用标签对待办进行分类，让管理更有条理。\n\n**系统预设标签：**\n\n💼 工作 | 📚 学习 | 🏠 生活\n💪 健康 | 🛒 购物 | 💡 其他\n\n**自定义标签：**\n\n前往 **更多 → 标签管理** 创建专属标签\n可自定义名称、颜色和图标\n\n**筛选查看：**\n\n点击顶部标签下拉菜单，按标签筛选待办',
+        tags: [1],
         completed: false,
-        time: Date.now()
+        time: baseTime + 4,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 4
       },
       {
-        text: '←——————按住后滑动︎●',
-        setDate: new Date().toISOString().split('T')[0],
-        setTime: '12:00',
-        remarks: '可快速编辑、删除待办',
+        id: generateTodoId(),
+        text: '🎤 按住底部麦克风语音创建',
+        setDate: today,
+        setTime: '18:00',
+        remarks: '**语音创建待办：**\n\n解放双手，用语音快速创建待办！\n\n**操作步骤：**\n\n1. 长按右下角麦克风按钮 🎤\n2. 说出待办内容（如："明天下午3点开会"）\n3. 松开手指，自动跳转编辑页\n\n**语音识别支持：**\n\n• 自动识别时间关键词\n• 支持中英文混合\n• 安静环境识别更准确\n\n**权限要求：**\n\n首次使用需授权麦克风权限',
         completed: false,
-        time: Date.now()
+        time: baseTime + 5,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 5
+      },
+      {
+        id: generateTodoId(),
+        text: '📊 查看数据分析',
+        setDate: today,
+        setTime: '20:00',
+        remarks: '💡 点击 **更多** 探索全部功能！\n\n**统计分析：**\n\n点击底部"统计"标签，查看完成情况图表。\n\n**数据维度：**\n\n📈 每日/每周/每月完成趋势\n📊 完成率统计\n🏆 连续完成天数\n\n---\n\n**更多功能等你发现：**\n\n📅 **日历视图** - 按日期查看待办，直观了解日程\n📁 **组合归档** - 创建组合分类整理待办\n👥 **协作功能** - 邀请好友共享待办，协作管理\n⭐ **收藏功能** - 标记重要待办，快速访问\n💾 **数据导出** - 备份与恢复，数据不丢失\n🔧 **小工具集** - 密码生成器、文本加密等',
+        completed: false,
+        time: baseTime + 6,
+        version: 1,
+        isDeleted: false,
+        deletedAt: null,
+        updatedAt: baseTime + 6
       },
     ];
 
     this.setData({ todos: defaultTodos });
     wx.setStorageSync('todos', defaultTodos);
+    wx.setStorageSync('hasInitializedDefaultTodos', true);
     getApp().updateCalendarCache(defaultTodos);
   },
 
@@ -220,12 +609,90 @@ Page({
    */
   toggleTodo(e) {
     const index = e.currentTarget.dataset.index;
-    const todos = this.data.todos.map((item, i) => 
-      i === index ? {...item, completed: item.completed ? false : Date.now()} : item
-    );
+    const todo = this.data.todos[index];
+    if (!todo) return;
     
-    this.setData({ todos });
-    wx.setStorageSync('todos', todos);
+    const todoId = todo.id;
+    
+    if (this.data._togglingIds[todoId]) {
+      return;
+    }
+    
+    this.setData({
+      [`_togglingIds.${todoId}`]: true
+    });
+    
+    const isCompleting = !todo.completed;
+    const now = Date.now();
+    const { currentTagFilter } = this.data;
+
+    const allTodos = this.data.allTodos.map(item =>
+      item.id === todoId ? {
+        ...item,
+        completed: isCompleting ? now : false,
+        version: (item.version || 1) + 1,
+        updatedAt: now,
+        _animate: isCompleting ? 'first-complete' : ''
+      } : item
+    );
+
+    const shouldRemove = 
+      (currentTagFilter === 'completed' && !isCompleting) ||
+      (currentTagFilter === 'uncompleted' && isCompleting);
+
+    if (shouldRemove) {
+      const todos = this.data.todos.map(item =>
+        item.id === todoId ? { ...item, _animate: 'remove-animation' } : item
+      );
+      this.setData({ todos, allTodos });
+      
+      setTimeout(() => {
+        const currentTodos = this.data.todos;
+        const newTodos = currentTodos.filter(item => item.id !== todoId);
+        this.setData({ 
+          todos: newTodos,
+          [`_togglingIds.${todoId}`]: false
+        });
+      }, 300);
+    } else {
+      const todos = this.data.todos.map(item =>
+        item.id === todoId ? {
+          ...item,
+          completed: isCompleting ? now : false,
+          version: (item.version || 1) + 1,
+          updatedAt: now,
+          _animate: isCompleting ? 'first-complete' : ''
+        } : item
+      );
+      this.setData({ todos, allTodos });
+
+      if (isCompleting) {
+        setTimeout(() => {
+          const currentTodos = this.data.todos;
+          const todoIndex = currentTodos.findIndex(t => t.id === todoId);
+          if (todoIndex > -1 && currentTodos[todoIndex]._animate) {
+            this.setData({
+              [`todos[${todoIndex}]._animate`]: '',
+              [`_togglingIds.${todoId}`]: false
+            });
+          } else {
+            this.setData({
+              [`_togglingIds.${todoId}`]: false
+            });
+          }
+        }, 600);
+      } else {
+        this.setData({
+          [`_togglingIds.${todoId}`]: false
+        });
+      }
+    }
+
+    wx.setStorageSync('todos', allTodos);
+    
+    if (isLoggedIn()) {
+      this.autoSyncToCloud();
+    }
   },
 
   /**
@@ -233,21 +700,50 @@ Page({
    */
   deleteTodo(index) {
     const that = this;
+    const todo = this.data.todos[index];
+    const allIndex = this.data.allTodos.findIndex(t => t.id === todo.id);
+    
     wx.showModal({
       title: '删除确认',
-      content: '该操作不可撤销，确定继续吗？',
+      content: '删除后保留 30 天，可在"更多-回收站"找回，确定删除吗？',
       confirmText: '删除',
       confirmColor: '#ff4d4f',
       success(res) {
         if (res.confirm) {
           that.setData({
-            [`todos[${index}]._animate`]: 'remove-animation'
+            [`todos[${index}]._animate`]: 'remove-animation',
+            [`allTodos[${allIndex}]._animate`]: 'remove-animation'
           }, () => {
             setTimeout(() => {
-              const todos = that.data.todos.filter((_, i) => i !== index);
-              that.setData({ todos });
-              wx.setStorageSync('todos', todos);
-              getApp().updateCalendarCache(todos);
+              const now = Date.now();
+              const deletedItem = that.data.todos[index];
+              const deletedTodo = {
+                ...deletedItem,
+                isDeleted: true,
+                deletedAt: now,
+                updatedAt: now,
+                version: (deletedItem.version || 1) + 1
+              };
+              
+              addDeletedTodo(deletedTodo);
+              
+              const storageTodos = wx.getStorageSync('todos') || [];
+              const updatedTodos = storageTodos.map(t => 
+                t.id === deletedTodo.id ? deletedTodo : t
+              );
+              if (!storageTodos.find(t => t.id === deletedTodo.id)) {
+                updatedTodos.push(deletedTodo);
+              }
+              wx.setStorageSync('todos', updatedTodos);
+              
+              const newAllTodos = that.data.allTodos.filter((item, i) => i !== allIndex);
+              that.setData({ allTodos: newAllTodos });
+              that.applyTagFilter();
+              getApp().updateCalendarCache(newAllTodos);
+              
+              if (isLoggedIn()) {
+                that.autoSyncToCloud();
+              }
             }, 300);
           });
         }
@@ -260,48 +756,117 @@ Page({
    */
   editTodo(index) {
     const todo = this.data.todos[index];
+    const allIndex = this.data.allTodos.findIndex(t => t.id === todo.id);
+    const locationStr = todo.location ? encodeURIComponent(JSON.stringify(todo.location)) : '';
+    const tagsStr = todo.tags ? encodeURIComponent(JSON.stringify(todo.tags)) : '';
+    
+    const app = getApp();
+    app.globalData.editTodoImages = todo.images || [];
+    
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${index}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${encodeURIComponent(JSON.stringify(todo.location))}&time=${todo.time}&isStar=${todo.isStar || false}`
+      url: `/pages/add-todo/add-todo?edit=1&index=${allIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
   /**
    * 从子页面添加待办事项
    */
-  addTodoFromChild(text, setDate, setTime, remarks, location) {
+  addTodoFromChild(text, setDate, setTime, remarks, location, tags, comboId, images) {
+    const now = Date.now();
     const newTodo = {
+      id: generateTodoId(),
       text,
       setDate,
       setTime,
       remarks,
       location,
       completed: false,
-      time: Date.now()
+      time: now,
+      isStar: false,
+      tags: tags || [],
+      comboId: comboId || '',
+      images: images || [],
+      version: 1,
+      isDeleted: false,
+      deletedAt: null,
+      updatedAt: now,
+      _animate: 'add-animation'
     };
+
+    const allTodos = [newTodo, ...this.data.allTodos];
+    this.setData({ allTodos });
+    this.applyTagFilter();
+
+    setTimeout(() => {
+      const updatedTodos = [...allTodos];
+      updatedTodos[0]._animate = '';
+      this.setData({ allTodos: updatedTodos });
+      this.applyTagFilter();
+    }, 500);
+
+    wx.setStorageSync('todos', allTodos);
+    getApp().updateCalendarCache(allTodos);
     
-    const todos = [newTodo, ...this.data.todos];
-    this.setData({ todos });
-    wx.setStorageSync('todos', todos);
-    getApp().updateCalendarCache(todos);
+    if (comboId) {
+      this.updateComboTodoCount(comboId, allTodos);
+    }
+    
+    if (isLoggedIn()) {
+      this.autoSyncToCloud();
+    }
+  },
+
+  updateComboTodoCount(comboId, todos) {
+    const allTodos = todos || wx.getStorageSync('todos') || [];
+    const activeTodos = allTodos.filter(item => !item.isDeleted);
+    const count = activeTodos.filter(t => String(t.comboId) === String(comboId)).length;
+    
+    const combos = this.data.combos || [];
+    const comboIndex = combos.findIndex(c => String(c.id) === String(comboId));
+    if (comboIndex > -1) {
+      combos[comboIndex].todoCount = count;
+      this.setData({ combos });
+      app.setCombos(combos);
+    }
+    
+    const sharedCombos = this.data.sharedCombos || [];
+    const sharedIndex = sharedCombos.findIndex(c => String(c.id) === String(comboId));
+    if (sharedIndex > -1) {
+      sharedCombos[sharedIndex].todoCount = count;
+      this.setData({ sharedCombos });
+      app.setSharedCombos(sharedCombos);
+    }
   },
 
   /**
    * 显示清空选项
    */
   showClearOptions() {
-    wx.showActionSheet({
-      itemList: ['清空所有待办', '清空已完成待办'],
-      success: (res) => {
-        if (res.tapIndex === 0) { // 清空所有待办
-          this.showClearConfirm();
-        } else if (res.tapIndex === 1) { // 清空已完成待办
-          this.handleClearCompleted();
-        }
-      },
-      fail: (err) => {
-        console.log('用户取消选择', err);
-      }
+    ActionSheet.show({
+      theme: ActionSheetTheme.List,
+      selector: '#t-action-sheet',
+      context: this,
+      cancelText: '取消',
+      items: [
+        { label: '清空已完成待办' },
+        { label: '清空所有待办', color: '#ff4d4f' }
+      ],
+    })
+  },
+
+  /**
+   * 处理清空待办 ActionSheet 选择
+   */
+  onClearActionSheetSelect(e) {
+    const { index } = e.detail;
+    this.setData({
+      showClearActionSheet: false
     });
+    if (index === 0) {
+      this.handleClearCompleted();
+    } else if (index === 1) {
+      this.showClearConfirm();
+    }
   },
 
   /**
@@ -315,13 +880,27 @@ Page({
       confirmColor: '#ff4d4f',
       success: (res) => {
         if (res.confirm) {
+          const now = Date.now();
           const originalLength = this.data.todos.length;
-          const todos = this.data.todos.filter(item => !item.completed);
+          const todos = this.data.todos.map(item => {
+            if (item.completed) {
+              return {
+                ...item,
+                isDeleted: true,
+                deletedAt: now,
+                updatedAt: now,
+                version: (item.version || 1) + 1
+              };
+            }
+            return item;
+          }).filter(item => !item.isDeleted);
+          
           this.setData({ todos });
           wx.setStorageSync('todos', todos);
           getApp().updateCalendarCache(todos);
+          this.autoSyncToCloud();
           wx.showToast({
-            title: `已清除共 ${originalLength - todos.length} 项待办`,
+            title: `已清理 ${originalLength - todos.length} 项待办`,
             icon: 'success'
           });
         }
@@ -334,143 +913,345 @@ Page({
    */
   showClearConfirm() {
     wx.showModal({
-      title: '清空确认',
-      content: '这将永久删除所有待办事项，确定继续吗？',
+      title: '确认清空所有待办吗',
+      content: '这将永久删除所有待办事项',
       confirmText: '彻底清空',
       confirmColor: '#ff4d4f',
       success: (res) => {
         if (res.confirm) {
-          this.showFinalConfirm();
+          const now = Date.now();
+          const todos = this.data.todos.map(item => ({
+            ...item,
+            isDeleted: true,
+            deletedAt: now,
+            updatedAt: now,
+            version: (item.version || 1) + 1
+          })).filter(item => !item.isDeleted);
+          
+          this.setData({ todos });
+          wx.setStorageSync('todos', todos);
+          app.updateCalendarCache(todos);
+          this.autoSyncToCloud();
+          wx.showToast({
+            title: '已清空',
+            icon: 'success',
+            duration: 2000
+          });
         }
       }
     });
   },
 
-  /**
-   * 最后一次确认清空所有待办
-   */
-  showFinalConfirm() {
-    wx.showModal({
-      title: '最后一次确认',
-      content: '此操作不可恢复！请再次确认',
-      confirmText: '我确定',
-      confirmColor: '#ff4d4f',
-      success: (res) => {
-        if (res.confirm) {
-          this.clearAllTodos();
-        }
-      }
-    });
-  },
-
-  /**
-   * 清空所有待办事项
-   */
-  clearAllTodos() {
-    this.setData({ todos: [] });
-    wx.setStorageSync('todos', []);
-    app.updateCalendarCache([]);
-    wx.showToast({
-      title: '已清空',
-      icon: 'success',
-      duration: 2000
-    });
-  },
-
   // ===========================
-  // 拖拽排序功能
+  // 拖拽排序功能 - 占位符 + 平滑动画方案
   // ===========================
-  
+
   /**
-   * 开始拖拽
+   * 列表滚动事件 - 记录滚动位置
    */
-  startDrag(e) {
-    wx.vibrateShort({ type: 'medium' }); // 添加短震动反馈
-
-    const index = e.currentTarget.dataset.index;
+  onListScroll(e) {
     this.setData({
-      isDragging: true,
-      currentIndex: index,
-      startY: e.touches[0].pageY
-    });
-
-    // 禁止页面滚动
-    wx.pageScrollTo({
-      scrollTop: this.data.scrollTop,
-      duration: 0
+      listScrollTop: e.detail.scrollTop
     });
   },
 
   /**
-   * 拖拽移动处理
+   * scroll-view 的 touchmove 处理 - 拖拽时阻止滚动
    */
-  handleTouchMove(e) {
-    if (!this.data.isDragging) return;
-    
-    const { currentIndex, startY } = this.data;
-    const touch = e.touches[0];
-    const deltaY = touch.pageY - startY;
-    
-    // 更新偏移量
-    this.setData({
-      offsetY: deltaY,
-      [`todos[${currentIndex}]._offset`]: deltaY
-    });
-    
-    // 实时排序逻辑
-    if (Math.abs(deltaY) > 60) {
-      const newIndex = currentIndex + (deltaY > 0 ? 1 : -1);
-      if (newIndex >= 0 && newIndex < this.data.todos.length) {
-        const todos = [...this.data.todos];
-        const movedItem = todos.splice(currentIndex, 1)[0];
-        todos.splice(newIndex, 0, movedItem);
-        
-        this.setData({
-          todos,
-          currentIndex: newIndex,
-          startY: touch.pageY
-        });
-      }
+  onScrollTouchMove(e) {
+    if (this.data.isDragging) {
+      // 阻止滚动
+      return;
     }
   },
 
   /**
-   * 拖拽结束处理
+   * 阻止遮罩层上的滚动
    */
-  handleTouchEnd() {
-    if (!this.data.isDragging) return;
-    
-    this.setData({
-      isDragging: false,
-      currentIndex: -1,
-      offsetY: 0
-    });
-    
-    // 恢复页面滚动
-    wx.pageScrollTo({
-      scrollTop: this.data.scrollTop,
-      duration: 0
-    });
-    
-    // 同步存储
-    wx.setStorageSync('todos', this.data.todos);
-    getApp().updateCalendarCache(this.data.todos);
+  preventScroll(e) {
+    // 什么都不做，只是阻止事件传递
   },
 
   /**
-   * 取消拖拽
+   * 阻止遮罩层上的点击
    */
-  cancelDrag() {
+  preventTap(e) {
+    // 什么都不做，只是阻止事件传递
+  },
+
+  /**
+   * 浮动项上的 touchmove - 处理拖拽移动
+   */
+  onFloatTouchMove(e) {
+    if (!this.data.isDragging) return;
+    
+    const touch = e.touches[0];
+    this._handleDragMove(touch);
+  },
+
+  /**
+   * 触摸开始 - 启动长按检测
+   */
+  onTouchStart(e) {
+    // 如果正在拖拽，不处理
+    if (this.data.isDragging) return;
+
+    const index = parseInt(e.currentTarget.dataset.index);
+    const touch = e.touches[0];
+
+    // 清除之前的定时器
+    if (this.data._longPressTimer) {
+      clearTimeout(this.data._longPressTimer);
+    }
+
+    // 记录触摸起始信息（用于定时器回调）
+    this._pendingDragIndex = index;
+    this._pendingTouchStartX = touch.pageX;
+    this._pendingTouchStartY = touch.pageY;
+
+    // 记录到 data 用于 touchmove
+    this.setData({
+      _touchStartIndex: index,
+      touchStartX: touch.pageX,
+      touchStartY: touch.pageY
+    });
+
+    // 设置长按定时器（350ms）
+    const that = this;
+    const timer = setTimeout(() => {
+      // 使用保存的位置信息开始拖拽
+      that._startDragInternal(that._pendingDragIndex, {
+        pageX: that._pendingTouchStartX,
+        pageY: that._pendingTouchStartY
+      });
+    }, 350);
+
+    this.setData({
+      _longPressTimer: timer,
+      _isLongPress: false
+    });
+  },
+
+  /**
+   * 触摸移动 - 检查是否移动过大（取消长按）
+   */
+  onTouchMove(e) {
+    const { isDragging, _longPressTimer, touchStartX, touchStartY, _touchStartIndex } = this.data;
+
+    const touch = e.touches[0];
+    const moveThreshold = 15; // 移动阈值，超过则取消长按
+
+    // 计算移动距离
+    const deltaX = Math.abs(touch.pageX - touchStartX);
+    const deltaY = Math.abs(touch.pageY - touchStartY);
+
+    // 如果移动过大且还未开始拖拽，取消长按
+    if (!isDragging && _longPressTimer && (deltaX > moveThreshold || deltaY > moveThreshold)) {
+      clearTimeout(_longPressTimer);
+      this.setData({
+        _longPressTimer: null,
+        _touchStartIndex: -1
+      });
+      return;
+    }
+
+    // 如果正在拖拽，处理拖拽移动
+    if (isDragging) {
+      this._handleDragMove(touch);
+    }
+  },
+
+  /**
+   * 触摸结束
+   */
+  onTouchEnd(e) {
+    const { isDragging, _longPressTimer } = this.data;
+
+    // 清除长按定时器
+    if (_longPressTimer) {
+      clearTimeout(_longPressTimer);
+      this.setData({
+        _longPressTimer: null,
+        _touchStartIndex: -1
+      });
+    }
+
+    // 如果正在拖拽，结束拖拽
+    if (isDragging) {
+      this._handleDragEnd();
+    }
+  },
+
+  /**
+   * 触摸取消
+   */
+  onTouchCancel(e) {
+    this.onTouchEnd(e);
+  },
+
+  /**
+   * 内部：开始拖拽
+   */
+  _startDragInternal(index, touch) {
+    const todo = this.data.todos[index];
+    if (!todo || todo._isPlaceholder) return;
+
+    // 标记长按已触发，并设置防止点击标志
+    this.setData({
+      _isLongPress: true,
+      _preventTap: true  // 防止触发点击事件
+    });
+
+    // 震动反馈
+    wx.vibrateShort({ type: 'medium' });
+
+    // 备份原始数据
+    const originalTodos = JSON.parse(JSON.stringify(this.data.todos));
+
+    // 过滤掉占位符，创建干净的数组
+    const cleanTodos = originalTodos.filter(item => !item._isPlaceholder);
+
+    // 创建带占位符的数组
+    const todosWithPlaceholder = [...cleanTodos];
+    todosWithPlaceholder.splice(index, 0, {
+      _isPlaceholder: true,
+      _id: 'placeholder'
+    });
+
+    // 获取屏幕尺寸用于定位
+    const sysInfo = wx.getSystemInfoSync();
+    const windowWidth = sysInfo.windowWidth;
+
+    this.setData({
+      isDragging: true,
+      dragIndex: index,
+      placeholderIndex: index,
+      dragItem: { ...todo, _isDragging: true },
+      todos: todosWithPlaceholder,
+      _originalTodos: cleanTodos,
+      dragX: touch.pageX,
+      dragY: touch.pageY,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+      scrollEnabled: false,  // 禁用列表滚动
+      _longPressTimer: null,
+      dragItemWidth: windowWidth - 40  // rpx 转 px 约等于屏幕宽减去边距
+    });
+
+    // 获取拖拽项的准确高度
+    this._getDragItemSize();
+  },
+
+  /**
+   * 内部：获取拖拽项尺寸
+   */
+  _getDragItemSize() {
+    const query = wx.createSelectorQuery().in(this);
+    query.select('.todo-item:not(.placeholder)').boundingClientRect(rect => {
+      if (rect) {
+        this.setData({
+          dragItemWidth: rect.width,
+          dragItemHeight: rect.height
+        });
+      }
+    }).exec();
+  },
+
+  /**
+   * 内部：处理拖拽移动
+   */
+  _handleDragMove(touch) {
+    const { touchStartX, touchStartY, dragItemHeight, dragItemWidth, placeholderIndex, todos, listScrollTop } = this.data;
+
+    // 计算偏移量
+    const offsetX = touch.pageX - touchStartX;
+    const offsetY = touch.pageY - touchStartY;
+
+    // 更新拖拽位置（使用手指当前位置直接定位）
+    this.setData({
+      dragX: touch.pageX,
+      dragY: touch.pageY,
+      dragOffsetX: offsetX,
+      dragOffsetY: offsetY
+    });
+
+    // 计算新的占位符位置
+    const sysInfo = wx.getSystemInfoSync();
+    const itemHeight = dragItemHeight || 140 * sysInfo.windowWidth / 750; // 转换为 px
+
+    // 列表在屏幕上的起始位置（顶部栏 + 天气卡片 + 公告高度约 300rpx = 150px 左右）
+    const listTopPx = 150;
+
+    // 计算手指相对于列表顶部的位置（考虑滚动）
+    const scrollTopPx = listScrollTop * sysInfo.windowWidth / 750;
+    const relativeY = touch.pageY - listTopPx + scrollTopPx;
+
+    // 找到应该插入的位置
+    let newIndex = Math.floor(relativeY / itemHeight);
+    const maxIndex = this.data._originalTodos.length;
+    newIndex = Math.max(0, Math.min(newIndex, maxIndex));
+
+    // 如果位置变化，移动占位符
+    if (newIndex !== placeholderIndex) {
+      this._movePlaceholder(newIndex);
+    }
+  },
+
+  /**
+   * 内部：移动占位符
+   */
+  _movePlaceholder(newIndex) {
+    const { todos, _originalTodos } = this.data;
+
+    // 从当前数组中移除占位符
+    const filteredTodos = todos.filter(item => !item._isPlaceholder);
+
+    // 在新位置插入占位符
+    filteredTodos.splice(newIndex, 0, {
+      _isPlaceholder: true,
+      _id: 'placeholder'
+    });
+
+    this.setData({
+      todos: filteredTodos,
+      placeholderIndex: newIndex
+    });
+  },
+
+  /**
+   * 内部：处理拖拽结束
+   */
+  _handleDragEnd() {
+    const { _originalTodos, placeholderIndex, dragIndex } = this.data;
+
+    const finalTodos = [..._originalTodos];
+    const movedItem = finalTodos.splice(dragIndex, 1)[0];
+
+    let insertIndex = placeholderIndex;
+    if (dragIndex < placeholderIndex) {
+      insertIndex = placeholderIndex - 1;
+    }
+    insertIndex = Math.max(0, Math.min(insertIndex, finalTodos.length));
+
+    finalTodos.splice(insertIndex, 0, movedItem);
+
     this.setData({
       isDragging: false,
-      currentIndex: -1
+      dragIndex: -1,
+      placeholderIndex: -1,
+      dragItem: null,
+      todos: finalTodos,
+      _originalTodos: [],
+      scrollEnabled: true,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+      _isLongPress: false
     });
-    
-    // 恢复页面滚动
-    wx.pageScrollTo({
-      scrollTop: this.data.scrollTop,
-      duration: 0
-    });
+
+    wx.setStorageSync('todos', finalTodos);
+    getApp().updateCalendarCache(finalTodos);
+
+    wx.vibrateShort({ type: 'light' });
   },
 
   // ===========================
@@ -481,118 +1262,112 @@ Page({
    * 加载天气信息
    */
   loadWeather() {
-    const that = this;
-    let weatherSource = '精确卫星定位'; // 初始化获取方式为定位
+    return new Promise((resolve, reject) => {
+      const that = this;
+      let weatherSource = '精确卫星定位';
+      
+      wx.getLocation({
+        type: 'wgs84',
+        success: (locationRes) => {
+          wx.request({
+            url: 'https://api.seniverse.com/v3/weather/now.json',
+            data: {
+              key: weatherKey,
+              location: `${locationRes.latitude}:${locationRes.longitude}`,
+              language: 'zh-Hans',
+              unit: 'c'
+            },
+            success(res) {
+              if (res.data.results?.[0]?.now) {
+                const weatherData = res.data.results[0];
+                const dateObj = new Date(weatherData.last_update);
+                const formattedDate = `${dateObj.getFullYear()}年${ 
+                  (dateObj.getMonth() + 1).toString().padStart(2, '0')}月${
+                  dateObj.getDate().toString().padStart(2, '0')}日 ${
+                  dateObj.getHours().toString().padStart(2, '0')}:${
+                  dateObj.getMinutes().toString().padStart(2, '0')}`;
     
-    // 获取位置权限
-    wx.getLocation({
-      type: 'wgs84',
-      success: (locationRes) => {
-        // 成功获取经纬度后发起请求
-        wx.request({
-          url: 'https://api.seniverse.com/v3/weather/now.json',
-          data: {
-            key: weatherKey,
-            location: `${locationRes.latitude}:${locationRes.longitude}`,
-            language: 'zh-Hans',
-            unit: 'c'
-          },
-          success(res) {
-            if (res.data.results?.[0]?.now) {
-              const weatherData = res.data.results[0];
-              
-              // 格式化日期
-              const rawDate = weatherData.last_update;
-              const dateObj = new Date(rawDate);
-              const formattedDate = `${dateObj.getFullYear()}年${ 
-                (dateObj.getMonth() + 1).toString().padStart(2, '0')}月${
-                dateObj.getDate().toString().padStart(2, '0')}日 ${
-                dateObj.getHours().toString().padStart(2, '0')}:${
-                dateObj.getMinutes().toString().padStart(2, '0')}`;
-    
-              // 同时更新全局和本地数据
+                getApp().globalData.weather = {
+                  city: weatherData.location.name,
+                  code: weatherData.now.code,
+                  text: weatherData.now.text,
+                  temperature: weatherData.now.temperature,
+                  last_update: formattedDate,
+                  source: weatherSource
+                };
+                
+                that.setData({ 
+                  weather: getApp().globalData.weather,
+                  isLoading: false
+                });
+                resolve(getApp().globalData.weather);
+              } else {
+                resolve(null);
+              }
+            },
+            fail: () => {
+              weatherSource = 'IP 定位';
               getApp().globalData.weather = {
-                city: weatherData.location.name,
-                code: weatherData.now.code,
-                text: weatherData.now.text,
-                temperature: weatherData.now.temperature,
-                last_update: formattedDate,
+                city: "未知城市",
+                code: 0,
+                text: "未知天气",
+                temperature: "--",
+                last_update: '',
                 source: weatherSource
               };
-              
               that.setData({ 
                 weather: getApp().globalData.weather,
                 isLoading: false
               });
+              resolve(null);
             }
-          },
-          fail() {
-            weatherSource = 'IP 定位';
-            getApp().globalData.weather = {
-              city: "未知城市",
-              code: 0,
-              text: "未知天气",
-              temperature: "--",
-              last_update: formattedDate,
-              source: weatherSource
-            };
-
-            that.setData({ 
-              weather: getApp().globalData.weather,
-              isLoading: false
-            });
-            wx.showToast({ title: '天气获取失败', icon: 'none' });
-          }
-        });
-      },
-      fail: (err) => {
-        console.error('位置获取失败，使用IP定位', err);
-        weatherSource = 'IP 定位';
-        
-        // 使用IP定位
-        wx.request({
-          url: 'https://api.seniverse.com/v3/weather/now.json',
-          data: {
-            key: weatherKey,
-            location: 'ip',
-            language: 'zh-Hans',
-            unit: 'c'
-          },
-          success(res) {
-            if (res.data.results?.[0]?.now) {
-              const weatherData = res.data.results[0];
-              
-              // 格式化日期
-              const rawDate = weatherData.last_update;
-              const dateObj = new Date(rawDate);
-              const formattedDate = `${dateObj.getFullYear()}年${ 
-                (dateObj.getMonth() + 1).toString().padStart(2, '0')}月${
-                dateObj.getDate().toString().padStart(2, '0')}日 ${
-                dateObj.getHours().toString().padStart(2, '0')}:${
-                dateObj.getMinutes().toString().padStart(2, '0')}`;
+          });
+        },
+        fail: () => {
+          weatherSource = 'IP 定位';
+          wx.request({
+            url: 'https://api.seniverse.com/v3/weather/now.json',
+            data: {
+              key: weatherKey,
+              location: 'ip',
+              language: 'zh-Hans',
+              unit: 'c'
+            },
+            success: (res) => {
+              if (res.data.results?.[0]?.now) {
+                const weatherData = res.data.results[0];
+                const dateObj = new Date(weatherData.last_update);
+                const formattedDate = `${dateObj.getFullYear()}年${ 
+                  (dateObj.getMonth() + 1).toString().padStart(2, '0')}月${
+                  dateObj.getDate().toString().padStart(2, '0')}日 ${
+                  dateObj.getHours().toString().padStart(2, '0')}:${
+                  dateObj.getMinutes().toString().padStart(2, '0')}`;
     
-              // 同时更新全局和本地数据
-              getApp().globalData.weather = {
-                city: weatherData.location.name,
-                code: weatherData.now.code,
-                text: weatherData.now.text,
-                temperature: weatherData.now.temperature,
-                last_update: formattedDate,
-                source: weatherSource
-              };
-              
-              that.setData({ 
-                weather: getApp().globalData.weather,
-                isLoading: false
-              });
+                getApp().globalData.weather = {
+                  city: weatherData.location.name,
+                  code: weatherData.now.code,
+                  text: weatherData.now.text,
+                  temperature: weatherData.now.temperature,
+                  last_update: formattedDate,
+                  source: weatherSource
+                };
+                
+                that.setData({ 
+                  weather: getApp().globalData.weather,
+                  isLoading: false
+                });
+                resolve(getApp().globalData.weather);
+              } else {
+                resolve(null);
+              }
+            },
+            fail: () => {
+              that.setData({ isLoading: false });
+              resolve(null);
             }
-          },
-          fail() {
-            that.setData({ isLoading: false });
-            wx.showToast({ title: '天气获取失败', icon: 'none' });
-          }
-        });
-      }
+          });
+        }
+      });
     });
   },
 
@@ -601,7 +1376,7 @@ Page({
    */
   showWeather() {
     const weatherSource = this.data.weather?.source || '未知方式';
-    const ipWarning = weatherSource === 'IP 定位' ? '\n\n注意：IP 定位可能不准确，建议开启位置权限以获取更准确的天气信息。' : '';
+    const ipWarning = weatherSource === 'IP 定位' ? '\n\n注意：您可能正在使用移动数据，IP 定位可能不准确' : '';
     
     wx.showModal({
       title: '实时天气信息',
@@ -705,13 +1480,9 @@ Page({
               });
             }
           });
-        } else {
-          console.log("record has been authed");
         }
-      }, 
+      },
       fail(res) {
-        console.log("fail");
-        console.log(res);
       }
     });
   },
@@ -754,7 +1525,6 @@ Page({
     
     // 有新的识别内容返回
     manager.onRecognize = function (res) {
-      console.log(res);
       const text = res.result;
       that.setData({
         content: text
@@ -778,7 +1548,6 @@ Page({
 
     // 正常开始录音识别
     manager.onStart = function (res) {
-      console.log("成功开始识别", res);
     };
 
     // 识别错误事件
@@ -843,8 +1612,6 @@ Page({
    * 触摸开始录音
    */
   touchStart(e) {
-    console.log('start');
-    
     // 先检查麦克风权限
     wx.getSetting({
       success: (res) => {
@@ -876,7 +1643,6 @@ Page({
         }
       },
       fail: () => {
-        console.log('获取权限设置失败');
       }
     });
   },
@@ -885,7 +1651,6 @@ Page({
    * 触摸结束录音
    */
   touchEnd(e) {
-    console.log('end');
     this.setData({
       recordState: false
     });
@@ -902,13 +1667,6 @@ Page({
   // ===========================
   
   /**
-   * 输入框内容变化处理
-   */
-  onInput(e) {
-    this.setData({ inputValue: e.detail.value });
-  },
-
-  /**
    * 手动输入内容
    */
   conInput(e) {
@@ -921,9 +1679,18 @@ Page({
    * 跳转到待办详情
    */
   navigateToDetail(e) {
-    const index = e.currentTarget.dataset.index;
+    if (this.data._preventTap) {
+      this.setData({ _preventTap: false });
+      return;
+    }
+
+    if (e.target.dataset.component === 't-radio') {
+      return;
+    }
+
+    const todoId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?index=${index}`
+      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(todoId)}`
     });
   },
 
@@ -931,9 +1698,32 @@ Page({
    * 跳转到添加待办页面
    */
   navigateToAdd() {
-    wx.navigateTo({
-      url: '/pages/add-todo/add-todo'
-    });
+    const { currentTab } = this.data;
+    
+    if (currentTab === 'all') {
+      wx.navigateTo({
+        url: '/pages/add-todo/add-todo'
+      });
+    } else if (currentTab === 'combos') {
+      wx.navigateTo({
+        url: '/packageCombo/combo-edit/combo-edit'
+      });
+    } else if (currentTab === 'shared') {
+      wx.showActionSheet({
+        itemList: ['新建共享组合', '加入共享组合'],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            wx.navigateTo({
+              url: '/packageCombo/combo-edit/combo-edit?isShared=1'
+            });
+          } else if (res.tapIndex === 1) {
+            wx.navigateTo({
+              url: '/packageTools/join-collab/join-collab'
+            });
+          }
+        }
+      });
+    }
   },
 
   /**
@@ -1000,7 +1790,7 @@ Page({
   // ===========================
   // 辅助函数
   // ===========================
-  
+
   /**
    * 格式化日期
    */
@@ -1009,5 +1799,557 @@ Page({
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
+  },
+
+  /**
+   * 格式化时间
+   */
+  formatTime(timeValue) {
+    if (!timeValue) return '12:00';
+    if (typeof timeValue === 'string' && timeValue.length <= 5) {
+      const parts = timeValue.split(':');
+      if (parts.length === 2) {
+        const hours = parts[0].padStart(2, '0');
+        const minutes = parts[1].padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+    }
+    const timeMatch = String(timeValue).match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      const hours = timeMatch[1].padStart(2, '0');
+      const minutes = timeMatch[2].padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+    return '12:00';
+  },
+
+  /**
+   * 格式化待办日期时间
+   */
+  formatTodoDate(dateValue) {
+    if (!dateValue) return '';
+    const dateObj = new Date(dateValue);
+    if (isNaN(dateObj.getTime())) return '';
+    return this.formatDate(dateObj);
+  },
+
+  /**
+   * 格式化所有待办的日期时间
+   */
+  formatAllTodos(todos) {
+    if (!todos || !Array.isArray(todos)) return todos;
+    return todos.map(todo => ({
+      ...todo,
+      setDate: this.formatTodoDate(todo.setDate),
+      setTime: this.formatTime(todo.setTime),
+      friendlyDate: formatFriendlyDate(todo.setDate)
+    }));
+  },
+
+  // ===========================
+  // 广告事件处理
+  // ===========================
+
+  /**
+   * 广告加载成功
+   */
+  onAdLoad() {
+  },
+
+  /**
+   * 广告加载失败
+   */
+  onAdError(err) {
+    console.error('原生模板广告加载失败', err);
+  },
+
+  /**
+   * 广告关闭
+   */
+  onAdClose() {
+  },
+
+  /**
+   * 广告隐藏
+   */
+  onAdHide() {
+  },
+
+  // ===========================
+  // 分享参数处理
+  // ===========================
+
+  handleShareParams(options) {
+    const { type, code, auto } = options;
+    
+    if (type === 'combo_invite' && code) {
+      const shareData = {
+        type: 'combo_invite',
+        code: code.toUpperCase().slice(0, 6),
+        auto: auto === '1',
+        timestamp: Date.now()
+      };
+      
+      wx.setStorageSync('pendingShareData', shareData);
+      
+      if (!isLoggedIn()) {
+        this.setData({ showLoginPopup: true });
+      } else {
+        this.processComboInvite(shareData.code, shareData.auto);
+      }
+    }
+  },
+
+  handleSceneParams(options) {
+    let scene = options.scene;
+    if (!scene) return;
+    
+    try {
+      scene = decodeURIComponent(scene);
+    } catch (e) {
+      console.error('解码scene参数失败:', e);
+      return;
+    }
+    
+    let code = '';
+    let autoJoin = false;
+    
+    if (scene.includes('=')) {
+      const params = {};
+      const parts = scene.split('&');
+      parts.forEach(part => {
+        const [key, value] = part.split('=');
+        if (key && value) {
+          params[key] = value;
+        }
+      });
+      
+      if (params.code) {
+        code = params.code.toUpperCase().slice(0, 6);
+        autoJoin = params.auto === '1';
+      }
+    }
+    
+    if (code.length === 6) {
+      const shareData = {
+        type: 'combo_invite',
+        code: code,
+        auto: autoJoin,
+        timestamp: Date.now()
+      };
+      
+      wx.setStorageSync('pendingShareData', shareData);
+      
+      if (!isLoggedIn()) {
+        this.setData({ showLoginPopup: true });
+      } else {
+        this.processComboInvite(shareData.code, shareData.auto);
+      }
+    }
+  },
+
+  checkPendingShareData() {
+    const shareData = wx.getStorageSync('pendingShareData');
+    
+    if (!shareData) return;
+    
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (Date.now() - shareData.timestamp > TEN_MINUTES) {
+      wx.removeStorageSync('pendingShareData');
+      return;
+    }
+    
+    if (shareData.type === 'combo_invite') {
+      if (!isLoggedIn()) {
+        this.setData({ showLoginPopup: true });
+      } else {
+        this.processComboInvite(shareData.code, shareData.auto);
+      }
+    }
+  },
+
+  async processComboInvite(code, autoJoin = false) {
+    if (!code || code.length !== 6) {
+      wx.showToast({ title: '无效的邀请码', icon: 'none' });
+      wx.removeStorageSync('pendingShareData');
+      return;
+    }
+
+    try {
+      const result = await collabApi.join(code);
+      const comboInfo = result.combo || result;
+      comboInfo.isMember = result.isMember;
+      comboInfo.hasPendingRequest = result.hasPendingRequest;
+      comboInfo.memberFull = result.memberFull;
+      comboInfo.inviteCode = code;
+      
+      this.setData({
+        showInvitePopup: true,
+        inviteComboInfo: comboInfo,
+        inviteAutoJoin: autoJoin
+      });
+    } catch (err) {
+      wx.showToast({ title: err.message || '获取组合信息失败', icon: 'none' });
+      wx.removeStorageSync('pendingShareData');
+    }
+  },
+
+  hideLoginPopup(e) {
+    if (e && e.detail && e.detail.visible === true) {
+      return;
+    }
+    this.setData({ showLoginPopup: false });
+    wx.removeStorageSync('pendingShareData');
+  },
+
+  goToLogin() {
+    this.setData({ showLoginPopup: false });
+    wx.navigateTo({ url: '/pages/login/login' });
+  },
+
+  hideInvitePopup(e) {
+    if (e && e.detail && e.detail.visible === true) {
+      return;
+    }
+    this.setData({ showInvitePopup: false, inviteComboInfo: null, inviteAutoJoin: false });
+    wx.removeStorageSync('pendingShareData');
+  },
+
+  async handleJoinCombo() {
+    const { inviteComboInfo, isJoining, inviteAutoJoin } = this.data;
+    
+    if (isJoining || !inviteComboInfo) return;
+    
+    if (inviteComboInfo.isMember) {
+      wx.navigateTo({
+        url: `/packageCombo/combo-detail/combo-detail?id=${inviteComboInfo.id}&shared=1`
+      });
+      this.hideInvitePopup();
+      return;
+    }
+    
+    if (inviteComboInfo.memberFull) {
+      wx.showModal({
+        title: '成员已满',
+        content: '该共享组合成员已满，请联系该组合的超管或管理员。',
+        showCancel: false,
+        confirmText: '我知道了'
+      });
+      return;
+    }
+    
+    if (inviteComboInfo.hasPendingRequest) {
+      wx.showModal({
+        title: '提示',
+        content: '您已发送过加入申请，请等待超管审批。',
+        showCancel: false,
+        confirmText: '我知道了'
+      });
+      return;
+    }
+
+    this.setData({ isJoining: true });
+
+    try {
+      const code = inviteComboInfo.inviteCode;
+      let result;
+      
+      if (inviteAutoJoin) {
+        result = await collabApi.autoJoin(code);
+        
+        this.setData({ isJoining: false, showInvitePopup: false });
+        wx.removeStorageSync('pendingShareData');
+        
+        wx.showModal({
+          title: '加入成功',
+          content: '您已成功加入该共享组合！是否立即进入？\n\n您也可以在"共享组合"标签页找到该组合。',
+          confirmText: '立即进入',
+          cancelText: '稍后再说',
+          success: (res) => {
+            if (res.confirm) {
+              const comboId = result.combo?.id || inviteComboInfo.id;
+              wx.navigateTo({
+                url: `/packageCombo/combo-detail/combo-detail?id=${comboId}&shared=1`
+              });
+            }
+            this.loadCombosFromCloud();
+          }
+        });
+      } else {
+        result = await collabApi.sendRequest(code);
+        
+        this.setData({ 
+          isJoining: false, 
+          'inviteComboInfo.hasPendingRequest': true 
+        });
+        
+        wx.showModal({
+          title: '申请已发送',
+          content: '您的加入申请已发送，请等待超管或管理员审批。',
+          showCancel: false,
+          confirmText: '我知道了',
+          success: () => {
+            this.askSubscribeApprovalResult();
+          }
+        });
+      }
+    } catch (err) {
+      this.setData({ isJoining: false });
+      
+      if (err.message && err.message.includes('已是该组成员')) {
+        wx.showModal({
+          title: '提示',
+          content: '您已经是该组合的成员，是否立即进入？',
+          confirmText: '立即进入',
+          cancelText: '稍后再说',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: `/packageCombo/combo-detail/combo-detail?id=${inviteComboInfo.id}&shared=1`
+              });
+            }
+            this.hideInvitePopup();
+          }
+        });
+      } else if (err.message && err.message.includes('成员已满')) {
+        wx.showModal({
+          title: '成员已满',
+          content: '该共享组合成员已满，请联系该组合的超管或管理员。',
+          showCancel: false,
+          confirmText: '我知道了'
+        });
+      } else {
+        wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+      }
+    }
+  },
+
+  askSubscribeApprovalResult() {
+    const templateId = 'LenG38LPKm6kK4ymXx4Ftoc9LoN2f7xXh7qJ-U-myxA';
+    
+    wx.showModal({
+      title: '订阅审批结果',
+      content: '审批通过或拒绝后，您将第一时间收到消息提醒。',
+      confirmText: '订阅通知',
+      cancelText: '暂不需要',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            const subscribeRes = await wx.requestSubscribeMessage({
+              tmplIds: [templateId]
+            });
+            
+            if (subscribeRes[templateId] === 'accept') {
+              const { notifyApi } = require('../../utils/api.js');
+              await notifyApi.subscribe([templateId]);
+              wx.showToast({ title: '订阅成功', icon: 'success' });
+            } else {
+              wx.showToast({ title: '已取消订阅', icon: 'none' });
+            }
+          } catch (err) {
+            console.error('订阅失败:', err);
+            wx.showToast({ title: '订阅失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
+  async checkPendingApprovals() {
+    if (!isLoggedIn()) return;
+    
+    const sharedCombos = app.globalData.sharedCombos || [];
+    if (sharedCombos.length === 0) return;
+    
+    const managedCombos = sharedCombos.filter(combo => 
+      combo.role === 'owner' || combo.role === 'admin'
+    );
+    if (managedCombos.length === 0) return;
+    
+    const approvalGroups = [];
+    
+    for (const combo of managedCombos) {
+      try {
+        const result = await collabApi.getRequests(combo.id);
+        const requests = result.requests || result || [];
+        if (requests.length > 0) {
+          const formattedRequests = requests.map(req => ({
+            ...req,
+            formattedTime: formatDateTime(req.createdAt || req.created_at)
+          }));
+          approvalGroups.push({
+            combo: combo,
+            requests: formattedRequests
+          });
+        }
+      } catch (err) {
+        console.error('获取审批申请失败:', err);
+      }
+    }
+    
+    if (approvalGroups.length > 0) {
+      const totalApprovalCount = approvalGroups.reduce((sum, group) => sum + group.requests.length, 0);
+      this.setData({
+        showApprovalPopup: true,
+        approvalGroups: approvalGroups,
+        totalApprovalCount: totalApprovalCount
+      });
+    }
+  },
+
+  hideApprovalPopup(e) {
+    if (e && e.detail && e.detail.visible === true) {
+      return;
+    }
+    this.setData({ 
+      showApprovalPopup: false, 
+      approvalGroups: [],
+      totalApprovalCount: 0
+    });
+  },
+
+  async approveRequest(e) {
+    const requestId = e.currentTarget.dataset.id;
+    const comboId = e.currentTarget.dataset.comboId;
+    const { approvalGroups } = this.data;
+    
+    const group = approvalGroups.find(g => String(g.combo.id) === String(comboId));
+    const request = group?.requests.find(r => r.id === requestId);
+    
+    this.setData({ approvalLoading: true });
+    
+    try {
+      await collabApi.approveRequest(requestId);
+      wx.showToast({ title: '已通过', icon: 'success' });
+      
+      this.sendApprovalNotification({
+        comboName: group?.combo?.name,
+        comboId: group?.combo?.id,
+        shareCode: group?.combo?.share_code || group?.combo?.shareCode,
+        applicantId: request?.userId || request?.user_id,
+        requestTime: request?.createdAt || request?.created_at,
+        approved: true
+      });
+      
+      const newGroups = approvalGroups.map(group => {
+        if (String(group.combo.id) === String(comboId)) {
+          return {
+            ...group,
+            requests: group.requests.filter(r => r.id !== requestId)
+          };
+        }
+        return group;
+      }).filter(group => group.requests.length > 0);
+      
+      if (newGroups.length > 0) {
+        const totalApprovalCount = newGroups.reduce((sum, group) => sum + group.requests.length, 0);
+        this.setData({ 
+          approvalGroups: newGroups,
+          totalApprovalCount: totalApprovalCount,
+          approvalLoading: false
+        });
+      } else {
+        this.setData({ 
+          showApprovalPopup: false,
+          approvalGroups: [],
+          totalApprovalCount: 0,
+          approvalLoading: false
+        });
+      }
+      
+      this.loadCombosFromCloud();
+    } catch (err) {
+      this.setData({ approvalLoading: false });
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    }
+  },
+
+  async rejectRequest(e) {
+    const requestId = e.currentTarget.dataset.id;
+    const comboId = e.currentTarget.dataset.comboId;
+    const { approvalGroups } = this.data;
+    
+    const group = approvalGroups.find(g => String(g.combo.id) === String(comboId));
+    const request = group?.requests.find(r => r.id === requestId);
+    
+    this.setData({ approvalLoading: true });
+    
+    try {
+      await collabApi.rejectRequest(requestId);
+      wx.showToast({ title: '已拒绝', icon: 'success' });
+      
+      this.sendApprovalNotification({
+        comboName: group?.combo?.name,
+        comboId: group?.combo?.id,
+        shareCode: group?.combo?.share_code || group?.combo?.shareCode,
+        applicantId: request?.userId || request?.user_id,
+        requestTime: request?.createdAt || request?.created_at,
+        approved: false
+      });
+      
+      const newGroups = approvalGroups.map(group => {
+        if (String(group.combo.id) === String(comboId)) {
+          return {
+            ...group,
+            requests: group.requests.filter(r => r.id !== requestId)
+          };
+        }
+        return group;
+      }).filter(group => group.requests.length > 0);
+      
+      if (newGroups.length > 0) {
+        const totalApprovalCount = newGroups.reduce((sum, group) => sum + group.requests.length, 0);
+        this.setData({ 
+          approvalGroups: newGroups,
+          totalApprovalCount: totalApprovalCount,
+          approvalLoading: false
+        });
+      } else {
+        this.setData({ 
+          showApprovalPopup: false,
+          approvalGroups: [],
+          totalApprovalCount: 0,
+          approvalLoading: false
+        });
+      }
+    } catch (err) {
+      this.setData({ approvalLoading: false });
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    }
+  },
+
+  async sendApprovalNotification({ comboName, comboId, shareCode, applicantId, requestTime, approved }) {
+    if (!applicantId) return;
+    
+    try {
+      const userInfo = app.globalData.userInfo || wx.getStorageSync('user') || {};
+      const now = new Date();
+      
+      const formatTime = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        const h = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        return `${y}年${m}月${d}日 ${h}:${min}`;
+      };
+      
+      await notifyApi.sendApprovalResult({
+        templateId: 'LenG38LPKm6kK4ymXx4Ftoc9LoN2f7xXh7qJ-U-myxA',
+        toUserId: applicantId,
+        comboId: comboId,
+        shareCode: shareCode,
+        approved: approved,
+        data: {
+          thing28: { value: `申请加入「${comboName || '协作组'}」` },
+          time52: { value: formatTime(new Date(requestTime)) },
+          time26: { value: formatTime(now) },
+          phrase1: { value: approved ? '已通过' : '未通过' },
+          name2: { value: userInfo.nickname || '管理员' }
+        }
+      });
+    } catch (err) {
+      console.error('发送审批通知失败:', err);
+    }
   }
 });

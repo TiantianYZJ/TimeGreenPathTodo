@@ -1,37 +1,60 @@
 const { WxCalendar } = require('@lspriv/wx-calendar/lib');
 const { LunarPlugin } = require('@lspriv/wc-plugin-lunar');
+const { isLoggedIn } = require('../../utils/api.js');
+const { syncWithCloud } = require('../../utils/sync.js');
+const { formatFriendlyDate } = require('../../utils/util.js');
 
 WxCalendar.use(LunarPlugin);
 
+const app = getApp();
+
 Page({
   data: {
-    minDate: new Date(2025, 3, 3).getTime(),
-    maxDate: new Date(new Date().getFullYear() + 5, 0, 1).getTime(),
+    // 导航栏相关
+    navBarHeight: app.globalData.navBarHeight,
+    menuRight: app.globalData.menuRight,
+    menuTop: app.globalData.menuTop,
+    menuHeight: app.globalData.menuHeight,
+    menuWidth: app.globalData.menuWidth,
+    menuLeft: app.globalData.menuLeft,
+
+    minDate: new Date(2020, 0, 1).getTime(),
+    maxDate: new Date(new Date().getFullYear() + 5, 11, 31).getTime(),
     today: new Date().getTime(),
     marks: [], // 初始化marks数组
 
-    format(day) {
-      const { date } = day;
-      const key = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
-      const cache = getApp().globalData.calendarCache[key];
-
-      if (cache) {
-          day.prefix = cache.count;
-          day.suffix = cache.sampleText.substring(0,3) + (cache.sampleText.length >3 ? '..' : '');
-          day.className = 't-calendar__day--top';
-      }
-      return day;
-    },
-
     selectedTodos: [],
     selectedDate: '',
+    friendlySelectedDate: '',
+  },
+
+  // 日历日期格式化方法
+  format(day) {
+    const { date } = day;
+    const key = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
+    const cache = getApp().globalData.calendarCache[key];
+
+    if (cache) {
+        day.prefix = cache.count;
+        day.suffix = cache.sampleText.substring(0,3) + (cache.sampleText.length >3 ? '..' : '');
+        day.className = 't-calendar__day--top';
+    }
+    return day;
   },
 
   onShareAppMessage() {
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
+    }
+  },
+
+  async autoSyncToCloud() {
+    try {
+      await syncWithCloud('local');
+    } catch (err) {
+      console.error('自动同步失败:', err);
     }
   },
 
@@ -39,7 +62,7 @@ Page({
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
 
@@ -52,23 +75,19 @@ Page({
   },
 
   handleLoad(e) {
-    console.log('日历加载完成', e.detail);
     this.calendar = this.selectComponent('#calendar');
-    
+
     // 转换全局缓存为marks格式
     this.convertMarks();
-    
-    // 新增初始化选中逻辑
+
+    // 延迟300ms等待日历组件完全渲染后再初始化选中
     setTimeout(() => {
-      // 获取今日日期对象
       const today = new Date();
       const todayDetail = {
         year: today.getFullYear(),
-        month: today.getMonth() + 1, // 月份需要+1
+        month: today.getMonth() + 1,
         day: today.getDate()
       };
-      
-      // 手动触发确认事件
       this.handleConfirm({
         detail: {
           checked: todayDetail
@@ -88,7 +107,7 @@ Page({
   convertMarks() {
     const cache = getApp().globalData.calendarCache;
     const marks = [];
-    
+
     for (const key in cache) {
       const date = new Date(key);
       marks.push({
@@ -97,37 +116,29 @@ Page({
         text: cache[key].sampleText?.split(',')[0]?.trim()
       });
     }
-    
-    this.setData({ marks });
-  },
 
-  // 添加清空选中状态的方法
-  clearSelection() {
-    this.setData({ 
-      selectedTodos: [],
-      selectedDate: ''
-    });
+    this.setData({ marks });
   },
 
   parseTime(timeStr) {
     const [hours, minutes] = (timeStr || '00:00').split(':').map(Number);
-    return hours * 60 + minutes; // 转换为分钟数方便比较
+    return hours * 60 + minutes;
   },
 
-  // 新增搜索方法
+  // 搜索指定日期的待办并按时间排序
   searchTodos(targetDate) {
     const dateObj = new Date(targetDate);
     const currentKey = this.formatDate(dateObj);
-    
+
     const todos = wx.getStorageSync('todos') || [];
     const uniqueTodos = new Map();
-    
+
     const filtered = todos.filter(todo => {
       try {
         const todoDate = new Date(todo.setDate);
         const todoKey = this.formatDate(todoDate);
         const uniqueId = `${todo.text}|${todoKey}|${todo.remarks || ''}`;
-        
+
         if (todoKey === currentKey && !uniqueTodos.has(uniqueId)) {
           uniqueTodos.set(uniqueId, true);
           return true;
@@ -143,11 +154,15 @@ Page({
       const aTime = this.parseTime(a.setTime || '23:59');
       const bTime = this.parseTime(b.setTime || '23:59');
       return aTime - bTime;
-    });
+    }).map(todo => ({
+      ...todo,
+      friendlyDate: formatFriendlyDate(todo.setDate)
+    }));
 
-    this.setData({ 
+    this.setData({
       selectedTodos: sorted,
-      selectedDate: currentKey
+      selectedDate: currentKey,
+      friendlySelectedDate: formatFriendlyDate(currentKey)
     });
   },
 
@@ -159,93 +174,114 @@ Page({
       checked.month - 1,
       checked.day
     );
-    this.searchTodos(standardDate); // 调用新方法
+    this.searchTodos(standardDate);
   },
 
 
   // 复用todo页方法
   navigateToDetail(e) {
+    if (e.target.dataset.component === 't-radio') {
+      return;
+    }
+
     const selectedIndex = e.currentTarget.dataset.index;
-    // 获取当前展示的待办项
     const currentTodo = this.data.selectedTodos[selectedIndex];
-    
-    // 在全局todos中查找真实索引
-    const todos = wx.getStorageSync('todos');
-    const realIndex = todos.findIndex(t => 
-        t.text === currentTodo.text && 
-        t.setDate === currentTodo.setDate &&
-        t.setTime === currentTodo.setTime
-    );
-    
+
+    if (!currentTodo || !currentTodo.id) return;
+
     wx.navigateTo({
-        url: `/pages/todo-detail/todo-detail?index=${realIndex}`
+      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(currentTodo.id)}`
     });
   },
 
   toggleTodo(e) {
     const index = e.currentTarget.dataset.index;
-    const todos = wx.getStorageSync('todos');
-    
-    // 获取当前展示的待办项
     const currentTodo = this.data.selectedTodos[index];
-    
-    // 在全局todos中查找真实索引
-    const realIndex = todos.findIndex(t => 
-      t.text === currentTodo.text && 
+
+    const todos = wx.getStorageSync('todos');
+    const realIndex = todos.findIndex(t =>
+      t.text === currentTodo.text &&
+      t.setDate === currentTodo.setDate &&
+      t.setTime === currentTodo.setTime
+    );
+
+    if (realIndex !== -1) {
+      const now = Date.now();
+      todos[realIndex].completed = !todos[realIndex].completed ? now : false;
+      todos[realIndex].version = (todos[realIndex].version || 1) + 1;
+      todos[realIndex].updatedAt = now;
+      wx.setStorageSync('todos', todos);
+
+      this.searchTodos(this.data.selectedDate);
+      getApp().updateCalendarCache(todos);
+      
+      if (isLoggedIn()) {
+        this.autoSyncToCloud();
+      }
+    }
+  },
+
+  deleteTodo(index) {
+    const currentTodo = this.data.selectedTodos[index];
+    const that = this;
+
+    wx.showModal({
+      title: '删除确认',
+      content: '删除后保留 30 天，可在"更多-回收站"找回，确定删除吗？',
+      confirmText: '删除',
+      confirmColor: '#ff4d4f',
+      success: (res) => {
+        if (res.confirm) {
+          const todos = wx.getStorageSync('todos');
+          const realIndex = todos.findIndex(t =>
+            t.text === currentTodo.text &&
+            t.setDate === currentTodo.setDate &&
+            t.setTime === currentTodo.setTime
+          );
+
+          if (realIndex !== -1) {
+            const now = Date.now();
+            todos[realIndex] = {
+              ...todos[realIndex],
+              isDeleted: true,
+              deletedAt: now,
+              updatedAt: now,
+              version: (todos[realIndex].version || 1) + 1
+            };
+            wx.setStorageSync('todos', todos);
+
+            that.searchTodos(that.data.selectedDate);
+            getApp().updateCalendarCache(todos.filter(t => !t.isDeleted));
+            
+            if (isLoggedIn()) {
+              that.autoSyncToCloud();
+            }
+          }
+        }
+      }
+    });
+  },
+
+  editTodo(index) {
+    const currentTodo = this.data.selectedTodos[index];
+    const todos = wx.getStorageSync('todos');
+    const realIndex = todos.findIndex(t =>
+      t.text === currentTodo.text &&
       t.setDate === currentTodo.setDate &&
       t.setTime === currentTodo.setTime
     );
     
-    if (realIndex !== -1) {
-      // 更新真实索引项的完成状态
-      todos[realIndex].completed = !todos[realIndex].completed ? Date.now() : false;
-      wx.setStorageSync('todos', todos);
-      
-      // 重新过滤当天待办（保持当前选中日期）
-      const filtered = todos.filter(todo => 
-        this.formatDate(new Date(todo.setDate)) === this.data.selectedDate
-      );
-      
-      this.setData({ 
-        selectedTodos: filtered.sort((a, b) => 
-          this.parseTime(a.setTime || '23:59') - this.parseTime(b.setTime || '23:59')
-        ) 
-      });
-      getApp().updateCalendarCache(todos);
-    }
-  },
+    const locationStr = currentTodo.location ? encodeURIComponent(JSON.stringify(currentTodo.location)) : '';
+    const tagsStr = currentTodo.tags ? encodeURIComponent(JSON.stringify(currentTodo.tags)) : '';
+    
+    const app = getApp();
+    app.globalData.editTodoImages = currentTodo.images || [];
 
-  // 复用todo页的删除逻辑（约第171行）
-  deleteTodo(index) {
-    const that = this
-    wx.showModal({
-      title: '删除确认',
-      content: '该操作不可撤销，确定继续吗？',
-      confirmText: '删除',
-      confirmColor: '#ff4d4f',
-      success(res) {
-        if (res.confirm) {
-          const todos = wx.getStorageSync('todos')
-          todos.splice(index, 1)
-          wx.setStorageSync('todos', todos)
-          that.setData({
-            selectedTodos: that.data.selectedTodos.filter((_, i) => i !== index)
-          })
-          getApp().updateCalendarCache(todos)
-        }
-      }
-    })
-  },
-
-  // 复用编辑逻辑（约第184行）
-  editTodo(index) {
-    const todo = this.data.selectedTodos[index]
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${index}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${encodeURIComponent(JSON.stringify(todo.location))}`
-    })
+      url: `/pages/add-todo/add-todo?edit=1&index=${realIndex}&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&comboId=${currentTodo.comboId || ''}&tags=${tagsStr}&hasImages=${(currentTodo.images && currentTodo.images.length > 0) ? '1' : '0'}`
+    });
   },
 
-  // 复用操作按钮逻辑
   handleSwipeAction(e) {
     const { type, index } = e.currentTarget.dataset;
     if (type === 'edit') {
@@ -256,28 +292,38 @@ Page({
   },
 
   navigateToAdd() {
-    const timestamp = this.data.selectedDate ? new Date(this.data.selectedDate).getTime() : Date.now()
+    const selectedDateStr = this.data.selectedDate || this.formatDate(new Date());
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?setDate=${timestamp}`
-    })
+      url: `/pages/add-todo/add-todo?setDate=${selectedDateStr}`
+    });
   },
 
-  handleBackToToday() {
-    const calendar = this.selectComponent('#calendar');
-    if (calendar && calendar.checked) {
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
-      
-      // 更新选中日期状态
-      this.setData({ 
-        selectedDate: todayStr,
-        today: today.getTime() // 保持与组件数据同步
-      });
+  // ===========================
+  // 广告事件处理
+  // ===========================
 
-      // 调用组件方法跳转
-      calendar.checked(today).then(() => {
-        this.searchTodos(todayStr); // 刷新当天待办
-      });
-    }
+  /**
+   * 广告加载成功
+   */
+  onAdLoad() {
   },
+
+  /**
+   * 广告加载失败
+   */
+  onAdError(err) {
+    console.error('原生模板广告加载失败', err);
+  },
+
+  /**
+   * 广告关闭
+   */
+  onAdClose() {
+  },
+
+  /**
+   * 广告隐藏
+   */
+  onAdHide() {
+  }
 });

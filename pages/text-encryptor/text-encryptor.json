@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "文本加密解密",
-  "usingComponents": {
-    "t-textarea": "tdesign-miniprogram/textarea/textarea",
-    "t-input": "tdesign-miniprogram/input/input",
-    "t-button": "tdesign-miniprogram/button/button"
-  }
-}

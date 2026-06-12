@@ -1,15 +1,19 @@
+import ActionSheet, { ActionSheetTheme } from 'tdesign-miniprogram/action-sheet';
+
 const app = getApp();
+const { configApi } = require('../../utils/api.js');
 
 Page({
   data: {
     notices: [],
+    loading: false
   },
 
   onShareAppMessage() {
     return {
       title: '时光绿径待办-公告',
       path: '/pages/notice/notice',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
   
@@ -17,34 +21,75 @@ Page({
     return {
       title: '时光绿径待办-公告',
       path: '/pages/notice/notice',
-      imageUrl: 'https://pic1.imgdb.cn/item/6814180958cb8da5c8d64852.png'
+      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
 
   onLoad() {
-    // 从全局数据获取公告
-    this.setData({
-      notices: app.globalData.notices
+    this.loadNotices();
+  },
+
+  async loadNotices() {
+    this.setData({ loading: true });
+    
+    try {
+      const result = await configApi.getNotices();
+      if (result.success && result.notices) {
+        this.setData({ notices: result.notices });
+        app.globalData.notices = result.notices;
+      }
+    } catch (err) {
+      console.error('获取公告失败:', err);
+      if (app.globalData.notices) {
+        this.setData({ notices: app.globalData.notices });
+      }
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  async onPullDownRefresh() {
+    await this.loadNotices();
+    wx.stopPullDownRefresh();
+  },
+
+  onContentTap(e) {
+    const href = e.detail.node.href;
+    if (!href) return;
+    
+    if (href.startsWith('/') || href.startsWith('pages/') || 
+        href.startsWith('packageAdmin/') || href.startsWith('packageCombo/') || href.startsWith('packageTools/')) {
+      const url = href.startsWith('/') ? href : '/' + href;
+      wx.navigateTo({ url });
+      return;
+    }
+    
+    this._currentCopyLink = href;
+    
+    ActionSheet.show({
+      theme: ActionSheetTheme.List,
+      selector: '#t-action-sheet',
+      context: this,
+      description: href,
+      cancelText: '取消',
+      items: ['复制链接'],
     });
   },
 
-  // 显示最新公告弹窗
-  showNotice(e) {
-    // 添加详细的错误日志
-    console.log('点击事件参数:', e);
+  onCopyActionSheetSelect(e) {
+    const { index } = e.detail;
+    const href = this._currentCopyLink;
     
-    const index = Number(e.currentTarget.dataset.index); // 转换为数字类型
-    if (isNaN(index) || index < 0 || index >= this.data.notices.length) {
-        console.error('无效的公告索引:', index);
-        return;
+    if (index === 0) {
+      wx.setClipboardData({
+        data: href,
+        success: () => {
+          wx.showToast({
+            title: '链接已复制到剪贴板',
+            icon: 'none'
+          });
+        }
+      });
     }
-    
-    const selectedNotice = this.data.notices[index];
-    wx.showModal({
-        title: selectedNotice.title,
-        content: selectedNotice.content.replace(/\n/g, '\n'),
-        showCancel: false,
-        confirmText: "知道了"
-    });
   }
 });

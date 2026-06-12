@@ -1,0 +1,222 @@
+/* ============================================
+ * Header - 顶部导航栏样式
+ * ============================================ */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--spacing-5);
+  background-color: var(--color-bg-container);
+  border-bottom: 1px solid var(--color-border-secondary);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: var(--z-sticky);
+}
+
+/* ========== 左侧区域 ========== */
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-shrink: 0;
+}
+
+/* 折叠按钮 */
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-base);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+  outline: none;
+}
+
+.collapseButton:hover {
+  background-color: var(--color-fill-secondary);
+  color: var(--color-text-primary);
+}
+
+.collapseButton:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-primary-border);
+}
+
+/* 品牌/Logo 区域 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  user-select: none;
+  transition-property: opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease;
+}
+
+.brand:hover {
+  opacity: 0.85;
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+.brandText {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+/* ========== 中间搜索区域 ========== */
+.headerCenter {
+  flex: 1;
+  max-width: 480px;
+  margin: 0 var(--spacing-6);
+}
+
+.searchBox {
+  width: 100%;
+}
+
+.searchBox .ant-input-wrapper {
+  border-radius: var(--radius-full) !important;
+  overflow: hidden;
+}
+
+.searchBox .ant-input {
+  height: 36px;
+  font-size: var(--font-size-sm);
+  background-color: var(--color-fill-primary) !important;
+  border: 1px solid transparent !important;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease !important;
+}
+
+.searchBox .ant-input:hover {
+  background-color: var(--color-fill-secondary) !important;
+}
+
+.searchBox .ant-input:focus {
+  background-color: var(--color-bg-container) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--color-primary-bg) !important;
+}
+
+.searchIcon {
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+}
+
+/* ========== 右侧操作区域 ========== */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-shrink: 0;
+}
+
+/* 用户头像 */
+.userAvatarWrapper {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  transition-property: opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease;
+}
+
+.userAvatarWrapper:hover {
+  opacity: 0.85;
+}
+
+.avatar {
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary) !important;
+  cursor: pointer;
+  transition-property: transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+
+/* 登录按钮 */
+.loginButton {
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== 响应式适配 ========== */
+
+/* 平板及以下 */
+@media (max-width: 768px) {
+  .header {
+    height: 56px;
+    padding: 0 var(--spacing-3);
+  }
+
+  .brandText {
+    font-size: var(--font-size-base);
+  }
+
+  .headerCenter {
+    max-width: 200px;
+    margin: 0 var(--spacing-3);
+  }
+
+  .searchBox .ant-input {
+    height: 32px;
+    font-size: var(--font-size-xs);
+  }
+
+  .searchBox .ant-input-search-button {
+    display: none;
+  }
+}
+
+/* 小屏手机 */
+@media (max-width: 480px) {
+  .headerCenter {
+    display: none;
+  }
+
+  .brandText {
+    /* 超小屏可能隐藏文字，只保留图标 */
+  }
+}
+
+/* ========== 暗色主题适配 ========== */
+[data-theme='dark'] .header {
+  background-color: var(--color-bg-container);
+  border-bottom-color: var(--color-border);
+}
+
+[data-theme='dark'] .searchBox .ant-input {
+  background-color: var(--color-fill-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme='dark'] .searchBox .ant-input::placeholder {
+  color: var(--color-text-quaternary);
+}

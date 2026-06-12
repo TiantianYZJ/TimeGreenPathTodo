@@ -1,6 +1,10 @@
 page {
   font-size: 28rpx;
   background: #e3f5eb;
+  --td-brand-color: #00b26a;
+  --td-brand-color-light: #e0f2ec;
+  --td-button-light-active-bg-color: #c4dcd4;
+  --td-primary-color-8: #008550;
 }
 
 /* 卡片通用样式 */

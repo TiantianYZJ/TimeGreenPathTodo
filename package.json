@@ -12,10 +12,7 @@
   "dependencies": {
     "@lspriv/wc-plugin-lunar": "^1.0.3-alpha.0",
     "@lspriv/wx-calendar": "^1.8.4",
-    "crypto-js": "^4.2.0",
     "ec-canvas": "^1.0.0",
-    "echarts-for-weixin": "^1.0.2",
-    "tdesign-miniprogram": "^1.8.8",
-    "weapp-qrcode": "^1.0.0"
+    "tdesign-miniprogram": "^1.12.3"
   }
 }
