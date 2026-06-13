@@ -45,9 +45,6 @@
   padding: 40rpx 0;
 }
 
-.cmp-section {
-}
-
 .cmp-label {
   font-size: 38rpx;
   color: #505050;
@@ -64,10 +61,6 @@
   padding: 18rpx 0;
 }
 
-.cmp-row:last-child {
-  border-bottom: none;
-}
-
 .cmp-col {
   display: flex;
   flex-direction: row;
@@ -76,13 +69,8 @@
   flex: 1;
 }
 
-.cmp-col--left {
-  justify-content: flex-end;
-}
-
-.cmp-col--right {
-  justify-content: flex-start;
-}
+.cmp-col--left { justify-content: flex-end; }
+.cmp-col--right { justify-content: flex-start; }
 
 .cmp-arrow {
   width: 120rpx;
@@ -91,7 +79,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12rpx;
 }
 
 .cmp-text-before {
@@ -102,7 +89,7 @@
 .cmp-text-after {
   font-size: 38rpx;
   color: #333;
-  font-weight: 520;
+  font-weight: 500;
 }
 
 .cmp-footer {
@@ -115,110 +102,53 @@
   padding: 0 16rpx;
 }
 
-/* ===== Bottom Section ===== */
-.login-bottom {
-  padding-top: 16rpx;
-}
-
-.agreement {
+/* ===== QR Body ===== */
+.qr-body {
+  flex: 1;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   justify-content: center;
-  margin-bottom: 24rpx;
+  padding: 40rpx 0;
 }
 
-.agreement-checkbox {
-  --td-checkbox-bg-color: #e3f5eb;
-  --td-checkbox-vertical-padding: 0;
-}
-
-.agreement-text {
-  font-size: 28rpx;
-  color: #999;
-}
-
-.agreement-link {
-  font-size: 28rpx;
-  color: #00b26a;
-}
-
-.login-btn {
-  width: 100%;
-  height: 96rpx;
-  line-height: 96rpx;
-  background: #00b26a;
-  color: #fff;
-  font-size: 38rpx;
-  border-radius: 50rpx;
-  font-weight: 600;
-  box-shadow: 0 8rpx 20rpx rgba(0,178,106,0.25);
-  display: flex;
+.qr-body--center {
   align-items: center;
-  justify-content: center;
-  gap: 12rpx;
 }
 
-.login-btn::after {
-  border: none;
-}
-
-.login-btn.disabled {
-  background: #ccc;
-  box-shadow: none;
-}
-
-/* ===== QR Common: Card ===== */
-.card {
-  margin-top: 40rpx;
-  background: #fff;
-  border-radius: 32rpx;
-  padding: 40rpx 32rpx;
-  box-shadow: 0 12rpx 40rpx rgba(0,0,0,0.08);
-}
-
-/* ===== QR Common: Banner ===== */
+/* ===== Banner ===== */
 .banner {
   display: flex;
   align-items: flex-start;
-  padding: 24rpx;
-  border-radius: 16rpx;
-  margin-bottom: 28rpx;
-  background: #fff;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  padding: 28rpx;
+  border-radius: 32rpx;
+  margin-bottom: 32rpx;
+  background: rgba(255,255,255,0.8);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.banner--info {
-  border-left: 6rpx solid #2dd4bf;
-}
-
-.banner--setup {
-  border-left: 6rpx solid #00b26a;
-}
-
-.banner--warn {
-  border-left: 6rpx solid #faad14;
-  margin-bottom: 28rpx;
-}
+.banner--info { border-left: 8rpx solid #2dd4bf; }
+.banner--setup { border-left: 8rpx solid #00b26a; }
+.banner--warn { border-left: 8rpx solid #faad14; }
 
 .banner-body {
-  margin-left: 16rpx;
+  margin-left: 20rpx;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
 .banner-title {
-  font-size: 28rpx;
+  font-size: 34rpx;
   font-weight: 600;
   color: #333;
+  margin-bottom: 6rpx;
 }
 
 .banner-desc {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #666;
-  margin-top: 4rpx;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* ===== Profile Setup ===== */
@@ -226,17 +156,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12rpx 0;
+  width: 100%;
 }
 
 .profile-avatar-wrap {
   position: relative;
-  margin-bottom: 32rpx;
+  margin-bottom: 36rpx;
 }
 
 .avatar-btn {
-  width: 160rpx;
-  height: 160rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 50%;
   overflow: hidden;
   padding: 0;
@@ -245,23 +175,21 @@
   line-height: normal;
 }
 
-.avatar-btn::after {
-  border: none;
-}
+.avatar-btn::after { border: none; }
 
 .profile-avatar {
-  width: 160rpx;
-  height: 160rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 50%;
   background: #f0f0f0;
 }
 
 .avatar-badge {
   position: absolute;
-  bottom: 4rpx;
-  right: 4rpx;
-  width: 44rpx;
-  height: 44rpx;
+  bottom: 6rpx;
+  right: 6rpx;
+  width: 48rpx;
+  height: 48rpx;
   border-radius: 50%;
   background: #00b26a;
   display: flex;
@@ -272,13 +200,13 @@
 
 .nickname-input {
   width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 96rpx;
+  line-height: 96rpx;
   text-align: center;
-  font-size: 32rpx;
+  font-size: 36rpx;
   border: none;
-  background: #f5f5f5;
-  border-radius: 44rpx;
+  background: rgba(255,255,255,0.85);
+  border-radius: 48rpx;
   padding: 0 32rpx;
   box-sizing: border-box;
   margin-bottom: 40rpx;
@@ -298,50 +226,74 @@
 
 .btn-secondary {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 96rpx;
+  line-height: 96rpx;
   text-align: center;
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #999;
-  background: #f5f5f5;
-  border-radius: 44rpx;
+  background: rgba(255,255,255,0.7);
+  border-radius: 48rpx;
   border: none;
   font-weight: 500;
 }
 
-.btn-secondary::after {
-  border: none;
+.btn-secondary::after { border: none; }
+
+/* ===== Bottom Section ===== */
+.login-bottom {
+  padding-top: 8rpx;
 }
 
-.btn-primary {
-  flex: 2;
-  height: 88rpx;
-  line-height: 88rpx;
-  text-align: center;
-  font-size: 28rpx;
-  color: #fff;
+.agreement {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.agreement-checkbox {
+  --td-checkbox-bg-color: #e3f5eb;
+  --td-checkbox-vertical-padding: 0;
+}
+
+.agreement-text { font-size: 28rpx; color: #999; }
+.agreement-link { font-size: 28rpx; color: #00b26a; }
+
+.login-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
   background: #00b26a;
-  border-radius: 44rpx;
-  border: none;
+  color: #fff;
+  font-size: 38rpx;
+  border-radius: 50rpx;
   font-weight: 600;
-  box-shadow: 0 6rpx 16rpx rgba(0,178,106,0.25);
+  box-shadow: 0 8rpx 20rpx rgba(0,178,106,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
 }
 
-.btn-primary::after {
-  border: none;
+.login-btn::after { border: none; }
+
+.login-btn.disabled {
+  background: #ccc;
+  box-shadow: none;
 }
 
-/* ===== QR Confirm ===== */
+/* ===== Confirm ===== */
 .confirm-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12rpx 0 32rpx;
+  margin-bottom: 32rpx;
 }
 
 .confirm-icon {
-  width: 112rpx;
-  height: 112rpx;
+  width: 120rpx;
+  height: 120rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -352,76 +304,58 @@
 }
 
 .confirm-title {
-  font-size: 36rpx;
+  font-size: 42rpx;
   font-weight: 700;
   color: #333;
   margin-bottom: 8rpx;
 }
 
 .confirm-desc {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #999;
 }
 
 .confirm-user-card {
   display: flex;
   align-items: center;
-  padding: 28rpx 24rpx;
-  background: #fff;
+  padding: 32rpx;
+  background: rgba(255,255,255,0.85);
   border-radius: 32rpx;
   margin-bottom: 24rpx;
-  border: 1rpx solid #f0f0f0;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .confirm-avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   background: #e8e8e8;
-  margin-right: 20rpx;
-}
-
-.confirm-user-info {
-  display: flex;
-  flex-direction: column;
+  margin-right: 24rpx;
 }
 
 .confirm-nickname {
-  font-size: 30rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: #333;
 }
 
 .confirm-id {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #999;
   margin-top: 4rpx;
 }
 
-.confirm-btn {
-  width: 100%;
-  height: 92rpx;
-  line-height: 92rpx;
-  background: #00b26a;
-  color: #fff;
-  font-size: 32rpx;
-  border-radius: 46rpx;
-  font-weight: 600;
-  box-shadow: 0 8rpx 24rpx rgba(0,178,106,0.35);
-  margin-bottom: 20rpx;
-}
-
-.confirm-btn::after {
-  border: none;
+.cancel-wrap {
+  text-align: center;
+  margin-top: 16rpx;
 }
 
 .cancel-btn {
-  display: block;
-  text-align: center;
-  font-size: 28rpx;
+  display: inline-block;
+  font-size: 30rpx;
   color: #999;
-  padding: 16rpx;
+  padding: 16rpx 40rpx;
 }
 
 /* ===== Success ===== */
@@ -429,7 +363,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 20rpx 40rpx;
 }
 
 .success-icon {
@@ -438,18 +371,17 @@
 }
 
 .success-title {
-  font-size: 40rpx;
+  font-size: 48rpx;
   font-weight: 700;
   color: #00b26a;
   margin-bottom: 16rpx;
 }
 
 .success-desc {
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #999;
   text-align: center;
-  line-height: 1.5;
-  max-width: 480rpx;
+  line-height: 1.6;
 }
 
 /* ===== Popup ===== */
@@ -469,15 +401,8 @@
   border-bottom: 1rpx solid #f5f5f5;
 }
 
-.popup-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #333;
-}
-
-.popup-close {
-  padding: 8rpx;
-}
+.popup-title { font-size: 34rpx; font-weight: 600; color: #333; }
+.popup-close { padding: 8rpx; }
 
 .popup-body {
   padding: 24rpx;
