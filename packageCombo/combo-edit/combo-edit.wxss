@@ -94,7 +94,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 22rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .icon-item {
@@ -118,7 +118,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 22rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .color-item {
@@ -220,7 +220,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   padding: 18rpx 32rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
@@ -248,7 +248,7 @@
   display: flex;
   align-items: center;
   padding: 24rpx 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
 }
@@ -269,7 +269,7 @@
   display: flex;
   align-items: center;
   padding: 24rpx 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
   gap: 16rpx;

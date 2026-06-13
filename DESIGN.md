@@ -470,6 +470,7 @@ WeChat mini-programs use `rpx` for uniform scaling, so no CSS breakpoints exist 
 
 - The `ui_design_spec.md` contains a `--gradient-chart` token (`linear-gradient(90deg, #00B26A 0%, #81C784 100%)`) for stats charts, but the actual ECharts implementation may use its own palette. Verify real chart colors against this token.
 - Dark mode is not implemented. The system is light-mode-only, with no dark palette defined.
-- The spec defines spacing as 8rpx increments, but actual pages use 20rpx (card margin) which breaks the 8rpx grid. 20rpx should be formalized as `{spacing.card-margin}`.
-- The login page uses `border-radius: 44rpx` for the WeChat button — this is inconsistent with the `{radius.pill}` token. Should be reconciled to either 44rpx or `{radius.pill}`.
-- Form input `margin-left: 28rpx` is not a standard spacing token. Should be formalized or replaced with `{spacing.md}` (24rpx).
+- The login page previously used `border-radius: 44rpx` for the WeChat button — **已修复**: 改为 `50rpx`（`{radius.pill}` 统一值）。
+- Form input `margin-left: 28rpx` — **已修复**: 改为 `24rpx`（`{spacing.md}` 标准间距）。
+- `{spacing.card-margin}` (20rpx) 是跨 7 个页面 28 处使用的卡片间距事实标准，不属于 8rpx 递增体系。建议正式纳入 tokens 而不改变实际值。
+- 底部安全区域（padding-bottom）各页面值不同，源于各页底部操作栏/控件的差异，属于页面级配置而非系统 token。安全区域的"不一致"是合理的。

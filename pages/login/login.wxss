@@ -464,7 +464,7 @@
   background: #00b26a;
   color: #fff;
   font-size: 30rpx;
-  border-radius: 44rpx;
+  border-radius: 50rpx;
   font-weight: 600;
   margin-top: 40rpx;
   box-shadow: 0 8rpx 20rpx rgba(0, 178, 106, 0.25);

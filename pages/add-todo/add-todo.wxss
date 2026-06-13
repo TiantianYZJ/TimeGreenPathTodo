@@ -64,7 +64,7 @@
 
 .picker-field {
   padding: 26rpx 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   font-size: 32rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
@@ -75,19 +75,19 @@
 
 .t-input {
   border-radius: 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .t-textarea {
   border-radius: 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .tag-item {
@@ -120,7 +120,7 @@
 .manage-link {
   font-size: 26rpx;
   color: #00b26a;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   margin-top: 16rpx;
 }
 
@@ -129,7 +129,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 24rpx 32rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
 }
@@ -178,14 +178,14 @@
 .clear-combo {
   font-size: 26rpx;
   color: #00b26a;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   margin-top: 12rpx;
 }
 
 .assign-type-selector {
   display: flex;
   gap: 8rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
   background: #f5f5f5;
   border-radius: 32rpx;
 }
@@ -211,7 +211,7 @@
   display: flex;
   flex-direction: column;
   gap: 12rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .exclude-option {
@@ -269,7 +269,7 @@
   display: flex;
   flex-direction: column;
   gap: 16rpx;
-  margin-left: 28rpx;
+  margin-left: 24rpx;
 }
 
 .member-select-item {
