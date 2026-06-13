@@ -34,7 +34,7 @@
           "./node_modules/@lspriv/wx-calendar/dist/*"
         ]
       }
-    }
+    },
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
