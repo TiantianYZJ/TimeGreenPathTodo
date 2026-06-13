@@ -9,14 +9,14 @@
       bind:tap="onTapCombo"
     >
       <view class="combo-icon {{item.is_shared ? 'shared' : 'private'}}">
-        <text wx:if="{{item.is_shared}}">👥</text>
-        <text wx:else>📁</text>
+        <text wx:if="{{item.is_shared}}" class="combo-icon-text">共享</text>
+        <text wx:else class="combo-icon-text">私有</text>
       </view>
       <view class="combo-body">
         <view class="combo-name">{{item.name}}</view>
         <view class="combo-desc">{{item.is_shared ? '共享组合' : '私有组合'}} · {{item.todo_count || 0}} 条待办</view>
       </view>
-      <view class="combo-arrow">›</view>
+      <view class="combo-arrow">></view>
     </view>
   </view>
   <view wx:elif="{{items.combos && items.combos.length === 0}}" class="empty-state">

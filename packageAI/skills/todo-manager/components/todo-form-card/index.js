@@ -14,13 +14,5 @@ Component({
         }
       })
     }
-  },
-  methods: {
-    onTapEdit() {
-      const input = this.data.input || {}
-      wx.modelContext.getContext().sendFollowUpMessage({
-        content: [{ type: 'text', text: `修改待办内容，把 ${input.text || ''} 改为...` }]
-      })
-    }
   }
 })

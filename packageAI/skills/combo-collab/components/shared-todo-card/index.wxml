@@ -7,7 +7,7 @@
       class="todo-item"
       data-id="{{item.id}}"
       data-comboid="{{items.id}}"
-      bind:tap="onTapTodo"
+      bind:tap="onTapCompleteSharedTodo"
     >
       <view class="todo-text">{{item.text}}</view>
       <view class="todo-meta">

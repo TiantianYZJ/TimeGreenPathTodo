@@ -20,6 +20,11 @@
   font-size: 32rpx;
   margin-right: 20rpx;
   flex-shrink: 0;
+  background-color: #f5f5f5;
+}
+.combo-icon-text {
+  font-size: 24rpx;
+  font-weight: 500;
 }
 .combo-body {
   flex: 1;

@@ -11,7 +11,7 @@ Component({
     }
   },
   methods: {
-    onTapTodo(e) {
+    onTapCompleteSharedTodo(e) {
       const todoId = e.currentTarget.dataset.id
       const comboId = e.currentTarget.dataset.comboid
       if (!todoId || !comboId) return
