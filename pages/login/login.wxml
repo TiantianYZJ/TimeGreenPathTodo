@@ -66,11 +66,13 @@
     </view>
 
     <view class="login-bottom">
-      <view class="agreement" bindtap="onTapAgreement">
-        <t-checkbox checked="{{agreed}}" bind:change="onAgreeChange" borderless="{{true}}" />
-        <text class="agreement-text">我已阅读并同意</text>
+      <view class="agreement">
+        <view class="agreement-checkbox">
+          <t-checkbox checked="{{agreed}}" bind:change="onAgreeChange" borderless="{{true}}" />
+        </view>
+        <text class="agreement-text" catchtap="onTapAgreement">我已阅读并同意</text>
         <text class="agreement-link" catchtap="showUserAgreement">《用户协议》</text>
-        <text class="agreement-text">和</text>
+        <text class="agreement-text" catchtap="onTapAgreement">和</text>
         <text class="agreement-link" catchtap="showPrivacyPolicy">《隐私政策》</text>
       </view>
       <button class="login-btn {{agreed ? '' : 'disabled'}}" loading="{{loading}}" bindtap="handleLogin">
@@ -90,11 +92,13 @@
           <text class="banner-desc">请先登录您的账号，然后即可授权网页端登录</text>
         </view>
       </view>
-      <view class="agreement" bindtap="onTapAgreement">
-        <t-checkbox checked="{{agreed}}" bind:change="onAgreeChange" borderless="{{true}}" />
-        <text class="agreement-text">我已阅读并同意</text>
+      <view class="agreement">
+        <view class="agreement-checkbox">
+          <t-checkbox checked="{{agreed}}" bind:change="onAgreeChange" borderless="{{true}}" />
+        </view>
+        <text class="agreement-text" catchtap="onTapAgreement">我已阅读并同意</text>
         <text class="agreement-link" catchtap="showUserAgreement">《用户协议》</text>
-        <text class="agreement-text">和</text>
+        <text class="agreement-text" catchtap="onTapAgreement">和</text>
         <text class="agreement-link" catchtap="showPrivacyPolicy">《隐私政策》</text>
       </view>
       <button class="login-btn {{agreed ? '' : 'disabled'}}" loading="{{loading}}" bindtap="handleLogin">
