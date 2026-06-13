@@ -307,7 +307,7 @@ Page({
     try {
       let avatarUrl = this.data.profileAvatarUrl;
 
-      if (avatarUrl && avatarUrl.startsWith('http://tmp') || avatarUrl.startsWith('wxfile://')) {
+      if (avatarUrl && (avatarUrl.startsWith('http://tmp') || avatarUrl.startsWith('wxfile://'))) {
         try {
           const uploadRes = await authApi.uploadAvatar(avatarUrl);
           if (uploadRes.success && uploadRes.avatarUrl) {

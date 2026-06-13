@@ -389,6 +389,9 @@ App({
    */
   onError: function (msg) {
     console.error('全局错误捕获:', msg)
+    if (typeof msg === 'object' && msg.stack) {
+      console.error('错误栈:', msg.stack)
+    }
     wx.showToast({
       title: '程序开小差了，请尝试重启\n如问题持续存在，请联系客服',
       icon: 'none',
