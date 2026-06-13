@@ -12,7 +12,5 @@
     <text class="stat-label">完成率</text>
     <text class="stat-value rate">{{items.rate || 0}}%</text>
   </view>
-  <view class="stat-bar">
-    <view class="stat-bar-fill" style="width:{{items.rate || 0}}%"></view>
-  </view>
+
 </view>
