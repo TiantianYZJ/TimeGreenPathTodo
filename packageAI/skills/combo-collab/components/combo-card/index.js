@@ -24,7 +24,7 @@ Component({
             type: 'api/call',
             data: {
               name: 'getComboDetail',
-              arguments: { comboId: Number(comboId) }
+              arguments: { comboId }
             }
           }
         ]

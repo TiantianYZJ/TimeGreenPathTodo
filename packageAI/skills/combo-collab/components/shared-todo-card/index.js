@@ -22,7 +22,7 @@ Component({
             type: 'api/call',
             data: {
               name: 'completeSharedTodo',
-              arguments: { comboId: Number(comboId), todoId: Number(todoId), completed: true }
+              arguments: { comboId, todoId, completed: true }
             }
           }
         ]

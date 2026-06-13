@@ -12,7 +12,7 @@
       bind:tap="onTapTodo"
     >
       <view class="todo-left">
-        <view class="todo-check {{item.completed ? 'checked' : ''}}" data-id="{{item.id}}" bind:tap="onTapComplete">
+        <view class="todo-check {{item.completed ? 'checked' : ''}}" data-id="{{item.id}}" catch:tap="onTapComplete">
           <text wx:if="{{item.completed}}">✓</text>
         </view>
       </view>
