@@ -135,12 +135,6 @@
   "permission": {
     "scope.userLocation": {
       "desc": "需要获取您的位置以选择待办地点、获取当地天气信息"
-    },
-    "scope.record": {
-      "desc": "需要您的麦克风权限进行语音输入"
-    },
-    "scope.writePhotosAlbum": {
-      "desc": "需要保存图片到相册的权限"
     }
   },
   "requiredPrivateInfos": [
@@ -150,14 +144,7 @@
   "useExtendedLib": {
     "weui": true
   },
-  "compilerOptions": {
-    "paths": {
-      "@lspriv/wx-calendar/*": [
-        "./node_modules/@lspriv/wx-calendar/dist/*"
-      ]
-    }
-  },
-  "plugins": {
+"plugins": {
     "WechatSI": {
       "version": "0.3.6",
       "provider": "wx069ba97219f66d99"

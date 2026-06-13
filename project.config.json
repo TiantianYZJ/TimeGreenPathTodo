@@ -28,6 +28,13 @@
     "compileWorklet": false,
     "uploadWithSourceMap": true,
     "minifyWXSS": true,
+    "compileOptions": {
+      "paths": {
+        "@lspriv/wx-calendar/*": [
+          "./node_modules/@lspriv/wx-calendar/dist/*"
+        ]
+      }
+    }
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
