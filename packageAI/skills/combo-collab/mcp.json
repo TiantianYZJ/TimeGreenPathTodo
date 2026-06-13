@@ -96,6 +96,7 @@
     {
       "name": "listMembers",
       "description": "查看共享组合的成员列表。用户问『谁在xx组合』『组合成员』时调用。需先调用 listCombos 获取 comboId",
+      "_meta": { "ui": { "componentPath": "components/member-list-card/index" } },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -132,6 +133,10 @@
     {
       "path": "components/shared-todo-card/index",
       "relatedPage": "/packageCombo/combo-detail/combo-detail"
+    },
+    {
+      "path": "components/member-list-card/index",
+      "relatedPage": "/packageCombo/collaboration/collaboration"
     }
   ]
 }

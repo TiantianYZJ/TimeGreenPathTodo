@@ -49,6 +49,7 @@
     {
       "name": "getStarredTodos",
       "description": "获取所有收藏的待办。用户问『收藏』『星标』『重要的待办』时调用",
+      "_meta": { "ui": { "componentPath": "components/starred-list-card/index" } },
       "inputSchema": { "type": "object", "properties": {} },
       "outputSchema": {
         "type": "object",
@@ -135,6 +136,10 @@
     {
       "path": "components/trash-list/index",
       "relatedPage": "/packageTools/trash/trash"
+    },
+    {
+      "path": "components/starred-list-card/index",
+      "relatedPage": "/packageTools/star/star"
     }
   ]
 }

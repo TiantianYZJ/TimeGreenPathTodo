@@ -166,6 +166,7 @@
     {
       "name": "searchTodos",
       "description": "搜索待办事项。用户说『搜索』『查找』『找一下』『有没有关于』时调用",
+      "_meta": { "ui": { "componentPath": "components/search-results-card/index" } },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -208,6 +209,10 @@
     {
       "path": "components/todo-form-card/index",
       "relatedPage": "/pages/add-todo/add-todo"
+    },
+    {
+      "path": "components/search-results-card/index",
+      "relatedPage": "/pages/todo-search/todo-search"
     }
   ]
 }
