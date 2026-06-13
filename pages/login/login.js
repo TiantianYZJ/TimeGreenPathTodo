@@ -339,7 +339,13 @@ Page({
         });
       } else {
         this.setData({ loading: false });
-        wx.switchTab({ url: '/pages/todo/todo' });
+        const pendingShareData = wx.getStorageSync('pendingShareData');
+        const hasPendingShare = pendingShareData && (Date.now() - pendingShareData.timestamp < 10 * 60 * 1000);
+        if (hasPendingShare) {
+          wx.navigateBack();
+        } else {
+          wx.switchTab({ url: '/pages/todo/todo' });
+        }
       }
 
       wx.showToast({ title: '设置成功', icon: 'success' });
@@ -359,7 +365,13 @@ Page({
         currentUserInfo: wx.getStorageSync('user') || {}
       });
     } else {
-      wx.switchTab({ url: '/pages/todo/todo' });
+      const pendingShareData = wx.getStorageSync('pendingShareData');
+      const hasPendingShare = pendingShareData && (Date.now() - pendingShareData.timestamp < 10 * 60 * 1000);
+      if (hasPendingShare) {
+        wx.navigateBack();
+      } else {
+        wx.switchTab({ url: '/pages/todo/todo' });
+      }
     }
   },
 
