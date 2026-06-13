@@ -1,11 +1,14 @@
 .todo-list {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
   padding: 24rpx;
   width: 100%;
   box-sizing: border-box;
 }
 .summary {
   font-size: 26rpx;
-  color: #999;
+  color: #999999;
   margin-bottom: 16rpx;
   padding: 12rpx 0;
   border-bottom: 2rpx solid #f0f0f0;
@@ -19,7 +22,7 @@
 }
 .todo-item.completed .todo-text {
   text-decoration: line-through;
-  color: #bbb;
+  color: #bbbbbb;
 }
 .todo-left {
   margin-right: 16rpx;
@@ -29,7 +32,7 @@
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  border: 2rpx solid #ddd;
+  border: 2rpx solid #dddddd;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,7 +40,7 @@
 .todo-check.checked {
   background-color: #00b26a;
   border-color: #00b26a;
-  color: #fff;
+  color: #ffffff;
   font-size: 24rpx;
 }
 .todo-body {
@@ -46,12 +49,12 @@
 }
 .todo-text {
   font-size: 30rpx;
-  color: #333;
+  color: #333333;
   line-height: 1.4;
 }
 .todo-meta {
   font-size: 24rpx;
-  color: #bbb;
+  color: #bbbbbb;
   margin-top: 8rpx;
   display: flex;
   flex-direction: row;
@@ -69,5 +72,5 @@
   padding: 60rpx 0;
   text-align: center;
   font-size: 28rpx;
-  color: #ccc;
+  color: #cccccc;
 }

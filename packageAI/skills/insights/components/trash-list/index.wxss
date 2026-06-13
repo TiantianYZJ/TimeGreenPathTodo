@@ -1,11 +1,14 @@
 .trash-list {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
   padding: 24rpx;
   width: 100%;
   box-sizing: border-box;
 }
 .summary {
   font-size: 26rpx;
-  color: #999;
+  color: #999999;
   margin-bottom: 16rpx;
   padding-bottom: 12rpx;
   border-bottom: 2rpx solid #f0f0f0;
@@ -19,7 +22,7 @@
 }
 .todo-text {
   font-size: 28rpx;
-  color: #999;
+  color: #999999;
   flex: 1;
   min-width: 0;
 }
@@ -35,5 +38,5 @@
   padding: 60rpx 0;
   text-align: center;
   font-size: 28rpx;
-  color: #ccc;
+  color: #cccccc;
 }

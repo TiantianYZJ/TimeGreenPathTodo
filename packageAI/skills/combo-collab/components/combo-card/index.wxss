@@ -1,4 +1,7 @@
 .combo-list {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
   padding: 24rpx;
   width: 100%;
   box-sizing: border-box;
@@ -32,22 +35,22 @@
 }
 .combo-name {
   font-size: 30rpx;
-  color: #333;
+  color: #333333;
   font-weight: 500;
 }
 .combo-desc {
   font-size: 24rpx;
-  color: #bbb;
+  color: #bbbbbb;
   margin-top: 4rpx;
 }
 .combo-arrow {
   font-size: 36rpx;
-  color: #ccc;
+  color: #cccccc;
   margin-left: 12rpx;
 }
 .empty-state {
   padding: 60rpx 0;
   text-align: center;
   font-size: 28rpx;
-  color: #ccc;
+  color: #cccccc;
 }

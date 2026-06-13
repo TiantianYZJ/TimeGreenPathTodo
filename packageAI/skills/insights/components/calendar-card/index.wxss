@@ -1,4 +1,7 @@
 .calendar-card {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
   padding: 24rpx;
   width: 100%;
   box-sizing: border-box;
@@ -6,7 +9,7 @@
 .calendar-header {
   font-size: 32rpx;
   font-weight: 500;
-  color: #333;
+  color: #333333;
   margin-bottom: 20rpx;
   padding-bottom: 12rpx;
   border-bottom: 2rpx solid #f0f0f0;
@@ -22,11 +25,10 @@
   flex-direction: row;
   align-items: center;
   padding: 10rpx 0;
-  border-bottom: 1rpx solid #f9f9f9;
 }
 .day-date {
   font-size: 28rpx;
-  color: #333;
+  color: #333333;
   font-weight: 500;
   margin-right: 8rpx;
 }
@@ -41,5 +43,5 @@
   padding: 40rpx 0;
   text-align: center;
   font-size: 26rpx;
-  color: #ccc;
+  color: #cccccc;
 }

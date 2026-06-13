@@ -1,11 +1,14 @@
 .stats-card {
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
   padding: 24rpx;
   width: 100%;
   box-sizing: border-box;
 }
 .stat-header {
-  font-size: 28rpx;
-  color: #999;
+  font-size: 26rpx;
+  color: #999999;
   margin-bottom: 20rpx;
   padding-bottom: 12rpx;
   border-bottom: 2rpx solid #f0f0f0;
@@ -19,15 +22,14 @@
 }
 .stat-label {
   font-size: 28rpx;
-  color: #666;
+  color: #666666;
 }
 .stat-value {
   font-size: 30rpx;
-  color: #333;
+  color: #333333;
   font-weight: 500;
 }
 .stat-value.rate {
   color: #00b26a;
   font-size: 34rpx;
 }
-
