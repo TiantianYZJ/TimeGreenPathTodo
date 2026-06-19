@@ -429,7 +429,7 @@ const sync = async (req, res) => {
               await query(
                 `UPDATE todos SET 
                  text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?, 
-                 completed = ?, is_star = ?, tags = ?, images = ?, combo_id = ?, version = ?, updated_at = NOW()
+                 completed = ?, is_star = ?, tags = ?, images = ?, priority = ?, combo_id = ?, version = ?, updated_at = NOW()
                  WHERE id = ? AND user_id = ?`,
                 [
                   resolved.text,
@@ -441,6 +441,7 @@ const sync = async (req, res) => {
                   resolved.isStar ? 1 : 0,
                   resolvedTagsJson,
                   resolvedImagesJson,
+                  resolved.priority || 'p2',
                   resolved.comboId || null,
                   resolved.version || 1,
                   serverTodo.id,

@@ -119,6 +119,7 @@ wx:key="*this"
       <view 
         class="todo-item-wrapper" 
         data-index="{{index}}"
+        data-priority="{{todo.priority}}"
       >
         <t-swipe-cell
           class="todo-item {{todo.completed ? 'completed' : ''}} {{todo._animate || ''}} {{isDragging && currentIndex === index ? 'dragging' : ''}}"

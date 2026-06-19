@@ -1842,7 +1842,8 @@ Page({
       ...todo,
       setDate: this.formatTodoDate(todo.setDate),
       setTime: this.formatTime(todo.setTime),
-      friendlyDate: formatFriendlyDate(todo.setDate)
+      friendlyDate: formatFriendlyDate(todo.setDate),
+      priority: todo.priority || 'p2'
     }));
   },
 

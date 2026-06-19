@@ -1164,3 +1164,16 @@
   background: #f5f5f5;
   color: #d90000;
 }
+.todo-item-wrapper[data-priority]:not([data-priority="p2"])::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20rpx;
+  width: 6rpx;
+  height: 48rpx;
+  border-radius: 0 4rpx 4rpx 0;
+  z-index: 5;
+}
+.todo-item-wrapper[data-priority="p1"]::before { background: #e34d59; }
+.todo-item-wrapper[data-priority="p3"]::before { background: #ff9800; }
+.todo-item-wrapper[data-priority="p4"]::before { background: #999; }
