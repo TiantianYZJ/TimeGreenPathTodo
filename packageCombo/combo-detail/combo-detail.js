@@ -820,7 +820,7 @@ Page({
     });
   },
 
-  addTodoFromChild(text, setDate, setTime, remarks, location, tags, comboId, images) {
+  addTodoFromChild(text, setDate, setTime, remarks, location, tags, comboId, images, priority) {
     const now = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const newTodo = {
@@ -836,6 +836,7 @@ Page({
       tags: tags || [],
       comboId: comboId || '',
       images: images || [],
+      priority: priority || 'p2',
       version: 1,
       isDeleted: false,
       deletedAt: null,

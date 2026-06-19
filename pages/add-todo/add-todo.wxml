@@ -72,19 +72,23 @@ module.exports = {
     </view>
 
     <view class="form-item">
-      <text class="question-title">优先级</text>
+      <text class="question-title">优先等级</text>
       <view class="priority-grid">
         <view class="quadrant {{priority === 'p1' ? 'active' : ''}}" data-priority="p1" bindtap="setPriority">
-          <view class="priority-dot dot-p1"></view><text class="ql">P1 紧急重要</text><text class="qd">马上做</text>
+          <view class="priority-row"><view class="priority-dot dot-p1"></view><text class="ql">紧急重要</text></view>
+          <text class="qd">马上做</text>
         </view>
         <view class="quadrant {{priority === 'p2' ? 'active' : ''}}" data-priority="p2" bindtap="setPriority">
-          <view class="priority-dot dot-p2"></view><text class="ql">P2 重要不紧急</text><text class="qd">计划做</text>
+          <view class="priority-row"><view class="priority-dot dot-p2"></view><text class="ql">重要不紧急</text></view>
+          <text class="qd">计划做（默认）</text>
         </view>
         <view class="quadrant {{priority === 'p3' ? 'active' : ''}}" data-priority="p3" bindtap="setPriority">
-          <view class="priority-dot dot-p3"></view><text class="ql">P3 紧急不重要</text><text class="qd">快速处理</text>
+          <view class="priority-row"><view class="priority-dot dot-p3"></view><text class="ql">紧急不重要</text></view>
+          <text class="qd">快速处理</text>
         </view>
         <view class="quadrant {{priority === 'p4' ? 'active' : ''}}" data-priority="p4" bindtap="setPriority">
-          <view class="priority-dot dot-p4"></view><text class="ql">P4 不紧急不重要</text><text class="qd">可做可不做</text>
+          <view class="priority-row"><view class="priority-dot dot-p4"></view><text class="ql">不紧急不重要</text></view>
+          <text class="qd">可做可不做</text>
         </view>
       </view>
     </view>

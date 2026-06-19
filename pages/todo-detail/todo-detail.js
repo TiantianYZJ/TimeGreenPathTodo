@@ -237,6 +237,7 @@ Page({
       
       if (index !== -1) {
         const todo = todos[index];
+        if (!todo.priority) todo.priority = 'p2';
         
         let setDate;
         if (todo.setDate) {
@@ -335,7 +336,8 @@ Page({
           time: Number(options.time || Date.now()),
           isStar: options.isStar === 'true',
           tags: parsedTags,
-          images: parsedImages
+          images: parsedImages,
+          priority: options.priority || 'p2'
         },
         todoTags: this.getTagsByIds(parsedTags),
         formattedDate,
@@ -473,7 +475,8 @@ Page({
           allCompletedAt: sharedTodo.completedAt,
           isStar: isStar,
           tags: tags,
-          images: images
+          images: images,
+          priority: sharedTodo.priority || 'p2'
         },
         isSharedTodo: true,
         sharedTodoId: todoId,
@@ -685,6 +688,7 @@ Page({
     }
 
     const todo = todos[this.data.currentIndex]
+    if (!todo.priority) todo.priority = 'p2';
     let setDate;
     if (todo.setDate) {
       setDate = new Date(todo.setDate);
