@@ -79,3 +79,14 @@
 4. 头像 badge 要放在 button 外部（`open-type="chooseAvatar"` 对子元素有约束）
 5. type="nickname" 的 input 需绑定 `bindnicknamereview` 才能捕获微信自动填充
 6. 所有非标准色值（不在 DESIGN.md tokens 中的）应统一替换
+
+## 八、后端部署环境
+
+| 项目 | 详情 |
+|------|------|
+| 服务器 | 阿里云 ECS，2 核心 2GB 运存 |
+| MySQL | **5.5.62** — 不支持 JSON 列类型，JSON 数据需用 TEXT/VARCHAR 存储 |
+| Node.js | v25.9.0 |
+| npm | 11.16.0 |
+| 框架 | Express.js |
+| 位置 | `/backend/`
