@@ -369,3 +369,7 @@
   font-size: 28rpx;
   color: #666;
 }
+
+.setting-item.warning .setting-label {
+  color: #e65100;
+}

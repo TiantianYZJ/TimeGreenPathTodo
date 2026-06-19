@@ -82,7 +82,7 @@
 .weather-card {
   background: linear-gradient(135deg, #3ddaa0 0%, #12b086 100%); /* 清新绿色渐变 */
   border-radius: 32rpx;
-  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8rpx 20rpx rgba(0, 178, 106, 0.15);
   padding: 28rpx;
   color: #ffffff;
 }
@@ -221,7 +221,7 @@
   margin: 12rpx 20rpx;
   background: #ffffff;
   border-radius: 32rpx;
-  box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.1);
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.08);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease,
@@ -362,8 +362,9 @@
 
 /* swipe-cell 的完成态样式（背景色）- 无动画，只有样式 */
 .todo-item.completed {
-  background: linear-gradient(135deg, #ecfdf5 0%, #90e0b7 100%) !important;
-  box-shadow: 0 4rpx 16rpx rgba(76,175,80,0.15);
+  opacity: 0.5;
+  filter: grayscale(0.4);
+  background: #f8fbf9;
 }
 
 /* 完成态文字样式 */
