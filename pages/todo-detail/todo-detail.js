@@ -126,7 +126,8 @@ Page({
             completed: todoData.completed ? true : false,
             isStar: todoData.is_star || todoData.isStar || false,
             images: parsedImages,
-            location: todoData.location || null
+            location: todoData.location || null,
+            priority: todoData.priority || 'p2'
           },
           creator: {
             nickname: creator.nickname || '未知用户',
@@ -170,6 +171,7 @@ Page({
       
       if (index !== -1) {
         const todo = todos[index];
+        if (!todo.priority) todo.priority = 'p2';
         
         let setDate;
         if (todo.setDate) {
@@ -347,6 +349,7 @@ Page({
       this.setData({ currentIndex: index })
       const todos = wx.getStorageSync('todos') || []
       const todo = todos[index]
+      if (!todo.priority) todo.priority = 'p2';
       
       let setDate;
       if (todo.setDate) {
