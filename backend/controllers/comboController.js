@@ -325,9 +325,9 @@ const create = async (req, res) => {
             
             const sharedTodoResult = await query(
               `INSERT INTO shared_todos 
-               (combo_id, creator_id, text, set_date, set_time, remarks, assign_type, created_at) 
-               VALUES (?, ?, ?, ?, ?, ?, 'all', NOW())`,
-              [comboId, userId, todo.text, todo.set_date, todo.set_time, todo.remarks]
+               (combo_id, creator_id, text, set_date, set_time, remarks, assign_type, priority, created_at) 
+               VALUES (?, ?, ?, ?, ?, ?, 'all', ?, NOW())`,
+              [comboId, userId, todo.text, todo.set_date, todo.set_time, todo.remarks, todo.priority || 'p2']
             );
             
             const sharedTodoId = sharedTodoResult.insertId;

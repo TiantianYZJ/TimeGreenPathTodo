@@ -123,7 +123,7 @@ const create = async (req, res) => {
     
     const result = await query(
       `INSERT INTO todos 
-       (user_id, todo_id, text, set_date, set_time, remarks, location_text, is_star, combo_id, images, version, created_at, updated_at) 
+       (user_id, todo_id, text, set_date, set_time, remarks, location_text, is_star, combo_id, images, priority, version, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
       [
         userId,
@@ -228,6 +228,10 @@ const update = async (req, res) => {
     if (comboId !== undefined) {
       updateFields.push('combo_id = ?');
       updateValues.push(comboId);
+    }
+    if (priority !== undefined) {
+      updateFields.push('priority = ?');
+      updateValues.push(priority);
     }
     if (images !== undefined) {
       updateFields.push('images = ?');
