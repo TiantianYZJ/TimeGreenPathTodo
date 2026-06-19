@@ -960,3 +960,17 @@
 .pd.priority-detail-p1 { background: #e34d59; }
 .pd.priority-detail-p3 { background: #ff9800; }
 .pd.priority-detail-p4 { background: #999; }
+
+
+.date-info-priority {
+  display: flex;
+  align-items: center;
+}
+.date-info-priority .pd {
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+
+.date-info-priority { display: flex; align-items: center; }
+.date-info-priority .pd { margin-right: 12rpx; flex-shrink: 0; }
