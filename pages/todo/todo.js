@@ -1,7 +1,7 @@
 const app = getApp();
 const weatherKey = 'SdnJZGqS_c7zVlCnj';
 const { isLoggedIn, combosApi, collabApi, todosApi, configApi, notifyApi } = require('../../utils/api.js');
-const { addDeletedTodo, incrementalSync, getLocalTodos, setLocalTodos, checkSyncDiff, syncWithCloud } = require('../../utils/sync.js');
+const { addDeletedTodo, incrementalSync, getLocalTodos, setLocalTodos, checkSyncDiff, syncWithCloud, getTodoById, saveTodo, deleteTodoById } = require('../../utils/sync.js');
 const { formatFriendlyDate, formatDateTime } = require('../../utils/util.js');
 
 const plugin = requirePlugin('WechatSI');
@@ -105,11 +105,11 @@ Page({
     } else if (options && options.scene) {
       this.handleSceneParams(options);
     }
-    
-    const allTodos = wx.getStorageSync('todos') || [];
+
+    const allTodos = getLocalTodos();
     const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted && !item.parent_id));
     const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
-    
+
     const hasInitialized = wx.getStorageSync('hasInitializedDefaultTodos');
     if (!hasInitialized && todos.length === 0) {
       this.initDefaultTodos();
@@ -138,8 +138,8 @@ Page({
    */
   onShow() {
     this.checkPendingShareData();
-    
-    const allTodos = wx.getStorageSync('todos') || [];
+
+    const allTodos = getLocalTodos();
     const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted && !item.parent_id));
     const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
     
@@ -245,7 +245,7 @@ Page({
   },
 
   refreshLocalComboCounts() {
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const todos = allTodos.filter(item => !item.isDeleted && !item.parent_id);
     const combos = (app.globalData.combos || []).map(combo => ({
       ...combo,
@@ -609,7 +609,8 @@ Page({
     ];
 
     this.setData({ todos: defaultTodos });
-    wx.setStorageSync('todos', defaultTodos);
+    setLocalTodos(defaultTodos);
+    wx.setStorageSync('todos', defaultTodos); // 保留旧格式备份
     wx.setStorageSync('hasInitializedDefaultTodos', true);
     getApp().updateCalendarCache(defaultTodos);
   },
@@ -698,8 +699,10 @@ Page({
       }
     }
 
-    wx.setStorageSync('todos', allTodos);
-    
+    const updatedTodo = allTodos.find(t => t.id === todoId);
+    if (updatedTodo) saveTodo(updatedTodo);
+    wx.setStorageSync('todos', allTodos); // 保留旧格式备份（用于日历缓存）
+
     if (isLoggedIn()) {
       this.autoSyncToCloud();
     }
@@ -736,15 +739,16 @@ Page({
               };
               
               addDeletedTodo(deletedTodo);
-              
-              const storageTodos = wx.getStorageSync('todos') || [];
-              const updatedTodos = storageTodos.map(t => 
+              deleteTodoById(deletedTodo.id, now);
+
+              const storageTodos = getLocalTodos();
+              const updatedTodos = storageTodos.map(t =>
                 t.id === deletedTodo.id ? deletedTodo : t
               );
               if (!storageTodos.find(t => t.id === deletedTodo.id)) {
                 updatedTodos.push(deletedTodo);
               }
-              wx.setStorageSync('todos', updatedTodos);
+              wx.setStorageSync('todos', updatedTodos); // 保留旧格式备份
               
               const newAllTodos = that.data.allTodos.filter((item, i) => i !== allIndex);
               that.setData({ allTodos: newAllTodos });
@@ -815,8 +819,9 @@ Page({
       this.applyTagFilter();
     }, 500);
 
-    wx.setStorageSync('todos', allTodos);
+    saveTodo(newTodo);
     getApp().updateCalendarCache(allTodos);
+    wx.setStorageSync('todos', allTodos); // 保留旧格式备份（用于日历缓存）
     
     if (comboId) {
       this.updateComboTodoCount(comboId, allTodos);
@@ -828,7 +833,7 @@ Page({
   },
 
   updateComboTodoCount(comboId, todos) {
-    const allTodos = todos || wx.getStorageSync('todos') || [];
+    const allTodos = todos || getLocalTodos();
     const activeTodos = allTodos.filter(item => !item.isDeleted && !item.parent_id);
     const count = activeTodos.filter(t => String(t.comboId) === String(comboId)).length;
     
@@ -907,7 +912,8 @@ Page({
           }).filter(item => !item.isDeleted);
           
           this.setData({ todos });
-          wx.setStorageSync('todos', todos);
+          setLocalTodos(todos);
+          wx.setStorageSync('todos', todos); // 保留旧格式备份（用于日历缓存）
           getApp().updateCalendarCache(todos);
           this.autoSyncToCloud();
           wx.showToast({
@@ -940,7 +946,8 @@ Page({
           })).filter(item => !item.isDeleted);
           
           this.setData({ todos });
-          wx.setStorageSync('todos', todos);
+          setLocalTodos(todos);
+          wx.setStorageSync('todos', todos); // 保留旧格式备份（用于日历缓存）
           app.updateCalendarCache(todos);
           this.autoSyncToCloud();
           wx.showToast({
@@ -1259,7 +1266,8 @@ Page({
       _isLongPress: false
     });
 
-    wx.setStorageSync('todos', finalTodos);
+    setLocalTodos(finalTodos);
+    wx.setStorageSync('todos', finalTodos); // 保留旧格式备份（用于日历缓存）
     getApp().updateCalendarCache(finalTodos);
 
     wx.vibrateShort({ type: 'light' });

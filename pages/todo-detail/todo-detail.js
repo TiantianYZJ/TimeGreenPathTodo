@@ -2,7 +2,7 @@ import ActionSheet, { ActionSheetTheme } from 'tdesign-miniprogram/action-sheet'
 
 const app = getApp();
 const { combosApi, collabApi, notifyApi, commentsApi, isLoggedIn } = require('../../utils/api.js');
-const { syncWithCloud } = require('../../utils/sync.js');
+const { syncWithCloud, getLocalTodos, saveTodo, getTodoById, deleteTodoById } = require('../../utils/sync.js');
 
 const NOTIFY_TEMPLATE_ID = '1jvRWbLBNSasPzKtUnrQEiVrU6hj2lWwhKNq2u8jjWg';
 const SHARED_TODO_TEMPLATE_ID = '1jvRWbLBNSasPzKtUnrQEviO7vwbWCChJJr0z24an-Y';
@@ -93,8 +93,8 @@ Page({
       time: Date.now(),
       completed: false
     }
-    const todos = [newTodo, ...wx.getStorageSync('todos') || []]
-    wx.setStorageSync('todos', todos)
+    saveTodo(newTodo);
+    const todos = getLocalTodos();
     app.updateCalendarCache(todos);
     wx.showToast({ title: '已添加', icon: 'success' })
     wx.navigateBack()
@@ -198,7 +198,7 @@ Page({
   // 路径3: 按 todoId 加载
   _loadByTodoId(options) {
     const todoId = decodeURIComponent(options.todoId);
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const index = todos.findIndex(t => t.id === todoId);
 
     if (index !== -1) {
@@ -278,7 +278,7 @@ Page({
   // 路径5: 按旧版 id 加载
   _loadById(options) {
     const todoId = Number(options.id);
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const index = todos.findIndex(t => t.time === todoId);
 
     if (index !== -1) {
@@ -398,7 +398,7 @@ Page({
   _loadByIndex(options) {
     const index = options.index;
     this.setData({ currentIndex: index });
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const todo = todos[index];
     if (!todo.priority) todo.priority = 'p2';
 
@@ -728,8 +728,8 @@ Page({
       return;
     }
     
-    const todos = wx.getStorageSync('todos')
-    
+    const todos = getLocalTodos()
+
     if (!todos[this.data.currentIndex]) {
       wx.navigateBack()
       return
@@ -775,15 +775,12 @@ Page({
     return count;
   },
 
-  deleteSubtasks(todos, parentId) {
+  deleteSubtasks(parentId) {
+    const todos = getLocalTodos();
     for (const t of todos) {
       if (t.parent_id === parentId) {
-        this.deleteSubtasks(todos, t.id);
-        const idx = todos.findIndex(x => x.id === t.id);
-        if (idx > -1) {
-          todos[idx].isDeleted = true;
-          todos[idx].deletedAt = Date.now();
-        }
+        this.deleteSubtasks(t.id);
+        deleteTodoById(t.id, Date.now());
       }
     }
   },
@@ -814,7 +811,7 @@ Page({
       return;
     }
     
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const subCount = this.countSubtasks(allTodos, todo.id);
     
     const content = subCount > 0
@@ -828,13 +825,11 @@ Page({
       confirmColor: '#ff4d4f',
       success(res) {
         if (res.confirm) {
-          const todos = wx.getStorageSync('todos');
           if (subCount > 0) {
-            that.deleteSubtasks(todos, todo.id);
+            that.deleteSubtasks(todo.id);
           }
-          todos.splice(currentIndex, 1);
-          wx.setStorageSync('todos', todos);
-          app.updateCalendarCache(todos);
+          deleteTodoById(todo.id, Date.now());
+          app.updateCalendarCache(getLocalTodos());
           wx.navigateBack();
           wx.showToast({ title: '删除成功' });
         }
@@ -1049,13 +1044,15 @@ Page({
         return;
       }
       
-      const todos = wx.getStorageSync('todos');
       if (this.data.currentIndex > -1) {
-        todos[this.data.currentIndex].isStar = newStarState;
-        todos[this.data.currentIndex].version = (todos[this.data.currentIndex].version || 1) + 1;
-        todos[this.data.currentIndex].updatedAt = now;
-        wx.setStorageSync('todos', todos);
-        getApp().updateCalendarCache(todos);
+        const todo = getTodoById(this.data.todo.id);
+        if (todo) {
+          todo.isStar = newStarState;
+          todo.version = (todo.version || 1) + 1;
+          todo.updatedAt = now;
+          saveTodo(todo);
+          getApp().updateCalendarCache(getLocalTodos());
+        }
 
         const pages = getCurrentPages();
         const prevPage = pages.find(page => page.route === 'pages/todo/todo');
@@ -1608,7 +1605,7 @@ Page({
   loadSubtasks() {
     const { todo } = this.data;
     if (!todo || !todo.id) return;
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const flat = this.flattenSubtree(allTodos, todo.id, 0);
     this.setData({ subtaskList: flat });
   },
@@ -1657,10 +1654,8 @@ Page({
       location: null,
       remarks: ''
     };
-    const allTodos = wx.getStorageSync('todos') || [];
-    allTodos.unshift(newTodo);
-    wx.setStorageSync('todos', allTodos);
-    getApp().updateCalendarCache(allTodos);
+    saveTodo(newTodo);
+    getApp().updateCalendarCache(getLocalTodos());
     this.setData({ subtaskInputValue: '' });
     this.loadSubtasks();
     if (isLoggedIn()) syncWithCloud('local');
@@ -1668,21 +1663,21 @@ Page({
 
   toggleSubtask(e) {
     const id = e.currentTarget.dataset.id;
-    const allTodos = wx.getStorageSync('todos') || [];
-    const todo = allTodos.find(t => t.id === id);
+    const todo = getTodoById(id);
     if (!todo) return;
     todo.completed = todo.completed ? false : Date.now();
     todo.version = (todo.version || 1) + 1;
     todo.updatedAt = Date.now();
-    wx.setStorageSync('todos', allTodos);
-    getApp().updateCalendarCache(allTodos);
-    this.checkAndCompleteParent(allTodos, todo.parent_id);
+    saveTodo(todo);
+    getApp().updateCalendarCache(getLocalTodos());
+    this.checkAndCompleteParent(todo.parent_id);
     this.loadSubtasks();
     if (isLoggedIn()) syncWithCloud('local');
   },
 
-  checkAndCompleteParent(allTodos, parentId) {
+  checkAndCompleteParent(parentId) {
     if (!parentId) return;
+    const allTodos = getLocalTodos();
     const parent = allTodos.find(t => t.id === parentId);
     if (!parent || parent.completed) return;
     const siblings = allTodos.filter(t => t.parent_id === parentId && !t.isDeleted);
@@ -1691,19 +1686,18 @@ Page({
     parent.completed = Date.now();
     parent.version = (parent.version || 1) + 1;
     parent.updatedAt = Date.now();
-    wx.setStorageSync('todos', allTodos);
-    getApp().updateCalendarCache(allTodos);
+    saveTodo(parent);
+    getApp().updateCalendarCache(getLocalTodos());
     if (isLoggedIn()) syncWithCloud('local');
     if (parent.parent_id === this.data.todo.id) {
       this.setData({ todo: { ...this.data.todo, completed: parent.completed } });
     }
-    this.checkAndCompleteParent(allTodos, parent.parent_id);
+    this.checkAndCompleteParent(parent.parent_id);
   },
 
   startEditSubtask(e) {
     const id = e.currentTarget.dataset.id;
-    const allTodos = wx.getStorageSync('todos') || [];
-    const todo = allTodos.find(t => t.id === id);
+    const todo = getTodoById(id);
     if (!todo) return;
     this.setData({
       editingSubtaskId: id,
@@ -1722,13 +1716,12 @@ Page({
       this.setData({ editingSubtaskId: null });
       return;
     }
-    const allTodos = wx.getStorageSync('todos') || [];
-    const todo = allTodos.find(t => t.id === editingSubtaskId);
+    const todo = getTodoById(editingSubtaskId);
     if (!todo) return;
     todo.text = text;
     todo.version = (todo.version || 1) + 1;
     todo.updatedAt = Date.now();
-    wx.setStorageSync('todos', allTodos);
+    saveTodo(todo);
     this.setData({ editingSubtaskId: null });
     this.loadSubtasks();
     if (isLoggedIn()) syncWithCloud('local');
@@ -1779,10 +1772,8 @@ Page({
       location: null,
       remarks: ''
     };
-    const allTodos = wx.getStorageSync('todos') || [];
-    allTodos.unshift(newTodo);
-    wx.setStorageSync('todos', allTodos);
-    getApp().updateCalendarCache(allTodos);
+    saveTodo(newTodo);
+    getApp().updateCalendarCache(getLocalTodos());
     this.setData({ addingChildForId: null, childInputValue: '' });
     this.loadSubtasks();
     if (isLoggedIn()) syncWithCloud('local');
@@ -1790,7 +1781,7 @@ Page({
 
   deleteSubtask(e) {
     const id = e.currentTarget.dataset.id;
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const subCount = this.countSubtasks(allTodos, id);
     const content = subCount > 0
       ? `该子任务有 ${subCount} 个子任务，是否全部删除？`
@@ -1803,17 +1794,12 @@ Page({
       success(res) {
         if (res.confirm) {
           if (subCount > 0) {
-            that.deleteSubtasks(allTodos, id);
+            that.deleteSubtasks(id);
           }
-          const idx = allTodos.findIndex(t => t.id === id);
-          if (idx > -1) {
-            allTodos[idx].isDeleted = true;
-            allTodos[idx].deletedAt = Date.now();
-            wx.setStorageSync('todos', allTodos);
-            getApp().updateCalendarCache(allTodos);
-            that.loadSubtasks();
-            if (isLoggedIn()) syncWithCloud('local');
-          }
+          deleteTodoById(id, Date.now());
+          getApp().updateCalendarCache(getLocalTodos());
+          that.loadSubtasks();
+          if (isLoggedIn()) syncWithCloud('local');
         }
       }
     });

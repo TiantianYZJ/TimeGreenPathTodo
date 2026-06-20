@@ -1,3 +1,4 @@
+const { getLocalTodos } = require('../../utils/sync.js');
 const app = getApp();
 // 引入echarts
 import * as echarts from '../../miniprogram_npm/ec-canvas/echarts';
@@ -61,7 +62,7 @@ Page({
   },
 
   onShow() {
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     this.updateStats(todos);
   },
 
@@ -590,7 +591,7 @@ Page({
         const canvas = res[0].node;
         const ctx = canvas.getContext('2d');
         const dpr = wx.getWindowInfo().pixelRatio;
-        const todos = wx.getStorageSync('todos') || [];
+        const todos = getLocalTodos();
         const data = this.data;
 
         this._drawBackground(ctx, canvas, dpr);

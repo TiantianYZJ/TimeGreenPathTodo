@@ -1,4 +1,5 @@
 const app = getApp();
+const { getLocalTodos, saveTodo, getTodoById } = require('../../utils/sync.js');
 const { todosApi, collabApi, combosApi, isLoggedIn } = require('../../utils/api.js');
 
 function generateTodoId() {
@@ -710,7 +711,7 @@ Page({
       return;
     }
     
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const activeTodos = todos.filter(t => !t.isDeleted);
     const todoLimit = app.globalData?.userInfo?.todoLimit || 100;
     if (activeTodos.length >= todoLimit) {
@@ -807,10 +808,8 @@ Page({
         newTodo.priority
       );
     } else {
-      const todos = wx.getStorageSync('todos') || [];
-      todos.unshift(newTodo);
-      wx.setStorageSync('todos', todos);
-      app.updateCalendarCache(todos);
+      saveTodo(newTodo);
+      app.updateCalendarCache(getLocalTodos());
       
       if (isLoggedIn()) {
         const { syncWithCloud } = require('../../utils/sync.js');
@@ -826,7 +825,7 @@ Page({
   },
 
   updateComboTodoCount(comboId) {
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const count = todos.filter(t => String(t.comboId) === String(comboId)).length;
     
     const combos = app.globalData.combos || [];
@@ -852,11 +851,11 @@ Page({
       return;
     }
     
-    const todos = wx.getStorageSync('todos');
+    const todos = getLocalTodos();
     const originalTodo = todos[this.data.editIndex] || {};
     const now = Date.now();
     
-    todos[this.data.editIndex] = {
+    const updatedTodo = {
       ...originalTodo,
       text: this.data.inputValue,
       setDate: this.data.setDate,
@@ -872,16 +871,17 @@ Page({
       updatedAt: now
     };
     
-    wx.setStorageSync('todos', todos);
-    app.updateCalendarCache(todos);
+    saveTodo(updatedTodo);
+    const allTodos = getLocalTodos();
+    app.updateCalendarCache(allTodos);
     
     const pages = getCurrentPages();
     const todoPage = pages.find(page => page.route === 'pages/todo/todo');
     const calendarPage = pages.find(page => page.route === 'pages/calendar/calendar');
     const comboDetailPage = pages.find(page => page.route === 'pages/combo-detail/combo-detail');
     
-    if (todoPage) todoPage.setData({ todos });
-    if (calendarPage) calendarPage.setData({ todos });
+    if (todoPage) todoPage.setData({ todos: allTodos });
+    if (calendarPage) calendarPage.setData({ todos: allTodos });
     if (comboDetailPage && comboDetailPage.data.comboId) {
       comboDetailPage.loadComboData(comboDetailPage.data.comboId);
     }

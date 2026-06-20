@@ -1,3 +1,4 @@
+const { getLocalTodos, saveTodo, getTodoById, deleteTodoById } = require('../../utils/sync.js');
 const app = getApp();
 const { formatFriendlyDate } = require('../../utils/util.js');
 
@@ -42,8 +43,8 @@ Page({
   },
 
   searchTodos() {
-    const todos = wx.getStorageSync('todos') || [];
-    const results = todos.filter(todo => !todo.parent_id).filter(todo => 
+    const todos = getLocalTodos();
+    const results = todos.filter(todo => !todo.parent_id).filter(todo =>
       this.data.keywords.some(kw =>
         todo.text.toLowerCase().includes(kw.toLowerCase()) ||
         (todo.remarks && todo.remarks.toLowerCase().includes(kw.toLowerCase()))
@@ -58,16 +59,15 @@ Page({
 
   toggleTodo(e) {
     const todoId = this.data.searchResults[e.currentTarget.dataset.index].id;
-    const todos = wx.getStorageSync('todos');
-    const todoIndex = todos.findIndex(t => t.id === todoId);
-    
-    if (todoIndex !== -1) {
+    const todo = getTodoById(todoId);
+
+    if (todo) {
       const now = Date.now();
-      todos[todoIndex].completed = !todos[todoIndex].completed ? now : false;
-      todos[todoIndex].version = (todos[todoIndex].version || 1) + 1;
-      todos[todoIndex].updatedAt = now;
-      wx.setStorageSync('todos', todos);
-      app.updateCalendarCache(todos);
+      todo.completed = !todo.completed ? now : false;
+      todo.version = (todo.version || 1) + 1;
+      todo.updatedAt = now;
+      saveTodo(todo);
+      app.updateCalendarCache(getLocalTodos());
       this.searchTodos();
     }
   },
@@ -97,27 +97,17 @@ Page({
       confirmColor: '#ff4d4f',
       success(res) {
         if (res.confirm) {
-          const now = Date.now();
-          const todos = wx.getStorageSync('todos');
-          const todoIndex = todos.findIndex(t => t.id === todoId);
-          
-          if (todoIndex !== -1) {
-            todos[todoIndex].isDeleted = true;
-            todos[todoIndex].deletedAt = now;
-            todos[todoIndex].updatedAt = now;
-            todos[todoIndex].version = (todos[todoIndex].version || 1) + 1;
-            wx.setStorageSync('todos', todos);
-            app.updateCalendarCache(todos.filter(t => !t.isDeleted));
-            that.searchTodos();
-            wx.showToast({ title: '删除成功' });
-          }
+          deleteTodoById(todoId, Date.now());
+          app.updateCalendarCache(getLocalTodos());
+          that.searchTodos();
+          wx.showToast({ title: "删除成功" });
         }
       }
     });
   },
 
   editTodo(todoId) {
-    const todos = wx.getStorageSync('todos');
+    const todos = getLocalTodos();
     const todoIndex = todos.findIndex(t => t.id === todoId);
     
     if (todoIndex === -1) return;

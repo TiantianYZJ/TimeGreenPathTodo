@@ -1,3 +1,4 @@
+const { getLocalTodos, saveTodo, getTodoById } = require('../../utils/sync.js');
 const app = getApp();
 
 Page({
@@ -109,21 +110,16 @@ Page({
 
   toggleTodo(e) {
     const index = e.currentTarget.dataset.index;
-    const todos = wx.getStorageSync('todos') || [];
-    
     const dayTodo = this.data.dayTodos[index];
-    const todoIndex = todos.findIndex(t => t.text === dayTodo.text && t.time === dayTodo.time);
-    
-    if (todoIndex !== -1) {
-      const isCompleting = !todos[todoIndex].completed;
-      todos[todoIndex] = {
-        ...todos[todoIndex],
-        completed: isCompleting ? Date.now() : false
-      };
-      
-      wx.setStorageSync('todos', todos);
-      app.updateCalendarCache(todos);
-      
+    const todo = getTodoById(dayTodo.id);
+
+    if (todo) {
+      const isCompleting = !todo.completed;
+      todo.completed = isCompleting ? Date.now() : false;
+
+      saveTodo(todo);
+      app.updateCalendarCache(getLocalTodos());
+
       this.loadDayData(this.data.selectedDate);
     }
   },
@@ -144,7 +140,7 @@ Page({
   },
 
   loadDayData(dateStr) {
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     
     const dayTodos = todos.filter(todo => {
       if (todo.parent_id) return false;

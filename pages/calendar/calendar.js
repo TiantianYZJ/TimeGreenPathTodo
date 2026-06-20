@@ -1,7 +1,7 @@
 const { WxCalendar } = require('@lspriv/wx-calendar/lib');
 const { LunarPlugin } = require('@lspriv/wc-plugin-lunar');
 const { isLoggedIn } = require('../../utils/api.js');
-const { syncWithCloud } = require('../../utils/sync.js');
+const { getLocalTodos, saveTodo, getTodoById, deleteTodoById, syncWithCloud } = require('../../utils/sync.js');
 const { formatFriendlyDate } = require('../../utils/util.js');
 
 WxCalendar.use(LunarPlugin);
@@ -130,7 +130,7 @@ Page({
     const dateObj = new Date(targetDate);
     const currentKey = this.formatDate(dateObj);
 
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const uniqueTodos = new Map();
 
     const filtered = todos.filter(todo => {
@@ -198,23 +198,17 @@ Page({
   toggleTodo(e) {
     const index = e.currentTarget.dataset.index;
     const currentTodo = this.data.selectedTodos[index];
+    const todo = getTodoById(currentTodo.id);
 
-    const todos = wx.getStorageSync('todos');
-    const realIndex = todos.findIndex(t =>
-      t.text === currentTodo.text &&
-      t.setDate === currentTodo.setDate &&
-      t.setTime === currentTodo.setTime
-    );
-
-    if (realIndex !== -1) {
+    if (todo) {
       const now = Date.now();
-      todos[realIndex].completed = !todos[realIndex].completed ? now : false;
-      todos[realIndex].version = (todos[realIndex].version || 1) + 1;
-      todos[realIndex].updatedAt = now;
-      wx.setStorageSync('todos', todos);
+      todo.completed = !todo.completed ? now : false;
+      todo.version = (todo.version || 1) + 1;
+      todo.updatedAt = now;
+      saveTodo(todo);
 
       this.searchTodos(this.data.selectedDate);
-      getApp().updateCalendarCache(todos);
+      getApp().updateCalendarCache(getLocalTodos());
       
       if (isLoggedIn()) {
         this.autoSyncToCloud();
@@ -228,35 +222,25 @@ Page({
 
     wx.showModal({
       title: '删除确认',
-      content: '删除后保留 30 天，可在"更多-回收站"找回，确定删除吗？',
+      content: '删除后保留 30 天，可在“更多-回收站”找回，确定删除吗？',
       confirmText: '删除',
       confirmColor: '#ff4d4f',
       success: (res) => {
         if (res.confirm) {
-          const todos = wx.getStorageSync('todos');
-          const realIndex = todos.findIndex(t =>
-            t.text === currentTodo.text &&
-            t.setDate === currentTodo.setDate &&
-            t.setTime === currentTodo.setTime
-          );
-
-          if (realIndex !== -1) {
-            const now = Date.now();
-            todos[realIndex] = {
-              ...todos[realIndex],
-              isDeleted: true,
-              deletedAt: now,
-              updatedAt: now,
-              version: (todos[realIndex].version || 1) + 1
-            };
-            wx.setStorageSync('todos', todos);
-
-            that.searchTodos(that.data.selectedDate);
-            getApp().updateCalendarCache(todos.filter(t => !t.isDeleted));
-            
-            if (isLoggedIn()) {
-              that.autoSyncToCloud();
-            }
+          const now = Date.now();
+          const todo = getTodoById(currentTodo.id);
+          if (todo) {
+            todo.isDeleted = true;
+            todo.deletedAt = now;
+            todo.updatedAt = now;
+            todo.version = (todo.version || 1) + 1;
+            saveTodo(todo);
+          }
+          that.searchTodos(that.data.selectedDate);
+          getApp().updateCalendarCache(getLocalTodos());
+          
+          if (isLoggedIn()) {
+            that.autoSyncToCloud();
           }
         }
       }
@@ -265,7 +249,7 @@ Page({
 
   editTodo(index) {
     const currentTodo = this.data.selectedTodos[index];
-    const todos = wx.getStorageSync('todos');
+    const todos = getLocalTodos();
     const realIndex = todos.findIndex(t =>
       t.text === currentTodo.text &&
       t.setDate === currentTodo.setDate &&

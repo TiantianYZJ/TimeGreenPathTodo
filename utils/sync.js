@@ -3,9 +3,107 @@ const { todosApi, authApi, setToken, getToken } = require('./api.js');
 const SYNC_STORAGE_KEY = 'lastSyncAt';
 const LOCAL_TODOS_KEY = 'todos';
 const DELETED_TODOS_KEY = 'deletedTodos';
+const TODO_PREFIX = 'todo_';
+const INDEX_KEY = 'todos_index';
 
 let syncLock = false;
 let syncQueue = [];
+let _migrated = false;
+
+// ========== 增量读写 API ==========
+
+function migrateFromLegacyStorage() {
+  if (_migrated) return;
+  const legacy = wx.getStorageSync(LOCAL_TODOS_KEY);
+  if (legacy && Array.isArray(legacy) && legacy.length > 0) {
+    const ids = [];
+    for (const todo of legacy) {
+      if (!todo.isDeleted) ids.push(todo.id);
+      wx.setStorageSync(TODO_PREFIX + todo.id, todo);
+    }
+    wx.setStorageSync(INDEX_KEY, ids);
+    wx.removeStorageSync(LOCAL_TODOS_KEY);
+  }
+  _migrated = true;
+}
+
+function getTodoIds() {
+  migrateFromLegacyStorage();
+  return wx.getStorageSync(INDEX_KEY) || [];
+}
+
+function getTodoById(id) {
+  return wx.getStorageSync(TODO_PREFIX + id) || null;
+}
+
+function saveTodo(todo, { updateIndex = true } = {}) {
+  migrateFromLegacyStorage();
+  wx.setStorageSync(TODO_PREFIX + todo.id, todo);
+  if (updateIndex) {
+    const ids = getTodoIds();
+    if (!ids.includes(todo.id)) {
+      ids.unshift(todo.id);
+      wx.setStorageSync(INDEX_KEY, ids);
+    }
+  }
+}
+
+function deleteTodoById(id, deletedAt) {
+  migrateFromLegacyStorage();
+  const todo = getTodoById(id);
+  if (todo) {
+    todo.isDeleted = true;
+    todo.deletedAt = deletedAt || Date.now();
+    wx.setStorageSync(TODO_PREFIX + id, todo);
+  }
+  const ids = getTodoIds();
+  const idx = ids.indexOf(id);
+  if (idx > -1) {
+    ids.splice(idx, 1);
+    wx.setStorageSync(INDEX_KEY, ids);
+  }
+}
+
+// ========== 批量读写（兼容 sync 流程） ==========
+
+function getLocalTodos() {
+  migrateFromLegacyStorage();
+  const ids = wx.getStorageSync(INDEX_KEY);
+  if (ids && Array.isArray(ids)) {
+    return ids.map(id => getTodoById(id)).filter(Boolean);
+  }
+  // 兜底：旧格式
+  return wx.getStorageSync(LOCAL_TODOS_KEY) || [];
+}
+
+function setLocalTodos(todos) {
+  migrateFromLegacyStorage();
+  const activeTodos = todos.filter(t => !t.isDeleted);
+  activeTodos.sort((a, b) => (b.time || 0) - (a.time || 0));
+
+  // 增量写入每个 todo
+  const newIds = [];
+  for (const todo of activeTodos) {
+    newIds.push(todo.id);
+    wx.setStorageSync(TODO_PREFIX + todo.id, todo);
+  }
+
+  // 清理已不在集合中的 stale keys
+  const oldIds = wx.getStorageSync(INDEX_KEY) || [];
+  const newIdSet = new Set(newIds);
+  for (const oldId of oldIds) {
+    if (!newIdSet.has(oldId)) {
+      wx.removeStorageSync(TODO_PREFIX + oldId);
+    }
+  }
+
+  wx.setStorageSync(INDEX_KEY, newIds);
+
+  const app = getApp();
+  if (app && app.updateCalendarCache) {
+    app.updateCalendarCache(activeTodos);
+  }
+}
 
 function formatDate(dateValue) {
   if (!dateValue) return dateValue;
@@ -98,7 +196,7 @@ function clearDeletedTodos(ids) {
 }
 
 function getLocalChanges(lastSyncAt) {
-  const allTodos = wx.getStorageSync(LOCAL_TODOS_KEY) || [];
+  const allTodos = getLocalTodos();
   const deletedTodos = getDeletedTodos();
   const lastSyncTimestamp = lastSyncAt ? new Date(lastSyncAt).getTime() : 0;
   
@@ -243,7 +341,7 @@ async function checkSyncDiff() {
       };
     }
     
-    const localTodoIds = new Set((wx.getStorageSync(LOCAL_TODOS_KEY) || []).map(t => t.id));
+    const localTodoIds = new Set(getTodoIds());
     const cloudTodoIds = new Set(cloudChanges.map(t => t.id));
     
     const newFromCloud = cloudActiveChanges.filter(t => !localTodoIds.has(t.id));
@@ -511,5 +609,11 @@ module.exports = {
   addDeletedTodo,
   clearDeletedTodos,
   checkSyncDiff,
-  syncWithCloud
+  syncWithCloud,
+  // 增量 API
+  getTodoIds,
+  getTodoById,
+  saveTodo,
+  deleteTodoById,
+  migrateFromLegacyStorage
 };

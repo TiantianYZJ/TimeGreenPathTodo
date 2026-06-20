@@ -1,3 +1,4 @@
+const { getLocalTodos } = require('../../utils/sync.js');
 const app = getApp();
 const { authApi, isLoggedIn, setToken, getToken } = require('../../utils/api.js');
 
@@ -51,7 +52,7 @@ Page({
   },
 
   loadLocalData() {
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const activeTodos = todos.filter(t => !t.isDeleted);
     const combos = app.globalData.combos || [];
     const sharedCombos = app.globalData.sharedCombos || [];

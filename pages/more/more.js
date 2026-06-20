@@ -1,4 +1,5 @@
 const app = getApp();
+const { getLocalTodos } = require('../../utils/sync.js');
 const { isLoggedIn, authApi, todosApi } = require('../../utils/api.js');
 
 Page({
@@ -73,7 +74,7 @@ Page({
       }
     }
     
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const now = Date.now();
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
     

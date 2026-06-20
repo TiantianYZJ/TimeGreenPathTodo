@@ -1,6 +1,6 @@
 const app = getApp();
 const { combosApi, collabApi, isLoggedIn, notifyApi, adminApi } = require('../../utils/api.js');
-const { syncWithCloud, addDeletedTodo } = require('../../utils/sync.js');
+const { getLocalTodos, saveTodo, getTodoById, deleteTodoById, syncWithCloud, addDeletedTodo } = require('../../utils/sync.js');
 const { formatDateTime } = require('../../utils/util.js');
 
 const plugin = requirePlugin('WechatSI');
@@ -320,7 +320,7 @@ Page({
         
         setTimeout(() => this.updateFixedHeaderHeight(), 100);
       } else {
-        const allTodos = wx.getStorageSync('todos') || [];
+        const allTodos = getLocalTodos();
         const comboTodos = allTodos.filter(todo => 
           String(todo.comboId) === String(id) && !todo.isDeleted
         ).map(todo => ({
@@ -372,21 +372,14 @@ Page({
     
     this.setData({ todos });
     
-    const allTodos = wx.getStorageSync('todos') || [];
-    const updatedAllTodos = allTodos.map(t => {
-      if (t.id === todoId) {
-        return { 
-          ...t, 
-          completed: isCompleting ? now : false,
-          version: (t.version || 1) + 1,
-          updatedAt: now
-        };
-      }
-      return t;
-    });
-    
-    wx.setStorageSync('todos', updatedAllTodos);
-    app.updateCalendarCache(updatedAllTodos);
+    const storedTodo = getTodoById(todoId);
+    if (storedTodo) {
+      storedTodo.completed = isCompleting ? now : false;
+      storedTodo.version = (storedTodo.version || 1) + 1;
+      storedTodo.updatedAt = now;
+      saveTodo(storedTodo);
+    }
+    app.updateCalendarCache(getLocalTodos());
     this.updateStats();
     
     setTimeout(() => {
@@ -707,7 +700,7 @@ Page({
     const todo = this.data.todos[index];
     if (!todo || !todo.id) return;
     
-    const allTodos = wx.getStorageSync('todos') || [];
+    const allTodos = getLocalTodos();
     const globalIndex = allTodos.findIndex(t => t.id === todo.id);
     const { comboId } = this.data;
     
@@ -747,14 +740,8 @@ Page({
           const todos = that.data.todos.filter((_, i) => i !== index);
           that.setData({ todos });
           
-          let allTodos = wx.getStorageSync('todos') || [];
-          allTodos = allTodos.map(t => t.id === todoId ? updatedTodo : t);
-          if (!allTodos.find(t => t.id === todoId)) {
-            allTodos.push(updatedTodo);
-          }
-          wx.setStorageSync('todos', allTodos);
-          app.updateCalendarCache(allTodos.filter(t => !t.isDeleted));
-          
+          deleteTodoById(todoId, now);
+          app.updateCalendarCache(getLocalTodos());          
           if (isLoggedIn()) {
             that.autoSyncToCloud();
           }
@@ -851,10 +838,8 @@ Page({
     this.setData({ todos });
     this.updateStats();
     
-    const allTodos = wx.getStorageSync('todos') || [];
-    allTodos.unshift(newTodo);
-    wx.setStorageSync('todos', allTodos);
-    app.updateCalendarCache(allTodos);
+    saveTodo(newTodo);
+    app.updateCalendarCache(getLocalTodos());
     
     if (isLoggedIn()) {
       this.autoSyncToCloud();
@@ -959,7 +944,7 @@ Page({
           success: async (modalRes) => {
             if (modalRes.confirm) {
               try {
-                const allTodos = wx.getStorageSync('todos') || [];
+                const allTodos = getLocalTodos();
                 const comboIdStr = String(comboId);
                 
                 if (action === 'keep_todos') {
