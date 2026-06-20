@@ -118,85 +118,74 @@ function mergeChanges(cloudChanges, cloudDeletedIds, localWins = false) {
   const localTodos = getLocalTodos();
   const localDeletedTodos = getDeletedTodos();
   const localTodoMap = new Map();
-  
+
   localTodos.forEach(todo => {
-    if (todo.id) {
-      localTodoMap.set(todo.id, todo);
-    }
+    if (todo.id) localTodoMap.set(todo.id, todo);
   });
-  
+
   const localDeletedMap = new Map();
   localDeletedTodos.forEach(todo => {
     localDeletedMap.set(todo.id, todo);
   });
-  
+
   const cloudDeletedSet = new Set(cloudDeletedIds);
-  
+
+  /** 取时间戳，优先 used-defined 字段，兜底到 time */
+  const ts = todo => Math.max(todo.updatedAt || 0, todo.time || 0);
+  const deletedTs = todo => Math.max(todo.deletedAt || 0, todo.updatedAt || 0);
+
+  /** 判断 cloud 版本是否比 local 新 */
+  const cloudIsNewer = (cloud, local) => {
+    return (cloud.updatedAt || cloud.time || 0) >= (local.updatedAt || local.time || 0);
+  };
+
   cloudChanges.forEach(cloudTodo => {
-    const formattedCloudTodo = formatTodoDates(cloudTodo);
-    const localTodo = localTodoMap.get(formattedCloudTodo.id);
-    const localDeletedInfo = localDeletedMap.get(formattedCloudTodo.id);
-    
-    if (localDeletedInfo) {
-      const localDeletedAt = localDeletedInfo.deletedAt || 0;
-      const cloudUpdatedAt = formattedCloudTodo.updatedAt || formattedCloudTodo.time || 0;
-      
-      if (localDeletedAt >= cloudUpdatedAt) {
-        return;
+    const c = formatTodoDates(cloudTodo);
+    const local = localTodoMap.get(c.id);
+    const localDeleted = localDeletedMap.get(c.id);
+
+    // 本地已删除：保留删除，除非 cloud 后有更新
+    if (localDeleted && deletedTs(localDeleted) >= ts(c)) return;
+
+    if (!local) {
+      // 云端新增：跳过已删除和云端标记删除的
+      if (!c.isDeleted && !cloudDeletedSet.has(c.id) && !localDeletedMap.has(c.id)) {
+        localTodoMap.set(c.id, c);
       }
+      return;
     }
-    
-    if (!localTodo) {
-      if (!formattedCloudTodo.isDeleted && !cloudDeletedSet.has(formattedCloudTodo.id)) {
-        if (!localDeletedMap.has(formattedCloudTodo.id)) {
-          localTodoMap.set(formattedCloudTodo.id, formattedCloudTodo);
-        }
+
+    // 冲突处理：至少一方标记删除
+    if (c.isDeleted || local.isDeleted) {
+      const cloudDel = deletedTs(c);
+      const localDel = deletedTs(local);
+      if (c.isDeleted && local.isDeleted) {
+        if (cloudDel >= localDel) localTodoMap.delete(c.id);
+      } else if (c.isDeleted) {
+        if (cloudDel >= ts(local)) localTodoMap.delete(c.id);
+      } else {
+        if (localDel >= ts(c)) localTodoMap.delete(c.id);
       }
-    } else {
-      const localIsDeleted = localTodo.isDeleted;
-      const cloudIsDeleted = formattedCloudTodo.isDeleted;
-      
-      if (cloudIsDeleted || localIsDeleted) {
-        const cloudDeletedAt = formattedCloudTodo.deletedAt || formattedCloudTodo.updatedAt || 0;
-        const localDeletedAt = localTodo.deletedAt || localTodo.updatedAt || 0;
-        
-        if (cloudIsDeleted && localIsDeleted) {
-          if (cloudDeletedAt >= localDeletedAt) {
-            localTodoMap.delete(formattedCloudTodo.id);
-          }
-        } else if (cloudIsDeleted) {
-          if (cloudDeletedAt >= (localTodo.updatedAt || localTodo.time || 0)) {
-            localTodoMap.delete(formattedCloudTodo.id);
-          }
-        } else if (localIsDeleted) {
-          if (localDeletedAt >= cloudUpdatedAt) {
-            localTodoMap.delete(formattedCloudTodo.id);
-          }
-        }
-        return;
-      }
-      
-      const localUpdatedAt = localTodo.updatedAt || localTodo.time || 0;
-      const cloudUpdatedAt = formattedCloudTodo.updatedAt || formattedCloudTodo.time || 0;
-      
-      if (cloudUpdatedAt >= localUpdatedAt) {
-        localTodoMap.set(formattedCloudTodo.id, formattedCloudTodo);
-      }
+      return;
+    }
+
+    // 正常合并：取较新版本
+    if (cloudIsNewer(c, local)) {
+      localTodoMap.set(c.id, c);
     }
   });
-  
+
   cloudDeletedIds.forEach(id => {
-    const localTodo = localTodoMap.get(id);
-    if (localTodo) {
-      const localUpdatedAt = localTodo.updatedAt || localTodo.time || 0;
-      const cloudDeletedAt = localTodo.deletedAt || 0;
-      
+    const local = localTodoMap.get(id);
+    if (local) {
+      const localUpdatedAt = local.updatedAt || local.time || 0;
+      const cloudDeletedAt = local.deletedAt || 0;
       if (cloudDeletedAt >= localUpdatedAt) {
         localTodoMap.delete(id);
       }
     }
   });
-  
+
   const mergedTodos = Array.from(localTodoMap.values());
   mergedTodos.sort((a, b) => (b.time || 0) - (a.time || 0));
   return mergedTodos;

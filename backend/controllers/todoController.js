@@ -369,59 +369,124 @@ const sync = async (req, res) => {
     const conflicts = [];
     
     if (localChanges && Array.isArray(localChanges) && localChanges.length > 0) {
-      for (const localTodo of localChanges) {
+      // Collect all todo_ids
+      const todoIds = localChanges.map(t => t.id || generateTodoId());
+
+      // Phase 1: Batch SELECT existing todos (1 query instead of N individual SELECTs)
+      let existingRows = [];
+      let batchSelectFailed = false;
+
+      try {
+        const placeholders = todoIds.map(() => '?').join(',');
+        existingRows = await query(
+          `SELECT * FROM todos WHERE user_id = ? AND todo_id IN (${placeholders})`,
+          [userId, ...todoIds]
+        );
+      } catch (queryErr) {
+        batchSelectFailed = true;
+        logger.dbDebug('todo_id批量查询', '批量查询失败，尝试逐个查询', { userId, error: queryErr.message });
+      }
+
+      const existingMap = new Map(existingRows.map(t => [t.todo_id, t]));
+
+      // Split localChanges into toInsert and toUpdate
+      const toInsertItems = [];
+      const toUpdateItems = [];
+      const fallbackItems = [];
+
+      for (let i = 0; i < localChanges.length; i++) {
+        const localTodo = localChanges[i];
+        const todoId = todoIds[i];
+        const existing = existingMap.get(todoId);
+
+        if (existing) {
+          toUpdateItems.push({ localTodo, serverTodo: existing });
+        } else if (batchSelectFailed) {
+          fallbackItems.push({ localTodo, todoId });
+        } else {
+          toInsertItems.push({ localTodo, todoId });
+        }
+      }
+
+      // Handle fallback items (batch SELECT failed, retry individually by dbId)
+      for (const { localTodo, todoId } of fallbackItems) {
         try {
-          const todoId = localTodo.id || generateTodoId();
-          
           let existing = [];
           try {
             existing = await query(
               'SELECT * FROM todos WHERE user_id = ? AND todo_id = ?',
               [userId, todoId]
             );
-          } catch (queryErr) {
+          } catch (retryErr) {
             logger.dbDebug('todo_id查询', '尝试使用id查询', { userId, dbId: localTodo.dbId });
             existing = await query(
               'SELECT * FROM todos WHERE user_id = ? AND id = ?',
               [userId, localTodo.dbId]
             );
           }
-          
+
           if (existing.length === 0) {
+            toInsertItems.push({ localTodo, todoId });
+          } else {
+            toUpdateItems.push({ localTodo, serverTodo: existing[0] });
+          }
+        } catch (todoErr) {
+          logger.todoError('同步', '处理单个待办错误', { userId, error: todoErr.message, todo: localTodo?.id });
+        }
+      }
+
+      // Phase 2: Batch INSERT all new todos (1 query instead of N individual INSERTs)
+      if (toInsertItems.length > 0) {
+        try {
+          const insertFields = [
+            'user_id', 'todo_id', 'parent_id', 'text', 'set_date', 'set_time',
+            'remarks', 'location_text', 'completed', 'is_star', 'tags', 'images',
+            'combo_id', 'priority', 'version', 'is_deleted', 'deleted_at', 'created_at', 'updated_at'
+          ];
+          const rowPlaceholders = toInsertItems.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(',');
+          const insertValues = [];
+
+          for (const { localTodo, todoId } of toInsertItems) {
             const createdAt = localTodo.time ? new Date(localTodo.time) : new Date();
             const updatedAt = localTodo.updatedAt ? new Date(localTodo.updatedAt) : createdAt;
             const tagsJson = localTodo.tags && localTodo.tags.length > 0 ? JSON.stringify(localTodo.tags) : null;
             const imagesJson = localTodo.images && localTodo.images.length > 0 ? JSON.stringify(localTodo.images) : null;
-            
+
+            insertValues.push(
+              userId, todoId,
+              localTodo.parentId || localTodo.parent_id || null,
+              localTodo.text || '',
+              localTodo.setDate || null,
+              localTodo.setTime || null,
+              localTodo.remarks || null,
+              localTodo.location ? JSON.stringify(localTodo.location) : null,
+              localTodo.completed || 0,
+              localTodo.isStar ? 1 : 0,
+              tagsJson,
+              imagesJson,
+              localTodo.comboId || null,
+              localTodo.priority || 'p2',
+              localTodo.version || 1,
+              localTodo.isDeleted ? 1 : 0,
+              localTodo.deletedAt ? new Date(localTodo.deletedAt) : null,
+              createdAt,
+              updatedAt
+            );
+          }
+
+          await query(
+            `INSERT INTO todos (${insertFields.join(', ')}) VALUES ${rowPlaceholders}`,
+            insertValues
+          );
+        } catch (insertErr) {
+          logger.todoError('批量插入', '批量插入失败，尝试逐个简化插入', { userId, error: insertErr.message, count: toInsertItems.length });
+
+          // Fallback: individual simplified INSERTs for each item
+          for (const { localTodo, todoId } of toInsertItems) {
             try {
-              await query(
-                `INSERT INTO todos
-                 (user_id, todo_id, parent_id, text, set_date, set_time, remarks, location_text, completed, is_star, tags, images, combo_id, priority, version, is_deleted, deleted_at, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  userId,
-                  todoId,
-                  localTodo.parentId || localTodo.parent_id || null,
-                  localTodo.text || '',
-                  localTodo.setDate || null,
-                  localTodo.setTime || null,
-                  localTodo.remarks || null,
-                  localTodo.location ? JSON.stringify(localTodo.location) : null,
-                  localTodo.completed || 0,
-                  localTodo.isStar ? 1 : 0,
-                  tagsJson,
-                  imagesJson,
-                  localTodo.comboId || null,
-                  localTodo.priority || 'p2',
-                  localTodo.version || 1,
-                  localTodo.isDeleted ? 1 : 0,
-                  localTodo.deletedAt ? new Date(localTodo.deletedAt) : null,
-                  createdAt,
-                  updatedAt
-                ]
-              );
-            } catch (insertErr) {
-              logger.todoError('插入', '插入待办失败，尝试简化插入', { userId, error: insertErr.message });
+              const tagsJson = localTodo.tags && localTodo.tags.length > 0 ? JSON.stringify(localTodo.tags) : null;
+              const imagesJson = localTodo.images && localTodo.images.length > 0 ? JSON.stringify(localTodo.images) : null;
+
               await query(
                 `INSERT INTO todos (user_id, text, set_date, set_time, remarks, completed, is_star, tags, images, parent_id, priority, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -439,43 +504,45 @@ const sync = async (req, res) => {
                   localTodo.priority || 'p2'
                 ]
               );
-            }
-          } else {
-            const serverTodo = existing[0];
-            const resolved = resolveConflict(localTodo, formatTodo(serverTodo));
-            const resolvedTagsJson = resolved.tags && resolved.tags.length > 0 ? JSON.stringify(resolved.tags) : null;
-            const resolvedImagesJson = resolved.images && resolved.images.length > 0 ? JSON.stringify(resolved.images) : null;
-            
-            try {
-              await query(
-                `UPDATE todos SET 
-                 text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?, 
-                 completed = ?, is_star = ?, tags = ?, images = ?, priority = ?, parent_id = ?, combo_id = ?, version = ?, updated_at = NOW()
-                 WHERE id = ? AND user_id = ?`,
-                [
-                  resolved.text,
-                  resolved.setDate || null,
-                  resolved.setTime || null,
-                  resolved.remarks || null,
-                  resolved.location ? JSON.stringify(resolved.location) : null,
-                  resolved.completed || 0,
-                  resolved.isStar ? 1 : 0,
-                  resolvedTagsJson,
-                  resolvedImagesJson,
-                  resolved.priority || 'p2',
-                  resolved.parentId || resolved.parent_id || null,
-                  resolved.comboId || null,
-                  resolved.version || 1,
-                  serverTodo.id,
-                  userId
-                ]
-              );
-            } catch (updateErr) {
-              logger.todoError('更新', '更新待办失败', { userId, todoId, error: updateErr.message });
+            } catch (singleInsertErr) {
+              logger.todoError('插入', '简化插入待办失败', { userId, todoId, error: singleInsertErr.message });
             }
           }
-        } catch (todoErr) {
-          logger.todoError('同步', '处理单个待办错误', { userId, error: todoErr.message, todo: localTodo?.id });
+        }
+      }
+
+      // Phase 3: Update existing todos (individual UPDATEs, SELECT already done above)
+      for (const { localTodo, serverTodo } of toUpdateItems) {
+        try {
+          const resolved = resolveConflict(localTodo, formatTodo(serverTodo));
+          const resolvedTagsJson = resolved.tags && resolved.tags.length > 0 ? JSON.stringify(resolved.tags) : null;
+          const resolvedImagesJson = resolved.images && resolved.images.length > 0 ? JSON.stringify(resolved.images) : null;
+
+          await query(
+            `UPDATE todos SET
+             text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?,
+             completed = ?, is_star = ?, tags = ?, images = ?, priority = ?, parent_id = ?, combo_id = ?, version = ?, updated_at = NOW()
+             WHERE id = ? AND user_id = ?`,
+            [
+              resolved.text,
+              resolved.setDate || null,
+              resolved.setTime || null,
+              resolved.remarks || null,
+              resolved.location ? JSON.stringify(resolved.location) : null,
+              resolved.completed || 0,
+              resolved.isStar ? 1 : 0,
+              resolvedTagsJson,
+              resolvedImagesJson,
+              resolved.priority || 'p2',
+              resolved.parentId || resolved.parent_id || null,
+              resolved.comboId || null,
+              resolved.version || 1,
+              serverTodo.id,
+              userId
+            ]
+          );
+        } catch (updateErr) {
+          logger.todoError('更新', '更新待办失败', { userId, todoId: localTodo.id, error: updateErr.message });
         }
       }
     }
