@@ -266,11 +266,11 @@
       </view>
       <view wx:if="{{!subtaskCollapsed}}" class="subtask-body">
         <view wx:for="{{subtaskList}}" wx:key="id" class="subtask-row" style="padding-left: {{item._depth * 40 + 24}}rpx">
-          <view class="subtask-checkbox">
-            <t-radio checked="{{item.completed}}" catch:change="toggleSubtask" data-id="{{item.id}}" icon="line" block="{{false}}" />
+          <view class="subtask-checkbox {{item.completed ? 'checked' : ''}}" catchtap="toggleSubtask" data-id="{{item.id}}">
+            <text class="subtask-checkmark" wx:if="{{item.completed}}">✓</text>
           </view>
-          <view wx:if="{{editingSubtaskId !== item.id}}" class="subtask-text-wrap">
-            <text class="subtask-text {{item.completed ? 'completed' : ''}}" catchtap="startEditSubtask" data-id="{{item.id}}">{{item.text}}</text>
+          <view wx:if="{{editingSubtaskId !== item.id}}" class="subtask-text-wrap" catchtap="startEditSubtask" data-id="{{item.id}}">
+            <text class="subtask-text {{item.completed ? 'completed' : ''}}">{{item.text}}</text>
           </view>
           <view wx:if="{{editingSubtaskId === item.id}}" class="subtask-edit-wrap">
             <input class="subtask-edit-input" value="{{editingSubtaskText}}" bindinput="onEditInput" bindconfirm="saveEditSubtask" bindblur="saveEditSubtask" auto-focus />

@@ -1020,6 +1020,24 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 3rpx solid #ccc;
+  background: #fff;
+}
+
+.subtask-checkbox.checked {
+  background: #00b26a;
+  border-color: #00b26a;
+}
+
+.subtask-checkmark {
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .subtask-text-wrap {

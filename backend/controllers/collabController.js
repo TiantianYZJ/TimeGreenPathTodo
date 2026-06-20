@@ -456,7 +456,7 @@ const getSharedList = async (req, res) => {
 const createSharedTodo = async (req, res) => {
   const userId = req.user.id;
   const { comboId } = req.params;
-  const { text, setDate, setTime, remarks, location, assignType, assigneeIds, tags, excludeType, images } = req.body;
+  const { text, setDate, setTime, remarks, location, assignType, assigneeIds, tags, excludeType, images, priority } = req.body;
   
   if (!text || !text.trim()) {
     return res.status(400).json({
@@ -484,10 +484,10 @@ const createSharedTodo = async (req, res) => {
     const effectiveExcludeType = (assignType === 'all' || assignType === 'any') ? (excludeType || '') : '';
     
     const result = await query(
-      `INSERT INTO shared_todos 
-       (combo_id, creator_id, text, set_date, set_time, remarks, location_text, assign_type, exclude_type, tags, images, created_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [comboId, userId, text.trim(), setDate || null, setTime || null, remarks || null, locationJson, assignType || 'all', effectiveExcludeType, tagsJson, imagesJson]
+      `INSERT INTO shared_todos
+       (combo_id, creator_id, text, set_date, set_time, remarks, location_text, assign_type, exclude_type, tags, images, priority, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [comboId, userId, text.trim(), setDate || null, setTime || null, remarks || null, locationJson, assignType || 'all', effectiveExcludeType, tagsJson, imagesJson, priority || 'p2']
     );
     
     const sharedTodoId = result.insertId;
@@ -791,7 +791,7 @@ const deleteSharedTodo = async (req, res) => {
 const updateSharedTodo = async (req, res) => {
   const userId = req.user.id;
   const { comboId, todoId } = req.params;
-  const { text, setDate, setTime, remarks, location, tags, assignType, assigneeIds, excludeType, images } = req.body;
+  const { text, setDate, setTime, remarks, location, tags, assignType, assigneeIds, excludeType, images, priority } = req.body;
   
   if (!text || !text.trim()) {
     return res.status(400).json({
@@ -819,8 +819,8 @@ const updateSharedTodo = async (req, res) => {
     const effectiveExcludeType = (assignType === 'all' || assignType === 'any') ? (excludeType || '') : '';
     
     await query(
-      `UPDATE shared_todos SET text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?, assign_type = ?, exclude_type = ?, tags = ?, images = ?, updated_at = NOW() WHERE id = ? AND combo_id = ?`,
-      [text.trim(), setDate || null, setTime || '12:00', remarks || null, locationJson, assignType || 'all', effectiveExcludeType, tagsJson, imagesJson, todoId, comboId]
+      `UPDATE shared_todos SET text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?, assign_type = ?, exclude_type = ?, tags = ?, images = ?, priority = ?, updated_at = NOW() WHERE id = ? AND combo_id = ?`,
+      [text.trim(), setDate || null, setTime || '12:00', remarks || null, locationJson, assignType || 'all', effectiveExcludeType, tagsJson, imagesJson, priority || 'p2', todoId, comboId]
     );
     
     if (assignType === 'specific' && assigneeIds && assigneeIds.length > 0) {
