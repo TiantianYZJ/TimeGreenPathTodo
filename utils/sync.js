@@ -152,20 +152,6 @@ function setLastSyncTime(time) {
   wx.setStorageSync(SYNC_STORAGE_KEY, time);
 }
 
-function getLocalTodos() {
-  return wx.getStorageSync(LOCAL_TODOS_KEY) || [];
-}
-
-function setLocalTodos(todos) {
-  const activeTodos = todos.filter(t => !t.isDeleted);
-  activeTodos.sort((a, b) => (b.time || 0) - (a.time || 0));
-  wx.setStorageSync(LOCAL_TODOS_KEY, activeTodos);
-  const app = getApp();
-  if (app && app.updateCalendarCache) {
-    app.updateCalendarCache(activeTodos);
-  }
-}
-
 function getDeletedTodos() {
   return wx.getStorageSync(DELETED_TODOS_KEY) || [];
 }
