@@ -989,14 +989,13 @@
 .subtask-header {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  padding-bottom: 16rpx;
+  justify-content: space-between;
 }
 
 .subtask-header-text {
-  font-size: 30rpx;
+  font-size: 34rpx;
   color: #666;
-  font-weight: 500;
+  margin-right: 12rpx;
 }
 
 .subtask-body {
@@ -1023,9 +1022,11 @@
   justify-content: center;
   width: 40rpx;
   height: 40rpx;
+  margin-right: 8rpx;
   border-radius: 50%;
   border: 3rpx solid #ccc;
   background: #fff;
+  transition: all 0.2s ease;
 }
 
 .subtask-checkbox.checked {
@@ -1062,7 +1063,7 @@
 }
 
 .subtask-edit-input {
-  width: 100%;
+  width: 94%;
   height: 56rpx;
   padding: 0 16rpx;
   background: #fff;
