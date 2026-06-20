@@ -301,7 +301,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -421,7 +421,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -441,7 +441,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -493,7 +493,7 @@ Page({
    */
   onSearchConfirm() {
     wx.navigateTo({
-      url: `/pages/todo-search/todo-search`
+      url: `/packagePages/todo-search/todo-search`
     });
   },
 
@@ -777,7 +777,7 @@ Page({
     app.globalData.editTodoImages = todo.images || [];
     
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${allIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+      url: `/packagePages/add-todo/add-todo?edit=1&index=${allIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
@@ -1602,7 +1602,7 @@ Page({
       if (text) {
         // 自动跳转添加页面
         wx.navigateTo({
-          url: `/pages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
+          url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
         });
       }
     };
@@ -1704,7 +1704,7 @@ Page({
 
     const todoId = e.currentTarget.dataset.id;
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(todoId)}`
+      url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(todoId)}`
     });
   },
 
@@ -1716,7 +1716,7 @@ Page({
     
     if (currentTab === 'all') {
       wx.navigateTo({
-        url: '/pages/add-todo/add-todo'
+        url: '/packagePages/add-todo/add-todo'
       });
     } else if (currentTab === 'combos') {
       wx.navigateTo({
@@ -1757,7 +1757,7 @@ Page({
    */
   navigateToNotice() {
     wx.navigateTo({
-      url: '/pages/notice/notice'
+      url: '/packagePages/notice/notice'
     });
   },
 
@@ -2019,7 +2019,7 @@ Page({
 
   goToLogin() {
     this.setData({ showLoginPopup: false });
-    wx.navigateTo({ url: '/pages/login/login' });
+    wx.navigateTo({ url: '/packagePages/login/login' });
   },
 
   hideInvitePopup(e) {

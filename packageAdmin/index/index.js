@@ -433,7 +433,7 @@ Page({
     
     this.setData({ popupVisible: false });
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?adminView=1&todoData=${todoStr}&creator=${creatorStr}`
+      url: `/packagePages/todo-detail/todo-detail?adminView=1&todoData=${todoStr}&creator=${creatorStr}`
     });
   },
 
@@ -457,7 +457,7 @@ Page({
     if (todoId && comboId) {
       this.setData({ popupVisible: false });
       wx.navigateTo({
-        url: `/pages/todo-detail/todo-detail?sharedTodoId=${todoId}&comboId=${comboId}`
+        url: `/packagePages/todo-detail/todo-detail?sharedTodoId=${todoId}&comboId=${comboId}`
       });
     }
   },

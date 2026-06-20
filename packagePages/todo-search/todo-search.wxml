@@ -24,6 +24,7 @@
     <block wx:if="{{searchResults.length > 0}}">
       <!-- 复用todo页的列表样式 -->
       <block wx:for="{{searchResults}}" wx:key="originalIndex" wx:for-item="todo">
+        <view class="todo-item-wrapper" data-priority="{{todo.priority}}">
         <t-swipe-cell
           class="todo-item {{todo.completed ? 'completed' : ''}}"
           data-index="{{index}}"
@@ -35,7 +36,7 @@
 
           <t-cell
             title="{{hl.highlight(todo.text, keywordsStr)}}"
-            description="{{todo.location ? (todo.remarks ? '📍' + todo.location.name + '｜' + todo.remarks : '📍' + todo.location.name) : todo.remarks}}"
+            description="{{todo.description || (todo.location ? (todo.remarks ? '📍' + todo.location.name + '｜' + todo.remarks : '📍' + todo.location.name) : todo.remarks)}}"
             note="{{todo.friendlyDate || todo.setDate}}"
             bordered="{{false}}"
             custom-style="width:100%"
@@ -61,7 +62,6 @@
             </view>
           </t-cell>
 
-
           <view slot="right" class="btn-wrapper">
             <view class="btn edit-btn column"
             data-index="{{index}}"
@@ -77,6 +77,7 @@
             </view>
           </view>
         </t-swipe-cell>
+        </view>
       </block>
     </block>
     <view wx:else class="empty-tips">没有找到相关待办</view>

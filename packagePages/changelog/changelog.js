@@ -10,7 +10,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '时光绿径待办-更新日志',
-      path: '/pages/changelog/changelog',
+      path: '/packagePages/changelog/changelog',
       imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
@@ -18,7 +18,7 @@ Page({
   onShareTimeline() {
     return {
       title: '时光绿径待办-更新日志',
-      path: '/pages/changelog/changelog',
+      path: '/packagePages/changelog/changelog',
       imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },

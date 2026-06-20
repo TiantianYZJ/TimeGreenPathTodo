@@ -69,12 +69,12 @@
     <t-cell-group theme="card">
       <t-cell 
         title="使用指南" 
-        url="/pages/guide/guide" 
+        url="/packagePages/guide/guide" 
         leftIcon="book-open" hover arrow 
       />
       <t-cell 
         title="更新日志" 
-        url="/pages/changelog/changelog" 
+        url="/packagePages/changelog/changelog" 
         leftIcon="bulletpoint" hover arrow 
         note="{{latestVersion ? 'V' + latestVersion : ''}}"
       />

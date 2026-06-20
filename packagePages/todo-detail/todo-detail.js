@@ -73,21 +73,21 @@ Page({
     if (this.data.isSharedTodo) {
       return {
         title: '分享待办：' + currentTodo.text,
-        path: `/pages/todo-detail/todo-detail?sharedTodoId=${this.data.sharedTodoId}&comboId=${this.data.comboId}`,
+        path: `/packagePages/todo-detail/todo-detail?sharedTodoId=${this.data.sharedTodoId}&comboId=${this.data.comboId}`,
       };
     }
 
     if (this.data.pendingShareId) {
       return {
         title: '分享待办：' + currentTodo.text,
-        path: `/pages/todo-detail/todo-detail?isShare=1&shareId=${this.data.pendingShareId}`,
+        path: `/packagePages/todo-detail/todo-detail?isShare=1&shareId=${this.data.pendingShareId}`,
       };
     }
 
     const locationStr = currentTodo.location ? encodeURIComponent(JSON.stringify(currentTodo.location)) : '';
     const tagsStr = currentTodo.tags ? encodeURIComponent(JSON.stringify(currentTodo.tags)) : '';
     const imagesStr = currentTodo.images && currentTodo.images.length > 0 ? encodeURIComponent(JSON.stringify(currentTodo.images)) : '';
-    const sharePath = `/pages/todo-detail/todo-detail?isShare=1&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&priority=${currentTodo.priority || 'p2'}&tags=${tagsStr}&images=${imagesStr}`;
+    const sharePath = `/packagePages/todo-detail/todo-detail?isShare=1&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&priority=${currentTodo.priority || 'p2'}&tags=${tagsStr}&images=${imagesStr}`;
     return {
       title: '分享待办：' + currentTodo.text,
       path: sharePath,
@@ -1124,11 +1124,11 @@ Page({
       const assigneeIdsStr = assigneeIds.length > 0 ? encodeURIComponent(JSON.stringify(assigneeIds)) : '';
       
       wx.navigateTo({
-        url: `/pages/add-todo/add-todo?edit=1&sharedTodoId=${sharedTodoId}&comboId=${comboId}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&priority=${todo.priority || 'p2'}&tags=${tagsStr}&assignType=${assignType || 'all'}&assigneeIds=${assigneeIdsStr}&excludeType=${excludeType || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+        url: `/packagePages/add-todo/add-todo?edit=1&sharedTodoId=${sharedTodoId}&comboId=${comboId}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&priority=${todo.priority || 'p2'}&tags=${tagsStr}&assignType=${assignType || 'all'}&assigneeIds=${assigneeIdsStr}&excludeType=${excludeType || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
       });
     } else {
       wx.navigateTo({
-        url: `/pages/add-todo/add-todo?edit=1&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&index=${currentIndex}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&priority=${todo.priority || 'p2'}&comboId=${comboId || todo.comboId || ''}&tags=${tagsStr}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+        url: `/packagePages/add-todo/add-todo?edit=1&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&index=${currentIndex}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&priority=${todo.priority || 'p2'}&comboId=${comboId || todo.comboId || ''}&tags=${tagsStr}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
       });
     }
   },
@@ -1397,7 +1397,7 @@ Page({
         confirmText: '去登录',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -1672,7 +1672,7 @@ Page({
         confirmText: '去登录',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -2046,10 +2046,12 @@ Page({
     if (!text || !parentId) return;
     const now = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
+    const parentTodo = getTodoById(parentId);
+    const parentSetDate = parentTodo ? (parentTodo.setDate || '') : '';
     const newTodo = {
       id: `todo_${now}_${randomStr}`,
       text,
-      setDate: '',
+      setDate: parentSetDate,
       setTime: '12:00',
       completed: false,
       time: now,

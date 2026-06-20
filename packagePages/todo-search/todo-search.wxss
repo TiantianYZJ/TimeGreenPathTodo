@@ -1,4 +1,4 @@
-@import "../todo/todo.wxss";
+@import "../../pages/todo/todo.wxss";
 .search-input {
   flex: 1;
 }

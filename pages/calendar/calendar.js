@@ -191,7 +191,7 @@ Page({
     if (!currentTodo || !currentTodo.id) return;
 
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(currentTodo.id)}`
+      url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(currentTodo.id)}`
     });
   },
 
@@ -263,7 +263,7 @@ Page({
     app.globalData.editTodoImages = currentTodo.images || [];
 
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${realIndex}&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&comboId=${currentTodo.comboId || ''}&tags=${tagsStr}&hasImages=${(currentTodo.images && currentTodo.images.length > 0) ? '1' : '0'}`
+      url: `/packagePages/add-todo/add-todo?edit=1&index=${realIndex}&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&comboId=${currentTodo.comboId || ''}&tags=${tagsStr}&hasImages=${(currentTodo.images && currentTodo.images.length > 0) ? '1' : '0'}`
     });
   },
 
@@ -279,7 +279,7 @@ Page({
   navigateToAdd() {
     const selectedDateStr = this.data.selectedDate || this.formatDate(new Date());
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?setDate=${selectedDateStr}`
+      url: `/packagePages/add-todo/add-todo?setDate=${selectedDateStr}`
     });
   },
 

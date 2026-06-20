@@ -59,7 +59,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -83,7 +83,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });
@@ -112,7 +112,7 @@ Page({
   },
 
   goLogin() {
-    wx.navigateTo({ url: '/pages/login/login' });
+    wx.navigateTo({ url: '/packagePages/login/login' });
   },
 
   async saveTag() {
@@ -164,7 +164,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });

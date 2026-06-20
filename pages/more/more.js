@@ -141,11 +141,11 @@ Page({
   handleUserTap() {
     if (this.data.isLoggedIn) {
       wx.navigateTo({
-        url: '/pages/user-center/user-center',
+        url: '/packagePages/user-center/user-center',
       });
     } else {
       wx.navigateTo({
-        url: '/pages/login/login',
+        url: '/packagePages/login/login',
       });
     }
   },
@@ -159,7 +159,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
         }
       });

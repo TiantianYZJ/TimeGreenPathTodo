@@ -24,7 +24,7 @@ Page({
 
   goLogin() {
     wx.navigateTo({
-      url: '/pages/login/login'
+      url: '/packagePages/login/login'
     });
   },
 

@@ -49,7 +49,7 @@ Page({
 
   navigateToDailyStats() {
     wx.navigateTo({
-      url: '/pages/daily-stats/daily-stats'
+      url: '/packagePages/daily-stats/daily-stats'
     });
   },
 

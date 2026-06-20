@@ -213,15 +213,15 @@
     },
     {
       "path": "components/todo-card/index",
-      "relatedPage": "/pages/todo-detail/todo-detail"
+      "relatedPage": "/packagePages/todo-detail/todo-detail"
     },
     {
       "path": "components/todo-form-card/index",
-      "relatedPage": "/pages/add-todo/add-todo"
+      "relatedPage": "/packagePages/add-todo/add-todo"
     },
     {
       "path": "components/search-results-card/index",
-      "relatedPage": "/pages/todo-search/todo-search"
+      "relatedPage": "/packagePages/todo-search/todo-search"
     },
     {
       "path": "components/complete-card/index",

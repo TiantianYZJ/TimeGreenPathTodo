@@ -2,19 +2,9 @@
   "usingComponents": {},
   "pages": [
     "pages/todo/todo",
-    "pages/todo-search/todo-search",
     "pages/calendar/calendar",
     "pages/stats/stats",
-    "pages/daily-stats/daily-stats",
-    "pages/more/more",
-    "pages/guide/guide",
-    "pages/add-todo/add-todo",
-    "pages/todo-detail/todo-detail",
-    "pages/changelog/changelog",
-    "pages/day-todos/day-todos",
-    "pages/user-center/user-center",
-    "pages/login/login",
-    "pages/notice/notice"
+    "pages/more/more"
   ],
   "subPackages": [
     {
@@ -56,6 +46,22 @@
       ]
     },
     {
+      "root": "packagePages",
+      "name": "pages",
+      "pages": [
+        "add-todo/add-todo",
+        "changelog/changelog",
+        "daily-stats/daily-stats",
+        "day-todos/day-todos",
+        "guide/guide",
+        "login/login",
+        "notice/notice",
+        "todo-detail/todo-detail",
+        "todo-search/todo-search",
+        "user-center/user-center"
+      ]
+    },
+    {
       "root": "packageAI",
       "name": "ai",
       "independent": true,
@@ -65,7 +71,7 @@
   "preloadRule": {
     "pages/todo/todo": {
       "network": "all",
-      "packages": ["combo"]
+      "packages": ["combo", "pages"]
     },
     "pages/more/more": {
       "network": "all",

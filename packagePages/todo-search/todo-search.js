@@ -25,7 +25,7 @@ Page({
       this.searchTodos();
       // 更新页面URL参数
       wx.redirectTo({
-        url: `/pages/todo-search/todo-search?keywords=${encodeURIComponent(keywords.join(','))}`
+        url: `/packagePages/todo-search/todo-search?keywords=${encodeURIComponent(keywords.join(','))}`
       });
     });
   },
@@ -44,16 +44,57 @@ Page({
 
   searchTodos() {
     const todos = getLocalTodos();
-    const results = todos.filter(todo => !todo.parent_id).filter(todo =>
+
+    // 构建父链映射用于回溯层级
+    const parentMap = {};
+    const textMap = {};
+    todos.forEach(t => {
+      if (t.parent_id) parentMap[t.id] = t.parent_id;
+      textMap[t.id] = t.text;
+    });
+
+    const getHierarchy = (todoId) => {
+      const path = [];
+      let currentId = parentMap[todoId];
+      let rootParentId = null;
+      while (currentId) {
+        path.unshift(textMap[currentId] || '');
+        rootParentId = currentId;
+        currentId = parentMap[currentId];
+      }
+      return { hierarchyPath: path, rootParentId };
+    };
+
+    const results = todos.filter(todo =>
+      !todo.isDeleted &&
       this.data.keywords.some(kw =>
         todo.text.toLowerCase().includes(kw.toLowerCase()) ||
         (todo.remarks && todo.remarks.toLowerCase().includes(kw.toLowerCase()))
       )
-    ).map(todo => ({
-      ...todo,
-      friendlyDate: formatFriendlyDate(todo.setDate)
-    }));
-    
+    ).map(todo => {
+      let description = todo.remarks || '';
+      let rootParentId = null;
+      let hierarchyPath = [];
+
+      if (todo.parent_id) {
+        const result = getHierarchy(todo.id);
+        hierarchyPath = result.hierarchyPath;
+        rootParentId = result.rootParentId;
+      }
+
+      // 子待办：description 显示层级路径
+      if (todo.parent_id && hierarchyPath.length > 0) {
+        description = '🗂️ ' + hierarchyPath.join(' → ') + ' 的子待办';
+      }
+
+      return {
+        ...todo,
+        friendlyDate: formatFriendlyDate(todo.setDate),
+        description,
+        rootParentId
+      };
+    });
+
     this.setData({ searchResults: results });
   },
 
@@ -120,7 +161,7 @@ Page({
     app.globalData.editTodoImages = todo.images || [];
     
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${todoIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+      url: `/packagePages/add-todo/add-todo?edit=1&index=${todoIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&time=${todo.time}&isStar=${todo.isStar || false}&tags=${tagsStr}&comboId=${todo.comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
@@ -128,10 +169,11 @@ Page({
     if (e.target.dataset.component === 't-radio') {
       return;
     }
-    
-    const todoId = this.data.searchResults[e.currentTarget.dataset.index].id;
+
+    const todo = this.data.searchResults[e.currentTarget.dataset.index];
+    const targetId = todo.rootParentId || todo.id;
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(todoId)}`
+      url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(targetId)}`
     });
   },
 

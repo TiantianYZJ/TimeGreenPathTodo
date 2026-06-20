@@ -135,7 +135,7 @@ Page({
     if (!dayTodo || !dayTodo.id) return;
     
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(dayTodo.id)}`
+      url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(dayTodo.id)}`
     });
   },
 

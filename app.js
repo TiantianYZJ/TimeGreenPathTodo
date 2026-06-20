@@ -320,7 +320,7 @@ App({
             wx.setStorageSync('appVersion', latestVersionInfo.version);
           } else if (res.cancel) {
             wx.navigateTo({
-              url: '/pages/changelog/changelog'
+              url: '/packagePages/changelog/changelog'
             });
           }
         }

@@ -146,7 +146,7 @@ Page({
     const creatorStr = encodeURIComponent(JSON.stringify(creatorInfo));
     
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?adminView=1&todoData=${todoStr}&creator=${creatorStr}`
+      url: `/packagePages/todo-detail/todo-detail?adminView=1&todoData=${todoStr}&creator=${creatorStr}`
     });
   },
 

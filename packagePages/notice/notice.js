@@ -12,7 +12,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '时光绿径待办-公告',
-      path: '/pages/notice/notice',
+      path: '/packagePages/notice/notice',
       imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
@@ -20,7 +20,7 @@ Page({
   onShareTimeline() {
     return {
       title: '时光绿径待办-公告',
-      path: '/pages/notice/notice',
+      path: '/packagePages/notice/notice',
       imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
@@ -57,9 +57,15 @@ Page({
     const href = e.detail.node.href;
     if (!href) return;
     
-    if (href.startsWith('/') || href.startsWith('pages/') || 
-        href.startsWith('packageAdmin/') || href.startsWith('packageCombo/') || href.startsWith('packageTools/')) {
-      const url = href.startsWith('/') ? href : '/' + href;
+    if (href.startsWith('/') || href.startsWith('pages/') ||
+        href.startsWith('packageAdmin/') || href.startsWith('packageCombo/') ||
+        href.startsWith('packageTools/') || href.startsWith('packagePages/')) {
+      let url = href.startsWith('/') ? href : '/' + href;
+      // 兼容旧路径：/pages/{非Tab页} → /packagePages/
+      const tabPages = ['/pages/todo/todo', '/pages/calendar/calendar', '/pages/stats/stats', '/pages/more/more'];
+      if (url.startsWith('/pages/') && !tabPages.includes(url)) {
+        url = '/packagePages/' + url.slice(7);
+      }
       wx.navigateTo({ url });
       return;
     }

@@ -35,7 +35,7 @@ function requireLogin(callback) {
     cancelText: '取消',
     success: (res) => {
       if (res.confirm) {
-        wx.navigateTo({ url: '/pages/login/login' });
+        wx.navigateTo({ url: '/packagePages/login/login' });
       }
     }
   });
@@ -66,7 +66,7 @@ function request(options) {
           resolve(res.data);
         } else if (res.statusCode === 401) {
           clearToken();
-          wx.navigateTo({ url: '/pages/login/login' });
+          wx.navigateTo({ url: '/packagePages/login/login' });
           reject(new Error('登录已过期，请重新登录'));
         } else if (res.statusCode === 403) {
           reject(new Error('无管理员权限'));

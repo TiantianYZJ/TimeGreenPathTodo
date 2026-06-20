@@ -77,7 +77,7 @@ Page({
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/login/login' });
+            wx.navigateTo({ url: '/packagePages/login/login' });
           }
           if (res.cancel) {
             wx.navigateBack();
@@ -163,7 +163,7 @@ Page({
         cancelText: '稍后再说',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({ url: '/pages/user-center/user-center' });
+            wx.navigateTo({ url: '/packagePages/user-center/user-center' });
           }
         }
       });
@@ -708,7 +708,7 @@ Page({
     app.globalData.editTodoImages = todo.images || [];
     
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&index=${globalIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${encodeURIComponent(JSON.stringify(todo.location || false))}&time=${todo.time}&isStar=${todo.isStar || false}&comboId=${comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+      url: `/packagePages/add-todo/add-todo?edit=1&index=${globalIndex}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate}&setTime=${todo.setTime || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${encodeURIComponent(JSON.stringify(todo.location || false))}&time=${todo.time}&isStar=${todo.isStar || false}&comboId=${comboId || ''}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
@@ -757,7 +757,7 @@ Page({
     if (!todo || !todo.id) return;
     
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?todoId=${encodeURIComponent(todo.id)}`
+      url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(todo.id)}`
     });
   },
 
@@ -768,7 +768,7 @@ Page({
     const { comboId } = this.data;
     
     wx.navigateTo({
-      url: `/pages/todo-detail/todo-detail?sharedTodoId=${todo.id}&comboId=${comboId}`
+      url: `/packagePages/todo-detail/todo-detail?sharedTodoId=${todo.id}&comboId=${comboId}`
     });
   },
 
@@ -803,7 +803,7 @@ Page({
   addTodoToCombo() {
     const { comboId, isShared } = this.data;
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?comboId=${comboId}&isShared=${isShared ? 1 : 0}`
+      url: `/packagePages/add-todo/add-todo?comboId=${comboId}&isShared=${isShared ? 1 : 0}`
     });
   },
 
@@ -891,7 +891,7 @@ Page({
     app.globalData.editTodoImages = todo.images || [];
     
     wx.navigateTo({
-      url: `/pages/add-todo/add-todo?edit=1&sharedTodoId=${todo.id}&comboId=${comboId}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate || todo.set_date}&setTime=${todo.setTime || todo.set_time || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&tags=${tagsStr}&assignType=${todo.assignType || 'all'}&assigneeIds=${assigneeIdsStr}&excludeType=${excludeType}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
+      url: `/packagePages/add-todo/add-todo?edit=1&sharedTodoId=${todo.id}&comboId=${comboId}&text=${encodeURIComponent(todo.text)}&setDate=${todo.setDate || todo.set_date}&setTime=${todo.setTime || todo.set_time || '12:00'}&remarks=${encodeURIComponent(todo.remarks || '')}&location=${locationStr}&tags=${tagsStr}&assignType=${todo.assignType || 'all'}&assigneeIds=${assigneeIdsStr}&excludeType=${excludeType}&hasImages=${(todo.images && todo.images.length > 0) ? '1' : '0'}`
     });
   },
 
@@ -1204,7 +1204,7 @@ Page({
       if (text) {
         const { comboId, isShared } = that.data;
         wx.navigateTo({
-          url: `/pages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}&comboId=${comboId}&isShared=${isShared ? 1 : 0}`
+          url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}&comboId=${comboId}&isShared=${isShared ? 1 : 0}`
         });
       }
     };

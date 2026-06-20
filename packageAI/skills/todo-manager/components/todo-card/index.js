@@ -8,7 +8,7 @@ Component({
         this.setData({ todo: r })
         if (r.id) {
           viewCtx.setRelatedPage({ query: `id=${r.id}` })
-          viewCtx.preloadDetailPage({ url: `/pages/todo-detail/todo-detail?id=${r.id}` })
+          viewCtx.preloadDetailPage({ url: `/packagePages/todo-detail/todo-detail?id=${r.id}` })
         }
       })
     }
@@ -18,7 +18,7 @@ Component({
       const todoId = this.data.todo?.id
       if (!todoId) return
       wx.modelContext.getViewContext(this).openDetailPage({
-        url: `/pages/todo-detail/todo-detail?id=${todoId}`
+        url: `/packagePages/todo-detail/todo-detail?id=${todoId}`
       })
     },
     onTapComplete() {
