@@ -43,7 +43,7 @@ Page({
 
   searchTodos() {
     const todos = wx.getStorageSync('todos') || [];
-    const results = todos.filter(todo => 
+    const results = todos.filter(todo => !todo.parent_id).filter(todo => 
       this.data.keywords.some(kw =>
         todo.text.toLowerCase().includes(kw.toLowerCase()) ||
         (todo.remarks && todo.remarks.toLowerCase().includes(kw.toLowerCase()))

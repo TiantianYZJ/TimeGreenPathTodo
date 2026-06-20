@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 
 const getList = async (req, res) => {
   const userId = req.user.id;
-  const { page = 1, pageSize = 50, date, completed, includeDeleted } = req.query;
+  const { page = 1, pageSize = 50, date, completed, includeDeleted, parent_id } = req.query;
   const offset = (page - 1) * pageSize;
   
   try {
@@ -12,6 +12,17 @@ const getList = async (req, res) => {
     
     if (includeDeleted !== 'true') {
       sql += ' AND is_deleted = 0';
+    }
+    
+    if (parent_id !== undefined) {
+      if (parent_id === 'null' || parent_id === '') {
+        sql += ' AND parent_id IS NULL';
+      } else {
+        sql += ' AND parent_id = ?';
+        params.push(parent_id);
+      }
+    } else {
+      sql += ' AND parent_id IS NULL';
     }
     
     if (date) {
@@ -93,7 +104,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   const userId = req.user.id;
-  const { text, setDate, setTime, remarks, location, isStar, comboId, tagIds, todoId, images } = req.body;
+  const { text, setDate, setTime, remarks, location, isStar, comboId, tagIds, todoId, images, parent_id } = req.body;
   
   if (!text || !text.trim()) {
     return res.status(400).json({
@@ -123,11 +134,12 @@ const create = async (req, res) => {
     
     const result = await query(
       `INSERT INTO todos 
-       (user_id, todo_id, text, set_date, set_time, remarks, location_text, is_star, combo_id, images, priority, version, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
+       (user_id, todo_id, parent_id, text, set_date, set_time, remarks, location_text, is_star, combo_id, images, priority, version, created_at, updated_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'p2', 1, NOW(), NOW())`,
       [
         userId,
         finalTodoId,
+        parent_id || null,
         text.trim(),
         setDate || null,
         setTime || null,
@@ -236,6 +248,10 @@ const update = async (req, res) => {
     if (images !== undefined) {
       updateFields.push('images = ?');
       updateValues.push(images && images.length > 0 ? JSON.stringify(images) : null);
+    }
+    if (parent_id !== undefined) {
+      updateFields.push('parent_id = ?');
+      updateValues.push(parent_id || null);
     }
     
     updateFields.push('updated_at = NOW()');
@@ -379,11 +395,12 @@ const sync = async (req, res) => {
             try {
               await query(
                 `INSERT INTO todos 
-                 (user_id, todo_id, text, set_date, set_time, remarks, location_text, completed, is_star, tags, images, combo_id, version, is_deleted, deleted_at, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 (user_id, todo_id, parent_id, text, set_date, set_time, remarks, location_text, completed, is_star, tags, images, combo_id, version, is_deleted, deleted_at, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                   userId,
                   todoId,
+                  localTodo.parentId || localTodo.parent_id || null,
                   localTodo.text || '',
                   localTodo.setDate || null,
                   localTodo.setTime || null,
@@ -404,8 +421,8 @@ const sync = async (req, res) => {
             } catch (insertErr) {
               logger.todoError('插入', '插入待办失败，尝试简化插入', { userId, error: insertErr.message });
               await query(
-                `INSERT INTO todos (user_id, text, set_date, set_time, remarks, completed, is_star, tags, images, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                `INSERT INTO todos (user_id, text, set_date, set_time, remarks, completed, is_star, tags, images, parent_id, created_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
                 [
                   userId,
                   localTodo.text || '',
@@ -415,7 +432,8 @@ const sync = async (req, res) => {
                   localTodo.completed || 0,
                   localTodo.isStar ? 1 : 0,
                   tagsJson,
-                  imagesJson
+                  imagesJson,
+                  localTodo.parentId || localTodo.parent_id || null
                 ]
               );
             }
@@ -429,7 +447,7 @@ const sync = async (req, res) => {
               await query(
                 `UPDATE todos SET 
                  text = ?, set_date = ?, set_time = ?, remarks = ?, location_text = ?, 
-                 completed = ?, is_star = ?, tags = ?, images = ?, priority = ?, combo_id = ?, version = ?, updated_at = NOW()
+                 completed = ?, is_star = ?, tags = ?, images = ?, priority = ?, parent_id = ?, combo_id = ?, version = ?, updated_at = NOW()
                  WHERE id = ? AND user_id = ?`,
                 [
                   resolved.text,
@@ -442,6 +460,7 @@ const sync = async (req, res) => {
                   resolvedTagsJson,
                   resolvedImagesJson,
                   resolved.priority || 'p2',
+                  resolved.parentId || resolved.parent_id || null,
                   resolved.comboId || null,
                   resolved.version || 1,
                   serverTodo.id,
@@ -677,10 +696,12 @@ function formatTodo(todo) {
     location: location,
     completed: todo.completed || 0,
     isStar: todo.is_star === 1,
+    priority: todo.priority || 'p2',
     time: todo.created_at ? new Date(todo.created_at).getTime() : Date.now(),
     tags: tags,
     images: images,
     comboId: todo.combo_id,
+    parentId: todo.parent_id,
     version: todo.version || 1,
     isDeleted: todo.is_deleted === 1,
     deletedAt: todo.deleted_at ? new Date(todo.deleted_at).getTime() : null,

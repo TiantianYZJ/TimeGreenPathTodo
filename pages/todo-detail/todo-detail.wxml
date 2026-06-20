@@ -258,6 +258,40 @@
       </view>
     </view>
     
+    <!-- 子任务区块 -->
+    <view wx:if="{{!isSharedTodo && !adminView && todo.id}}" class="subtask-section">
+      <view class="subtask-header" bindtap="toggleSubtaskCollapse">
+        <t-icon name="{{subtaskCollapsed ? 'chevron-right' : 'chevron-down'}}" size="28rpx" color="#666" />
+        <text class="subtask-header-text">子任务 ({{subtaskList.length}})</text>
+      </view>
+      <view wx:if="{{!subtaskCollapsed}}" class="subtask-body">
+        <view wx:for="{{subtaskList}}" wx:key="id" class="subtask-row" style="padding-left: {{item._depth * 40 + 24}}rpx">
+          <view class="subtask-checkbox">
+            <t-radio checked="{{item.completed}}" catch:change="toggleSubtask" data-id="{{item.id}}" icon="line" block="{{false}}" />
+          </view>
+          <view wx:if="{{editingSubtaskId !== item.id}}" class="subtask-text-wrap">
+            <text class="subtask-text {{item.completed ? 'completed' : ''}}" catchtap="startEditSubtask" data-id="{{item.id}}">{{item.text}}</text>
+          </view>
+          <view wx:if="{{editingSubtaskId === item.id}}" class="subtask-edit-wrap">
+            <input class="subtask-edit-input" value="{{editingSubtaskText}}" bindinput="onEditInput" bindconfirm="saveEditSubtask" bindblur="saveEditSubtask" auto-focus />
+          </view>
+          <t-icon name="add" size="28rpx" color="#999" class="subtask-add-btn" catchtap="showAddChildInput" data-id="{{item.id}}" />
+          <t-icon name="delete" size="28rpx" color="#ccc" class="subtask-del-btn" catchtap="deleteSubtask" data-id="{{item.id}}" />
+        </view>
+        <view wx:if="{{addingChildForId}}" class="subtask-child-input" style="padding-left: {{childInputPadding}}rpx">
+          <input class="subtask-input-field" placeholder="输入子任务..." value="{{childInputValue}}" bindinput="onChildInput" bindconfirm="createChildSubtask" />
+          <t-icon name="check" size="32rpx" color="#00b26a" catchtap="createChildSubtask" />
+          <t-icon name="close" size="32rpx" color="#999" catchtap="showAddChildInput" data-id="{{addingChildForId}}" />
+        </view>
+        <view class="subtask-add-row">
+          <input class="subtask-add-input" placeholder="添加子任务..." value="{{subtaskInputValue}}" bindinput="onSubtaskInput" bindconfirm="createSubtask" />
+          <view class="subtask-send-btn {{subtaskHasInput ? 'active' : ''}}" catchtap="createSubtask">
+            <t-icon name="arrow-up" size="36rpx" color="#fff" />
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 广告位 -->
     <view class="ad-container">
       <ad-custom

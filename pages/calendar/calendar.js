@@ -134,6 +134,7 @@ Page({
     const uniqueTodos = new Map();
 
     const filtered = todos.filter(todo => {
+      if (todo.parent_id) return false;
       try {
         const todoDate = new Date(todo.setDate);
         const todoKey = this.formatDate(todoDate);

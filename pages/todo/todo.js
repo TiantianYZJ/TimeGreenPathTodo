@@ -107,7 +107,7 @@ Page({
     }
     
     const allTodos = wx.getStorageSync('todos') || [];
-    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted));
+    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted && !item.parent_id));
     const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
     
     const hasInitialized = wx.getStorageSync('hasInitializedDefaultTodos');
@@ -140,7 +140,7 @@ Page({
     this.checkPendingShareData();
     
     const allTodos = wx.getStorageSync('todos') || [];
-    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted));
+    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted && !item.parent_id));
     const allTags = app.getAllTags ? app.getAllTags() : app.globalData.systemTags || [];
     
     this.setData({
@@ -189,7 +189,7 @@ Page({
       }
       
       const mergedTodos = getLocalTodos();
-      const sortedTodos = mergedTodos.filter(t => !t.isDeleted).sort((a, b) => (b.time || 0) - (a.time || 0));
+      const sortedTodos = mergedTodos.filter(t => !t.isDeleted && !t.parent_id).sort((a, b) => (b.time || 0) - (a.time || 0));
       const formattedTodos = this.formatAllTodos(sortedTodos);
       this.setData({ allTodos: formattedTodos });
       this.applyTagFilter();
@@ -246,7 +246,7 @@ Page({
 
   refreshLocalComboCounts() {
     const allTodos = wx.getStorageSync('todos') || [];
-    const todos = allTodos.filter(item => !item.isDeleted);
+    const todos = allTodos.filter(item => !item.isDeleted && !item.parent_id);
     const combos = (app.globalData.combos || []).map(combo => ({
       ...combo,
       todoCount: todos.filter(t => String(t.comboId) === String(combo.id)).length
@@ -829,7 +829,7 @@ Page({
 
   updateComboTodoCount(comboId, todos) {
     const allTodos = todos || wx.getStorageSync('todos') || [];
-    const activeTodos = allTodos.filter(item => !item.isDeleted);
+    const activeTodos = allTodos.filter(item => !item.isDeleted && !item.parent_id);
     const count = activeTodos.filter(t => String(t.comboId) === String(comboId)).length;
     
     const combos = this.data.combos || [];

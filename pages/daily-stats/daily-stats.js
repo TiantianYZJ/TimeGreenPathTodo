@@ -147,6 +147,7 @@ Page({
     const todos = wx.getStorageSync('todos') || [];
     
     const dayTodos = todos.filter(todo => {
+      if (todo.parent_id) return false;
       if (todo.setDate === dateStr) return true;
       
       if (todo.time) {

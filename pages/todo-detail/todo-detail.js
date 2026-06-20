@@ -2,6 +2,7 @@ import ActionSheet, { ActionSheetTheme } from 'tdesign-miniprogram/action-sheet'
 
 const app = getApp();
 const { combosApi, collabApi, notifyApi, commentsApi, isLoggedIn } = require('../../utils/api.js');
+const { syncWithCloud } = require('../../utils/sync.js');
 
 const NOTIFY_TEMPLATE_ID = '1jvRWbLBNSasPzKtUnrQEiVrU6hj2lWwhKNq2u8jjWg';
 const SHARED_TODO_TEMPLATE_ID = '1jvRWbLBNSasPzKtUnrQEviO7vwbWCChJJr0z24an-Y';
@@ -50,7 +51,18 @@ Page({
     commentRefreshing: false,
     commentPage: 1,
     commentHasMore: true,
-    replyTarget: null
+    replyTarget: null,
+
+    subtaskList: [],
+    subtaskCollapsed: false,
+    showSubtaskInput: false,
+    subtaskInputValue: '',
+    subtaskHasInput: false,
+    editingSubtaskId: null,
+    editingSubtaskText: '',
+    addingChildForId: null,
+    childInputValue: '',
+    childInputPadding: 64
   },
 
   onShareAppMessage() {
@@ -209,6 +221,7 @@ Page({
         });
         
         this.loadNotification();
+        this.loadSubtasks();
       } else {
         wx.showToast({
           title: '待办不存在或已被删除',
@@ -275,6 +288,7 @@ Page({
         });
         
         this.loadNotification();
+        this.loadSubtasks();
       } else {
         wx.showToast({
           title: '待办不存在或已被删除',
@@ -713,21 +727,43 @@ Page({
       comboInfo: this.getComboById(todo.comboId),
       imagesLayout: this.calculateImagesLayout(parsedImages)
     })
+    
+    this.loadSubtasks();
   },
 
-  // 新增删除方法
+  countSubtasks(todos, parentId) {
+    let count = 0;
+    const children = todos.filter(t => t.parent_id === parentId);
+    for (const child of children) {
+      count += 1 + this.countSubtasks(todos, child.id);
+    }
+    return count;
+  },
+
+  deleteSubtasks(todos, parentId) {
+    const children = todos.filter(t => t.parent_id === parentId);
+    for (const child of children) {
+      this.deleteSubtasks(todos, child.id);
+      const idx = todos.findIndex(t => t.id === child.id);
+      if (idx > -1) {
+        todos[idx].isDeleted = true;
+        todos[idx].deletedAt = Date.now();
+      }
+    }
+  },
+
   deleteTodo() {
     const that = this;
-    const { isSharedTodo, sharedTodoId, comboId, currentIndex } = this.data;
+    const { isSharedTodo, sharedTodoId, comboId, currentIndex, todo } = this.data;
     
-    wx.showModal({
-      title: '删除确认',
-      content: '该操作不可撤销，确定继续吗？',
-      confirmText: '删除',
-      confirmColor: '#ff4d4f',
-      success(res) {
-        if (res.confirm) {
-          if (isSharedTodo) {
+    if (isSharedTodo) {
+      wx.showModal({
+        title: '删除确认',
+        content: '该操作不可撤销，确定继续吗？',
+        confirmText: '删除',
+        confirmColor: '#ff4d4f',
+        success(res) {
+          if (res.confirm) {
             collabApi.deleteSharedTodo(comboId, sharedTodoId)
               .then(() => {
                 wx.showToast({ title: '删除成功' });
@@ -736,14 +772,35 @@ Page({
               .catch(err => {
                 wx.showToast({ title: err.message || '删除失败', icon: 'none' });
               });
-          } else {
-            const todos = wx.getStorageSync('todos');
-            todos.splice(currentIndex, 1);
-            wx.setStorageSync('todos', todos);
-            app.updateCalendarCache(todos);
-            wx.navigateBack();
-            wx.showToast({ title: '删除成功' });
           }
+        }
+      });
+      return;
+    }
+    
+    const allTodos = wx.getStorageSync('todos') || [];
+    const subCount = this.countSubtasks(allTodos, todo.id);
+    
+    const content = subCount > 0
+      ? `该待办有 ${subCount} 个子任务，是否全部删除？`
+      : '该操作不可撤销，确定继续吗？';
+    
+    wx.showModal({
+      title: '删除确认',
+      content,
+      confirmText: '删除',
+      confirmColor: '#ff4d4f',
+      success(res) {
+        if (res.confirm) {
+          const todos = wx.getStorageSync('todos');
+          if (subCount > 0) {
+            that.deleteSubtasks(todos, todo.id);
+          }
+          todos.splice(currentIndex, 1);
+          wx.setStorageSync('todos', todos);
+          app.updateCalendarCache(todos);
+          wx.navigateBack();
+          wx.showToast({ title: '删除成功' });
         }
       }
     });
@@ -1336,7 +1393,7 @@ Page({
 
   onCommentPopupChange(e) {
     if (!e.detail.visible) {
-      this.setData({ 
+      this.setData({
         showCommentPopup: false,
         replyTarget: null,
         commentInput: ''
@@ -1504,6 +1561,222 @@ Page({
           } catch (err) {
             wx.hideLoading();
             wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  },
+
+  // ==================== 子任务 ====================
+
+  loadSubtasks() {
+    const { todo } = this.data;
+    if (!todo || !todo.id) return;
+    const allTodos = wx.getStorageSync('todos') || [];
+    const flat = this.flattenSubtree(allTodos, todo.id, 0);
+    this.setData({ subtaskList: flat });
+  },
+
+  toggleSubtaskCollapse() {
+    this.setData({ subtaskCollapsed: !this.data.subtaskCollapsed });
+  },
+
+  flattenSubtree(allTodos, parentId, depth) {
+    const children = allTodos.filter(t => t.parent_id === parentId && !t.isDeleted);
+    let result = [];
+    for (const child of children) {
+      result.push({ ...child, _depth: depth });
+      result = result.concat(this.flattenSubtree(allTodos, child.id, depth + 1));
+    }
+    return result;
+  },
+
+  onSubtaskInput(e) {
+    const val = e.detail.value;
+    this.setData({ subtaskInputValue: val, subtaskHasInput: val.trim().length > 0 });
+  },
+
+  createSubtask() {
+    const text = this.data.subtaskInputValue.trim();
+    if (!text) return;
+    const { todo } = this.data;
+    const now = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const newTodo = {
+      id: `todo_${now}_${randomStr}`,
+      text,
+      setDate: todo.setDate || '',
+      setTime: todo.setTime || '12:00',
+      completed: false,
+      time: now,
+      parent_id: todo.id,
+      priority: 'p2',
+      version: 1,
+      isDeleted: false,
+      deletedAt: null,
+      updatedAt: now,
+      isStar: false,
+      tags: [],
+      images: [],
+      location: null,
+      remarks: ''
+    };
+    const allTodos = wx.getStorageSync('todos') || [];
+    allTodos.unshift(newTodo);
+    wx.setStorageSync('todos', allTodos);
+    getApp().updateCalendarCache(allTodos);
+    this.setData({ subtaskInputValue: '' });
+    this.loadSubtasks();
+    if (isLoggedIn()) syncWithCloud('local');
+  },
+
+  toggleSubtask(e) {
+    const id = e.currentTarget.dataset.id;
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todo = allTodos.find(t => t.id === id);
+    if (!todo) return;
+    todo.completed = todo.completed ? false : Date.now();
+    todo.version = (todo.version || 1) + 1;
+    todo.updatedAt = Date.now();
+    wx.setStorageSync('todos', allTodos);
+    getApp().updateCalendarCache(allTodos);
+    this.checkAndCompleteParent(allTodos, todo.parent_id);
+    this.loadSubtasks();
+    if (isLoggedIn()) syncWithCloud('local');
+  },
+
+  checkAndCompleteParent(allTodos, parentId) {
+    if (!parentId) return;
+    const parent = allTodos.find(t => t.id === parentId);
+    if (!parent || parent.completed) return;
+    const siblings = allTodos.filter(t => t.parent_id === parentId && !t.isDeleted);
+    const allDone = siblings.length > 0 && siblings.every(t => t.completed);
+    if (!allDone) return;
+    parent.completed = Date.now();
+    parent.version = (parent.version || 1) + 1;
+    parent.updatedAt = Date.now();
+    wx.setStorageSync('todos', allTodos);
+    getApp().updateCalendarCache(allTodos);
+    if (isLoggedIn()) syncWithCloud('local');
+    if (parent.parent_id === this.data.todo.id) {
+      this.setData({ todo: { ...this.data.todo, completed: parent.completed } });
+    }
+    this.checkAndCompleteParent(allTodos, parent.parent_id);
+  },
+
+  startEditSubtask(e) {
+    const id = e.currentTarget.dataset.id;
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todo = allTodos.find(t => t.id === id);
+    if (!todo) return;
+    this.setData({
+      editingSubtaskId: id,
+      editingSubtaskText: todo.text
+    });
+  },
+
+  onEditInput(e) {
+    this.setData({ editingSubtaskText: e.detail.value });
+  },
+
+  saveEditSubtask() {
+    const { editingSubtaskId, editingSubtaskText } = this.data;
+    const text = editingSubtaskText.trim();
+    if (!text || !editingSubtaskId) {
+      this.setData({ editingSubtaskId: null });
+      return;
+    }
+    const allTodos = wx.getStorageSync('todos') || [];
+    const todo = allTodos.find(t => t.id === editingSubtaskId);
+    if (!todo) return;
+    todo.text = text;
+    todo.version = (todo.version || 1) + 1;
+    todo.updatedAt = Date.now();
+    wx.setStorageSync('todos', allTodos);
+    this.setData({ editingSubtaskId: null });
+    this.loadSubtasks();
+    if (isLoggedIn()) syncWithCloud('local');
+  },
+
+  cancelEditSubtask() {
+    this.setData({ editingSubtaskId: null });
+  },
+
+  showAddChildInput(e) {
+    const id = e.currentTarget.dataset.id;
+    const isClosing = this.data.addingChildForId === id;
+    const found = this.data.subtaskList.find(t => t.id === id);
+    const targetDepth = isClosing ? 0 : (found ? found._depth || 0 : 0);
+    this.setData({
+      addingChildForId: isClosing ? null : id,
+      childInputValue: '',
+      childInputPadding: targetDepth * 40 + 64
+    });
+  },
+
+  onChildInput(e) {
+    this.setData({ childInputValue: e.detail.value });
+  },
+
+  createChildSubtask() {
+    const text = this.data.childInputValue.trim();
+    const parentId = this.data.addingChildForId;
+    if (!text || !parentId) return;
+    const now = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const newTodo = {
+      id: `todo_${now}_${randomStr}`,
+      text,
+      setDate: '',
+      setTime: '12:00',
+      completed: false,
+      time: now,
+      parent_id: parentId,
+      priority: 'p2',
+      version: 1,
+      isDeleted: false,
+      deletedAt: null,
+      updatedAt: now,
+      isStar: false,
+      tags: [],
+      images: [],
+      location: null,
+      remarks: ''
+    };
+    const allTodos = wx.getStorageSync('todos') || [];
+    allTodos.unshift(newTodo);
+    wx.setStorageSync('todos', allTodos);
+    getApp().updateCalendarCache(allTodos);
+    this.setData({ addingChildForId: null, childInputValue: '' });
+    this.loadSubtasks();
+    if (isLoggedIn()) syncWithCloud('local');
+  },
+
+  deleteSubtask(e) {
+    const id = e.currentTarget.dataset.id;
+    const allTodos = wx.getStorageSync('todos') || [];
+    const subCount = this.countSubtasks(allTodos, id);
+    const content = subCount > 0
+      ? `该子任务有 ${subCount} 个子任务，是否全部删除？`
+      : '确定删除该子任务？';
+    const that = this;
+    wx.showModal({
+      title: '删除确认',
+      content,
+      confirmColor: '#ff4d4f',
+      success(res) {
+        if (res.confirm) {
+          if (subCount > 0) {
+            that.deleteSubtasks(allTodos, id);
+          }
+          const idx = allTodos.findIndex(t => t.id === id);
+          if (idx > -1) {
+            allTodos[idx].isDeleted = true;
+            allTodos[idx].deletedAt = Date.now();
+            wx.setStorageSync('todos', allTodos);
+            getApp().updateCalendarCache(allTodos);
+            that.loadSubtasks();
+            if (isLoggedIn()) syncWithCloud('local');
           }
         }
       }

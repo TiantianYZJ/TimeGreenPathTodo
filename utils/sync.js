@@ -41,7 +41,8 @@ function formatTodoDates(todo) {
   return {
     ...todo,
     setDate: formatDate(todo.setDate),
-    setTime: formatTime(todo.setTime)
+    setTime: formatTime(todo.setTime),
+    parent_id: todo.parentId || todo.parent_id || null
   };
 }
 
