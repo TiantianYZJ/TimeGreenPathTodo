@@ -104,269 +104,107 @@ Page({
     const pages = getCurrentPages();
     const isFromShare = pages.length === 1;
     this.setData({ isFromShare });
-    
+
     // 管理员查看模式
     if (options.adminView === '1') {
-      try {
-        const todoData = JSON.parse(decodeURIComponent(options.todoData || '{}'));
-        const creatorInfo = decodeURIComponent(options.creator || '{}');
-        let creator;
-        try {
-          creator = JSON.parse(creatorInfo);
-        } catch (e) {
-          creator = { nickname: creatorInfo || '未知用户', avatar: '/images/avatar.png' };
-        }
-        
-        let parsedImages = this.parseImages(todoData.images);
-        
-        let dateObj = new Date();
-        if (todoData.set_date || todoData.setDate) {
-          const rawDate = todoData.set_date || todoData.setDate;
-          dateObj = new Date(rawDate);
-          if (isNaN(dateObj.getTime())) dateObj = new Date();
-        }
-        
-        const setTime = todoData.set_time || todoData.setTime || '12:00';
-        
-        this.setData({
-          adminView: true,
-          todo: {
-            text: todoData.text || '',
-            setDate: this.formatDate(dateObj),
-            setTime: setTime,
-            remarks: todoData.remarks || '',
-            completed: todoData.completed ? true : false,
-            isStar: todoData.is_star || todoData.isStar || false,
-            images: parsedImages,
-            location: todoData.location || null,
-            priority: todoData.priority || 'p2'
-          },
-          creator: {
-            nickname: creator.nickname || '未知用户',
-            avatar: creator.avatar || '/images/avatar.png'
-          },
-          formattedDate: this.formatRichDate(dateObj, setTime),
-          formatDateTime: this.formatAdminDateTime(todoData.created_at || todoData.time || Date.now()),
-          formatCompletedTime: todoData.completed ? this.formatAdminDateTime(todoData.completed) : '',
-          imagesLayout: this.calculateImagesLayout(parsedImages)
-        });
-        return;
-      } catch (err) {
-        console.error('解析管理员查看数据失败:', err);
-      }
+      this._loadAdminView(options);
+      // 如果 adminView 解析成功则提前返回，否则 fall through 到后续条件（保留原始行为）
+      if (this.data.adminView) return;
     }
-    
-    const defaultTodo = {
-      text: '项目需求调研会议',
-      setDate: new Date().toISOString().split('T')[0],
-      setTime: '12:00',
-      remarks: '1. 准备用户画像文档\n2. 确认技术可行性\n3. 制定项目排期',
-      location: {
-        name: '腾讯大厦会议室',
-        address: '深圳市南山区科技园科技中一路',
-        latitude: 22.546786,
-        longitude: 113.944466
-      },
-      isStar: true
-    };
 
     if (options.sharedTodoId) {
-      this.setData({ isSharedTodo: true });
-      this.loadSharedTodo(options.sharedTodoId, options.comboId);
+      this._loadBySharedTodoId(options);
       return;
     }
 
     if (options.todoId) {
-      const todoId = decodeURIComponent(options.todoId);
-      const todos = wx.getStorageSync('todos') || [];
-      const index = todos.findIndex(t => t.id === todoId);
-      
-      if (index !== -1) {
-        const todo = todos[index];
-        if (!todo.priority) todo.priority = 'p2';
-        
-        let setDate;
-        if (todo.setDate) {
-          setDate = new Date(todo.setDate);
-          if (isNaN(setDate.getTime())) {
-            setDate = new Date();
-          }
-        } else {
-          setDate = new Date();
-        }
-        todo.setDate = this.formatDate(setDate);
-        todo.setTime = this.formatTime(todo.setTime);
-        
-        let parsedImages = this.parseImages(todo.images);
-        todo.images = parsedImages;
-        
-        const formattedDate = this.formatRichDate(setDate);
-        const formatDateTime = this.formatDateTime(todo.time || Date.now());
-        const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : '';
-        
-        this.setData({
-          currentIndex: index,
-          todo,
-          formattedDate,
-          formatDateTime,
-          formatCompletedTime,
-          setTime: todo.setTime,
-          isShare: false,
-          time: todo.time || Date.now(),
-          isStar: todo.isStar || false,
-          todoTags: this.getTagsByIds(todo.tags || []),
-          comboInfo: this.getComboById(todo.comboId),
-          todoId: todo.id || todo.todo_id || String(todo.time),
-          imagesLayout: this.calculateImagesLayout(parsedImages)
-        });
-        
-        this.loadNotification();
-        this.loadSubtasks();
-      } else {
-        wx.showToast({
-          title: '待办不存在或已被删除',
-          icon: 'none',
-          duration: 2000
-        });
-        setTimeout(() => wx.navigateBack(), 1500);
-      }
+      this._loadByTodoId(options);
       return;
     }
 
     if (!options.index && !options.id && options.isShare !== '1') {
-      const formattedDate = this.formatRichDate(new Date(defaultTodo.setDate));
-      this.setData({
-        todo: defaultTodo,
-        formattedDate,
-        isShare: false
-      });
+      this._loadDefault(options);
       return;
     }
 
     if (options.id) {
-      const todoId = Number(options.id);
-      const todos = wx.getStorageSync('todos') || [];
-      const index = todos.findIndex(t => t.time === todoId);
-      
-      if (index !== -1) {
-        const todo = todos[index];
-        if (!todo.priority) todo.priority = 'p2';
-        
-        let setDate;
-        if (todo.setDate) {
-          setDate = new Date(todo.setDate);
-          if (isNaN(setDate.getTime())) {
-            setDate = new Date();
-          }
-        } else {
-          setDate = new Date();
-        }
-        todo.setDate = this.formatDate(setDate);
-        todo.setTime = this.formatTime(todo.setTime);
-        
-        let parsedImages = this.parseImages(todo.images);
-        todo.images = parsedImages;
-        
-        const formattedDate = this.formatRichDate(setDate);
-        const formatDateTime = this.formatDateTime(todo.time || Date.now());
-        const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : '';
-        
-        this.setData({
-          currentIndex: index,
-          todo,
-          formattedDate,
-          formatDateTime,
-          formatCompletedTime,
-          setTime: todo.setTime,
-          isShare: false,
-          time: todo.time || Date.now(),
-          isStar: todo.isStar || false,
-          todoTags: this.getTagsByIds(todo.tags || []),
-          comboInfo: this.getComboById(todo.comboId),
-          todoId: todo.id || todo.todo_id || String(todo.time),
-          imagesLayout: this.calculateImagesLayout(parsedImages)
-        });
-        
-        this.loadNotification();
-        this.loadSubtasks();
-      } else {
-        wx.showToast({
-          title: '待办不存在或已被删除',
-          icon: 'none',
-          duration: 2000
-        });
-        setTimeout(() => wx.navigateBack(), 1500);
-      }
+      this._loadById(options);
       return;
     }
 
-    if(options.isShare === '1') {
-      let setDateObj;
-      if (options.setDate) {
-        setDateObj = new Date(options.setDate);
-        if (isNaN(setDateObj.getTime())) {
-          setDateObj = new Date();
-        }
-      } else {
-        setDateObj = new Date();
-      }
-      const formattedDate = this.formatRichDate(setDateObj);
+    if (options.isShare === '1') {
+      this._loadByShare(options);
+    } else {
+      this._loadByIndex(options);
+    }
+  },
 
-      const locationParam = options.location;
-      let parsedLocation = null;
+  // 路径1: 管理员查看模式
+  _loadAdminView(options) {
+    try {
+      const todoData = JSON.parse(decodeURIComponent(options.todoData || '{}'));
+      const creatorInfo = decodeURIComponent(options.creator || '{}');
+      let creator;
       try {
-        if (locationParam) {
-          parsedLocation = JSON.parse(decodeURIComponent(locationParam));
-        }
+        creator = JSON.parse(creatorInfo);
       } catch (e) {
-        console.error('位置参数解析失败:', e);
+        creator = { nickname: creatorInfo || '未知用户', avatar: '/images/avatar.png' };
       }
 
-      let parsedTags = [];
-      try {
-        if (options.tags) {
-          parsedTags = JSON.parse(decodeURIComponent(options.tags));
-        }
-      } catch (e) {
-        console.error('标签参数解析失败:', e);
+      let parsedImages = this.parseImages(todoData.images);
+
+      let dateObj = new Date();
+      if (todoData.set_date || todoData.setDate) {
+        const rawDate = todoData.set_date || todoData.setDate;
+        dateObj = new Date(rawDate);
+        if (isNaN(dateObj.getTime())) dateObj = new Date();
       }
 
-      let parsedImages = [];
-      try {
-        if (options.images) {
-          parsedImages = this.parseImages(decodeURIComponent(options.images));
-        }
-      } catch (e) {
-        console.error('图片参数解析失败:', e);
-      }
+      const setTime = todoData.set_time || todoData.setTime || '12:00';
 
       this.setData({
+        adminView: true,
         todo: {
-          text: decodeURIComponent(options.text || ''),
-          setDate: this.formatDate(setDateObj),
-          setTime: this.formatTime(options.setTime),
-          remarks: decodeURIComponent(options.remarks || ''),
-          location: parsedLocation,
-          time: Number(options.time || Date.now()),
-          isStar: options.isStar === 'true',
-          tags: parsedTags,
+          text: todoData.text || '',
+          setDate: this.formatDate(dateObj),
+          setTime: setTime,
+          remarks: todoData.remarks || '',
+          completed: todoData.completed ? true : false,
+          isStar: todoData.is_star || todoData.isStar || false,
           images: parsedImages,
-          priority: options.priority || 'p2'
+          location: todoData.location || null,
+          priority: todoData.priority || 'p2'
         },
-        todoTags: this.getTagsByIds(parsedTags),
-        formattedDate,
-        formatDateTime: this.formatDateTime(Number(options.time || Date.now())),
-        isShare: true,
+        creator: {
+          nickname: creator.nickname || '未知用户',
+          avatar: creator.avatar || '/images/avatar.png'
+        },
+        formattedDate: this.formatRichDate(dateObj, setTime),
+        formatDateTime: this.formatAdminDateTime(todoData.created_at || todoData.time || Date.now()),
+        formatCompletedTime: todoData.completed ? this.formatAdminDateTime(todoData.completed) : '',
         imagesLayout: this.calculateImagesLayout(parsedImages)
-      })
+      });
+    } catch (err) {
+      console.error('解析管理员查看数据失败:', err);
+    }
+  },
 
-    } else {
-      const index = options.index
-      this.setData({ currentIndex: index })
-      const todos = wx.getStorageSync('todos') || []
-      const todo = todos[index]
+  // 路径2: 共享待办
+  _loadBySharedTodoId(options) {
+    this.setData({ isSharedTodo: true });
+    this.loadSharedTodo(options.sharedTodoId, options.comboId);
+  },
+
+  // 路径3: 按 todoId 加载
+  _loadByTodoId(options) {
+    const todoId = decodeURIComponent(options.todoId);
+    const todos = wx.getStorageSync('todos') || [];
+    const index = todos.findIndex(t => t.id === todoId);
+
+    if (index !== -1) {
+      const todo = todos[index];
       if (!todo.priority) todo.priority = 'p2';
-      
+
       let setDate;
       if (todo.setDate) {
         setDate = new Date(todo.setDate);
@@ -378,15 +216,16 @@ Page({
       }
       todo.setDate = this.formatDate(setDate);
       todo.setTime = this.formatTime(todo.setTime);
-      
+
       let parsedImages = this.parseImages(todo.images);
       todo.images = parsedImages;
-      
-      const formattedDate = this.formatRichDate(setDate)
-      const formatDateTime = this.formatDateTime(todo.time || Date.now())
-      const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : ''
+
+      const formattedDate = this.formatRichDate(setDate);
+      const formatDateTime = this.formatDateTime(todo.time || Date.now());
+      const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : '';
 
       this.setData({
+        currentIndex: index,
         todo,
         formattedDate,
         formatDateTime,
@@ -400,9 +239,204 @@ Page({
         todoId: todo.id || todo.todo_id || String(todo.time),
         imagesLayout: this.calculateImagesLayout(parsedImages)
       });
-      
+
       this.loadNotification();
+      this.loadSubtasks();
+    } else {
+      wx.showToast({
+        title: '待办不存在或已被删除',
+        icon: 'none',
+        duration: 2000
+      });
+      setTimeout(() => wx.navigateBack(), 1500);
     }
+  },
+
+  // 路径4: 默认占位内容
+  _loadDefault(options) {
+    const defaultTodo = {
+      text: '项目需求调研会议',
+      setDate: new Date().toISOString().split('T')[0],
+      setTime: '12:00',
+      remarks: '1. 准备用户画像文档\n2. 确认技术可行性\n3. 制定项目排期',
+      location: {
+        name: '腾讯大厦会议室',
+        address: '深圳市南山区科技园科技中一路',
+        latitude: 22.546786,
+        longitude: 113.944466
+      },
+      isStar: true
+    };
+    const formattedDate = this.formatRichDate(new Date(defaultTodo.setDate));
+    this.setData({
+      todo: defaultTodo,
+      formattedDate,
+      isShare: false
+    });
+  },
+
+  // 路径5: 按旧版 id 加载
+  _loadById(options) {
+    const todoId = Number(options.id);
+    const todos = wx.getStorageSync('todos') || [];
+    const index = todos.findIndex(t => t.time === todoId);
+
+    if (index !== -1) {
+      const todo = todos[index];
+      if (!todo.priority) todo.priority = 'p2';
+
+      let setDate;
+      if (todo.setDate) {
+        setDate = new Date(todo.setDate);
+        if (isNaN(setDate.getTime())) {
+          setDate = new Date();
+        }
+      } else {
+        setDate = new Date();
+      }
+      todo.setDate = this.formatDate(setDate);
+      todo.setTime = this.formatTime(todo.setTime);
+
+      let parsedImages = this.parseImages(todo.images);
+      todo.images = parsedImages;
+
+      const formattedDate = this.formatRichDate(setDate);
+      const formatDateTime = this.formatDateTime(todo.time || Date.now());
+      const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : '';
+
+      this.setData({
+        currentIndex: index,
+        todo,
+        formattedDate,
+        formatDateTime,
+        formatCompletedTime,
+        setTime: todo.setTime,
+        isShare: false,
+        time: todo.time || Date.now(),
+        isStar: todo.isStar || false,
+        todoTags: this.getTagsByIds(todo.tags || []),
+        comboInfo: this.getComboById(todo.comboId),
+        todoId: todo.id || todo.todo_id || String(todo.time),
+        imagesLayout: this.calculateImagesLayout(parsedImages)
+      });
+
+      this.loadNotification();
+      this.loadSubtasks();
+    } else {
+      wx.showToast({
+        title: '待办不存在或已被删除',
+        icon: 'none',
+        duration: 2000
+      });
+      setTimeout(() => wx.navigateBack(), 1500);
+    }
+  },
+
+  // 路径6: 微信分享链接加载
+  _loadByShare(options) {
+    let setDateObj;
+    if (options.setDate) {
+      setDateObj = new Date(options.setDate);
+      if (isNaN(setDateObj.getTime())) {
+        setDateObj = new Date();
+      }
+    } else {
+      setDateObj = new Date();
+    }
+    const formattedDate = this.formatRichDate(setDateObj);
+
+    const locationParam = options.location;
+    let parsedLocation = null;
+    try {
+      if (locationParam) {
+        parsedLocation = JSON.parse(decodeURIComponent(locationParam));
+      }
+    } catch (e) {
+      console.error('位置参数解析失败:', e);
+    }
+
+    let parsedTags = [];
+    try {
+      if (options.tags) {
+        parsedTags = JSON.parse(decodeURIComponent(options.tags));
+      }
+    } catch (e) {
+      console.error('标签参数解析失败:', e);
+    }
+
+    let parsedImages = [];
+    try {
+      if (options.images) {
+        parsedImages = this.parseImages(decodeURIComponent(options.images));
+      }
+    } catch (e) {
+      console.error('图片参数解析失败:', e);
+    }
+
+    this.setData({
+      todo: {
+        text: decodeURIComponent(options.text || ''),
+        setDate: this.formatDate(setDateObj),
+        setTime: this.formatTime(options.setTime),
+        remarks: decodeURIComponent(options.remarks || ''),
+        location: parsedLocation,
+        time: Number(options.time || Date.now()),
+        isStar: options.isStar === 'true',
+        tags: parsedTags,
+        images: parsedImages,
+        priority: options.priority || 'p2'
+      },
+      todoTags: this.getTagsByIds(parsedTags),
+      formattedDate,
+      formatDateTime: this.formatDateTime(Number(options.time || Date.now())),
+      isShare: true,
+      imagesLayout: this.calculateImagesLayout(parsedImages)
+    });
+  },
+
+  // 路径7: 按数组索引加载
+  _loadByIndex(options) {
+    const index = options.index;
+    this.setData({ currentIndex: index });
+    const todos = wx.getStorageSync('todos') || [];
+    const todo = todos[index];
+    if (!todo.priority) todo.priority = 'p2';
+
+    let setDate;
+    if (todo.setDate) {
+      setDate = new Date(todo.setDate);
+      if (isNaN(setDate.getTime())) {
+        setDate = new Date();
+      }
+    } else {
+      setDate = new Date();
+    }
+    todo.setDate = this.formatDate(setDate);
+    todo.setTime = this.formatTime(todo.setTime);
+
+    let parsedImages = this.parseImages(todo.images);
+    todo.images = parsedImages;
+
+    const formattedDate = this.formatRichDate(setDate);
+    const formatDateTime = this.formatDateTime(todo.time || Date.now());
+    const formatCompletedTime = todo.completed ? this.formatDateTime(todo.completed) : '';
+
+    this.setData({
+      todo,
+      formattedDate,
+      formatDateTime,
+      formatCompletedTime,
+      setTime: todo.setTime,
+      isShare: false,
+      time: todo.time || Date.now(),
+      isStar: todo.isStar || false,
+      todoTags: this.getTagsByIds(todo.tags || []),
+      comboInfo: this.getComboById(todo.comboId),
+      todoId: todo.id || todo.todo_id || String(todo.time),
+      imagesLayout: this.calculateImagesLayout(parsedImages)
+    });
+
+    this.loadNotification();
   },
 
   async loadSharedTodo(todoId, comboId) {
@@ -733,21 +767,23 @@ Page({
 
   countSubtasks(todos, parentId) {
     let count = 0;
-    const children = todos.filter(t => t.parent_id === parentId);
-    for (const child of children) {
-      count += 1 + this.countSubtasks(todos, child.id);
+    for (const t of todos) {
+      if (t.parent_id === parentId) {
+        count += 1 + this.countSubtasks(todos, t.id);
+      }
     }
     return count;
   },
 
   deleteSubtasks(todos, parentId) {
-    const children = todos.filter(t => t.parent_id === parentId);
-    for (const child of children) {
-      this.deleteSubtasks(todos, child.id);
-      const idx = todos.findIndex(t => t.id === child.id);
-      if (idx > -1) {
-        todos[idx].isDeleted = true;
-        todos[idx].deletedAt = Date.now();
+    for (const t of todos) {
+      if (t.parent_id === parentId) {
+        this.deleteSubtasks(todos, t.id);
+        const idx = todos.findIndex(x => x.id === t.id);
+        if (idx > -1) {
+          todos[idx].isDeleted = true;
+          todos[idx].deletedAt = Date.now();
+        }
       }
     }
   },
@@ -1581,12 +1617,12 @@ Page({
     this.setData({ subtaskCollapsed: !this.data.subtaskCollapsed });
   },
 
-  flattenSubtree(allTodos, parentId, depth) {
-    const children = allTodos.filter(t => t.parent_id === parentId && !t.isDeleted);
-    let result = [];
-    for (const child of children) {
-      result.push({ ...child, _depth: depth });
-      result = result.concat(this.flattenSubtree(allTodos, child.id, depth + 1));
+  flattenSubtree(allTodos, parentId, depth, result = []) {
+    for (const t of allTodos) {
+      if (t.parent_id === parentId && !t.isDeleted) {
+        result.push({ ...t, _depth: depth });
+        this.flattenSubtree(allTodos, t.id, depth + 1, result);
+      }
     }
     return result;
   },
