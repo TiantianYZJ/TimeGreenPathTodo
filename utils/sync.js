@@ -27,9 +27,28 @@ function migrateFromLegacyStorage() {
   _migrated = true;
 }
 
+let _reindexed = false;
+
+function reindexTodos() {
+  if (_reindexed) return getTodoIds();
+  _reindexed = true;
+  const info = wx.getStorageInfoSync();
+  const allKeys = (info.keys || []).filter(k => k.startsWith(TODO_PREFIX));
+  if (allKeys.length === 0) return [];
+  const ids = allKeys.map(k => k.slice(TODO_PREFIX.length)).filter(id => {
+    const t = getTodoById(id);
+    return t && !t.isDeleted;
+  });
+  ids.sort((a, b) => (getTodoById(b)?.time || 0) - (getTodoById(a)?.time || 0));
+  wx.setStorageSync(INDEX_KEY, ids);
+  return ids;
+}
+
 function getTodoIds() {
   migrateFromLegacyStorage();
-  return wx.getStorageSync(INDEX_KEY) || [];
+  const ids = wx.getStorageSync(INDEX_KEY) || [];
+  if (ids.length === 0) return reindexTodos();
+  return ids;
 }
 
 function getTodoById(id) {
@@ -601,5 +620,6 @@ module.exports = {
   getTodoById,
   saveTodo,
   deleteTodoById,
-  migrateFromLegacyStorage
+  migrateFromLegacyStorage,
+  reindexTodos
 };
