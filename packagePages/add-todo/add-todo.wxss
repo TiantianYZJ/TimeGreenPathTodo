@@ -307,11 +307,14 @@
 }
 
 .combo-popup-content {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24rpx) saturate(180%);
+  -webkit-backdrop-filter: blur(24rpx) saturate(180%);
   border-radius: 32rpx 32rpx 0 0;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
 .popup-header {
