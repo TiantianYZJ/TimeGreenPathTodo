@@ -9,7 +9,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   waitForConnections: true,
   queueLimit: 0,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  timezone: '+08:00'
 });
 
 const query = (sql, params = []) => {
