@@ -1,5 +1,6 @@
 const app = getApp();
 const { combosApi, requireLogin, isLoggedIn } = require('../../utils/api.js');
+const { getLocalTodos, saveTodo } = require('../../utils/sync.js');
 const { formatFriendlyDate } = require('../../utils/util.js');
 
 const iconCategories = {
@@ -100,7 +101,7 @@ Page({
   },
 
   loadAvailableTodos() {
-    const todos = wx.getStorageSync('todos') || [];
+    const todos = getLocalTodos();
     const availableTodos = todos.filter(t => {
       const cid = t.comboId;
       return cid === undefined || cid === null || cid === '' || cid === 'null' || cid === 'undefined';
@@ -399,7 +400,7 @@ Page({
     const { todoIds } = this.data;
     
     if (todoIds && todoIds.length > 0) {
-      const todos = wx.getStorageSync('todos') || [];
+      const todos = getLocalTodos();
       const todoIdsNum = todoIds.map(id => Number(id));
       const updatedTodos = todos.map(t => {
         if (todoIdsNum.includes(t.time)) {
@@ -407,7 +408,10 @@ Page({
         }
         return t;
       });
-      wx.setStorageSync('todos', updatedTodos);
+      todoIdsNum.forEach(id => {
+        const todo = updatedTodos.find(t => t.time === id);
+        if (todo) saveTodo(todo);
+      });
       getApp().updateCalendarCache(updatedTodos);
     }
     

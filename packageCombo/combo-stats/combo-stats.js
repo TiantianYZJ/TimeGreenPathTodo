@@ -1,5 +1,6 @@
 const app = getApp();
 const { combosApi } = require('../../utils/api.js');
+const { getLocalTodos } = require('../../utils/sync.js');
 import * as echarts from '../../miniprogram_npm/ec-canvas/echarts';
 
 Page({
@@ -142,7 +143,7 @@ Page({
         this.calculatePersonalStats(todos);
         
       } else {
-        const allTodos = wx.getStorageSync('todos') || [];
+        const allTodos = getLocalTodos();
         const todos = allTodos.filter(todo => 
           String(todo.comboId) === String(id) && !todo.isDeleted
         );

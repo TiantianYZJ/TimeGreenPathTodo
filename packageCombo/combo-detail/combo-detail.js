@@ -950,15 +950,16 @@ Page({
                 if (action === 'keep_todos') {
                   const updatedTodos = allTodos.map(t => {
                     if (String(t.comboId) === comboIdStr) {
-                      return { ...t, comboId: '' };
+                      const updated = { ...t, comboId: '' };
+                      saveTodo(updated);
+                      return updated;
                     }
                     return t;
                   });
-                  wx.setStorageSync('todos', updatedTodos);
                   getApp().updateCalendarCache(updatedTodos);
                 } else {
                   const updatedTodos = allTodos.filter(t => String(t.comboId) !== comboIdStr);
-                  wx.setStorageSync('todos', updatedTodos);
+                  allTodos.filter(t => String(t.comboId) === comboIdStr).forEach(t => deleteTodoById(t.id, Date.now()));
                   getApp().updateCalendarCache(updatedTodos);
                 }
                 

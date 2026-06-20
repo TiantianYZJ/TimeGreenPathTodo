@@ -610,7 +610,6 @@ Page({
 
     this.setData({ todos: defaultTodos });
     setLocalTodos(defaultTodos);
-    wx.setStorageSync('todos', defaultTodos); // 保留旧格式备份
     wx.setStorageSync('hasInitializedDefaultTodos', true);
     getApp().updateCalendarCache(defaultTodos);
   },
@@ -701,7 +700,7 @@ Page({
 
     const updatedTodo = allTodos.find(t => t.id === todoId);
     if (updatedTodo) saveTodo(updatedTodo);
-    wx.setStorageSync('todos', allTodos); // 保留旧格式备份（用于日历缓存）
+    getApp().updateCalendarCache(allTodos);
 
     if (isLoggedIn()) {
       this.autoSyncToCloud();
@@ -748,8 +747,8 @@ Page({
               if (!storageTodos.find(t => t.id === deletedTodo.id)) {
                 updatedTodos.push(deletedTodo);
               }
-              wx.setStorageSync('todos', updatedTodos); // 保留旧格式备份
-              
+              getApp().updateCalendarCache(updatedTodos);
+
               const newAllTodos = that.data.allTodos.filter((item, i) => i !== allIndex);
               that.setData({ allTodos: newAllTodos });
               that.applyTagFilter();
@@ -821,7 +820,6 @@ Page({
 
     saveTodo(newTodo);
     getApp().updateCalendarCache(allTodos);
-    wx.setStorageSync('todos', allTodos); // 保留旧格式备份（用于日历缓存）
     
     if (comboId) {
       this.updateComboTodoCount(comboId, allTodos);
@@ -913,7 +911,6 @@ Page({
           
           this.setData({ todos });
           setLocalTodos(todos);
-          wx.setStorageSync('todos', todos); // 保留旧格式备份（用于日历缓存）
           getApp().updateCalendarCache(todos);
           this.autoSyncToCloud();
           wx.showToast({
@@ -947,7 +944,6 @@ Page({
           
           this.setData({ todos });
           setLocalTodos(todos);
-          wx.setStorageSync('todos', todos); // 保留旧格式备份（用于日历缓存）
           app.updateCalendarCache(todos);
           this.autoSyncToCloud();
           wx.showToast({
@@ -1267,7 +1263,6 @@ Page({
     });
 
     setLocalTodos(finalTodos);
-    wx.setStorageSync('todos', finalTodos); // 保留旧格式备份（用于日历缓存）
     getApp().updateCalendarCache(finalTodos);
 
     wx.vibrateShort({ type: 'light' });
