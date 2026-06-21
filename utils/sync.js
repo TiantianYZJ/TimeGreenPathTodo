@@ -81,6 +81,14 @@ function deleteTodoById(id, deletedAt) {
     ids.splice(idx, 1);
     wx.setStorageSync(INDEX_KEY, ids);
   }
+  // 注册到已删除列表，确保云端同步能感知此删除
+  if (todo) {
+    addDeletedTodo({
+      id: todo.id,
+      deletedAt: todo.deletedAt,
+      updatedAt: todo.updatedAt || todo.time || Date.now()
+    });
+  }
 }
 
 function getDeletedTodoList() {
