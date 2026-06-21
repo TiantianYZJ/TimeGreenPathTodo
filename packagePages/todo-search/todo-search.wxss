@@ -41,6 +41,12 @@
   font-weight: 500;
 }
 
+/* 覆盖 @import 导入的 .todo-item 伪元素色条（在子包中改用 wrapper::before） */
+.todo-item-wrapper[data-priority] .todo-item::before,
+.todo-item-wrapper:not([data-priority]) .todo-item::before {
+  content: none;
+}
+
 /* ===========================
    优先级左侧弧度色条
    =========================== */
