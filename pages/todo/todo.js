@@ -63,6 +63,14 @@ Page({
     // 语音相关
     recordState: false, // 录音状态
     content: '', // 识别的内容
+    // ↓↓↓ 新增 ↓↓↓
+    isRecording: false,   // 遮罩显隐控制
+    overlayPhase: '',     // 动画阶段: '' / 'expand' / 'collapse'
+    fabCx: 0,             // FAB 中心 X 坐标
+    fabCy: 0,             // FAB 中心 Y 坐标
+    voiceText: '',        // 实时识别文字
+    voiceWaveBars: [],    // 波浪 bar 数组（32 个元素）
+    // ↑↑↑ 新增 ↑↑↑
 
     scrollTop: 0,
     showBackTop: false, // 返回顶部按钮显示控制
@@ -1564,10 +1572,12 @@ Page({
     manager.onRecognize = function (res) {
       const text = res.result;
       that.setData({
+        voiceText: text,
         content: text
       });
-      
-      if (text === '') {
+
+      // 只有非遮罩模式下的空结果才弹窗提示
+      if (text === '' && !that.data.isRecording) {
         wx.showModal({
           title: '语音识别未成功',
           content: `未能识别到有效内容。可能是您在上一轮识别为完成时开启了第二轮识别。
@@ -1610,7 +1620,7 @@ Page({
     // 识别结束事件
     manager.onStop = function (res) {
       var text = res.result;
-  
+
       // 过滤末尾标点
       if (text && text.length > 0) {
         const lastChar = text[text.length - 1];
@@ -1620,13 +1630,15 @@ Page({
       }
 
       that.setData({ content: text });
-      wx.hideLoading();
 
-      if (text) {
-        // 自动跳转添加页面
-        wx.navigateTo({
-          url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
-        });
+      // 非遮罩模式（旧路径兼容）：遮罩模式下 text 已由 onRecognize 更新
+      if (!that.data.isRecording) {
+        wx.hideLoading();
+        if (text) {
+          wx.navigateTo({
+            url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
+          });
+        }
       }
     };
   },
@@ -1635,51 +1647,63 @@ Page({
    * 开始录音
    */
   startRecording() {
-    this.setData({ recordState: true });
-    manager.start({
-      lang: 'zh_CN',
+    const sysInfo = wx.getSystemInfoSync();
+    const ratio = sysInfo.windowWidth / 750;
+    const fabSize = 112 * ratio;         // TDesign FAB 尺寸 112rpx → px
+    const fabRight = 32 * ratio;
+    const fabBottom = 150 * ratio;
+    const cx = sysInfo.windowWidth - fabRight - fabSize / 2;
+    const cy = sysInfo.windowHeight - fabBottom - fabSize / 2;
+
+    // 两阶段展开：先插入 DOM（无 phase），再触发 transition
+    this.setData({
+      isRecording: true,
+      overlayPhase: '',
+      recordState: true,
+      voiceText: '',
+      voiceWaveBars: new Array(32).fill(0),
+      fabCx: cx,
+      fabCy: cy
     });
-    wx.showToast({
-      icon: 'none',
-      title: '识别已开始，松手结束录音',
-    });
+
+    setTimeout(() => {
+      this.setData({ overlayPhase: 'expand' });
+    }, 50);
+
+    // 开始语音识别
+    manager.start({ lang: 'zh_CN' });
   },
 
   /**
    * 触摸开始录音
    */
   touchStart(e) {
+    // 如果遮罩已显示，防止二次触发
+    if (this.data.isRecording) return;
+
     // 先检查麦克风权限
     wx.getSetting({
       success: (res) => {
         if (!res.authSetting['scope.record']) {
-          // 未授权，先请求权限
           wx.authorize({
             scope: 'scope.record',
             success: () => {
-              // 授权成功，开始录音
               this.startRecording();
             },
             fail: () => {
-              // 授权失败，显示引导
               wx.showModal({
                 title: '需要麦克风权限',
                 content: '语音功能需要麦克风权限，请在设置中开启',
                 confirmText: '去设置',
                 success: (res) => {
-                  if (res.confirm) {
-                    wx.openSetting();
-                  }
+                  if (res.confirm) wx.openSetting();
                 }
               });
             }
           });
         } else {
-          // 已授权，直接开始录音
           this.startRecording();
         }
-      },
-      fail: () => {
       }
     });
   },
@@ -1688,15 +1712,33 @@ Page({
    * 触摸结束录音
    */
   touchEnd(e) {
-    this.setData({
-      recordState: false
-    });
-    
-    // 结束语音识别
+    if (!this.data.isRecording) return;
+
+    // 停止语音识别
     manager.stop();
-    wx.showLoading({
-      title: '正在识别...'
-    });
+
+    // 触发收缩动画
+    this.setData({ overlayPhase: 'collapse' });
+
+    // 等待收缩动画完成后再处理跳转
+    setTimeout(() => {
+      const text = this.data.voiceText;
+
+      // 先隐藏遮罩
+      this.setData({
+        isRecording: false,
+        overlayPhase: '',
+        recordState: false,
+        voiceWaveBars: []
+      });
+
+      // 有识别文本才跳转（快速松手无文本则不跳转）
+      if (text) {
+        wx.navigateTo({
+          url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
+        });
+      }
+    }, 350); // 略长于收缩动画时长（300ms），等动画完全结束
   },
 
   // ===========================
