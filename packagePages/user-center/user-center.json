@@ -1,7 +1,6 @@
 {
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-cell": "tdesign-miniprogram/cell/cell"
+    "t-icon": "tdesign-miniprogram/icon/icon"
   },
   "navigationBarTitleText": "个人中心",
   "enablePullDownRefresh": true

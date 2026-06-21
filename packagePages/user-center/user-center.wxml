@@ -1,109 +1,187 @@
 <view class="container">
+  <!-- ========== 未登录态 ========== -->
   <view wx:if="{{!isLoggedIn}}" class="login-section">
+    <view class="login-decor">
+      <view class="decor-circle decor-c1"></view>
+      <view class="decor-circle decor-c2"></view>
+      <view class="decor-circle decor-c3"></view>
+    </view>
     <view class="login-card">
-      <image class="login-avatar" src="/images/avatar.png" />
-      <text class="login-title">欢迎使用时光绿径待办</text>
-      <text class="login-desc">登录后可同步数据、参与协作</text>
+      <view class="login-avatar-ring">
+        <image class="login-avatar" src="/images/avatar.png" />
+      </view>
+      <text class="login-title">时光绿径待办</text>
+      <text class="login-desc">记录你的每日足迹，让成长清晰可见</text>
       <button class="login-btn" bindtap="handleLogin">
-        <t-icon name="wechat" size="40rpx" color="#fff" />
+        <t-icon name="logo-wechat-stroke" size="36rpx" color="#fff" />
         <text>微信一键登录</text>
       </button>
+      <text class="login-hint">登录后可同步数据、参与协作</text>
     </view>
   </view>
 
+  <!-- ========== 已登录态 ========== -->
   <view wx:else class="user-section">
-    <view class="user-card">
-      <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="chooseAvatar">
-        <image class="user-avatar" src="{{avatarUrl || '/images/avatar.png'}}" />
-        <view class="avatar-edit">
-          <t-icon name="edit" size="32rpx" color="#fff" />
+
+    <!-- 顶部个人资料卡片 -->
+    <view class="profile-card">
+      <view class="profile-bg-decor">
+        <view class="bg-blob blob-1"></view>
+        <view class="bg-blob blob-2"></view>
+      </view>
+      <view class="profile-content">
+        <view class="profile-top">
+          <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="chooseAvatar">
+            <image class="user-avatar" src="{{avatarUrl || '/images/avatar.png'}}" />
+            <view class="avatar-edit-badge">
+              <t-icon name="edit-1" size="24rpx" color="#fff" />
+            </view>
+          </button>
+          <view class="profile-info">
+            <view class="greeting-row">
+              <t-icon name="{{greetingIcon}}" size="28rpx" color="rgba(255,255,255,0.9)" />
+              <text class="greeting-text">{{timeGreeting}}</text>
+            </view>
+            <view class="name-row">
+              <text wx:if="{{nickname}}" class="user-nickname">{{nickname}}</text>
+              <text wx:else class="user-nickname placeholder" bindtap="startEditNickname">点击设置昵称</text>
+              <view class="name-edit-btn" bindtap="startEditNickname">
+                <t-icon name="edit-1" size="28rpx" color="rgba(255,255,255,0.7)" />
+              </view>
+            </view>
+          </view>
         </view>
-      </button>
-      
-      <view class="nickname-wrapper">
-        <view wx:if="{{!isEditing}}" class="nickname-display" bindtap="startEditNickname">
-          <text class="user-nickname">{{nickname || '点击设置昵称'}}</text>
+
+        <!-- 昵称编辑态 -->
+        <view wx:if="{{isEditing}}" class="nickname-edit-bar">
+          <view class="nickname-edit-inner">
+            <input
+              class="nickname-input"
+              type="nickname"
+              value="{{tempNickname}}"
+              bindinput="onNicknameInput"
+              bindblur="onNicknameBlur"
+              placeholder="请输入昵称"
+              maxlength="16"
+              focus="{{true}}"
+            />
+            <view class="edit-actions">
+              <text class="edit-btn cancel" bindtap="cancelEdit">取消</text>
+              <text class="edit-btn confirm" bindtap="confirmEdit">确定</text>
+            </view>
+          </view>
         </view>
-        <view wx:else class="nickname-edit">
-          <input 
-            class="nickname-input"
-            type="nickname"
-            value="{{tempNickname}}"
-            bindinput="onNicknameInput"
-            bindblur="onNicknameBlur"
-            placeholder="请输入昵称或选择微信昵称"
-            maxlength="16"
-            focus="{{true}}"
-          />
-          <view class="edit-actions">
-            <text class="edit-btn cancel" bindtap="cancelEdit">取消</text>
-            <text class="edit-btn confirm" bindtap="confirmEdit">确定</text>
+
+        <view class="daily-motto">{{dailyMotto}}</view>
+      </view>
+    </view>
+
+    <!-- 成长数据卡片 -->
+    <view class="growth-card">
+      <view class="growth-header">
+        <t-icon name="tree-round-dot" size="32rpx" color="#00b26a" />
+        <text class="growth-title">我的小森林</text>
+      </view>
+      <view class="growth-stats">
+        <view class="growth-stat-item">
+          <view class="growth-stat-icon" style="background: #e8f8f0;">
+            <t-icon name="edit-1" size="32rpx" color="#00b26a" />
+          </view>
+          <view class="growth-stat-body">
+            <text class="growth-stat-value">{{todoCount}}</text>
+            <text class="growth-stat-label">待办事项</text>
+          </view>
+        </view>
+        <view class="growth-stat-divider"></view>
+        <view class="growth-stat-item">
+          <view class="growth-stat-icon" style="background: #f0fdf4;">
+            <t-icon name="check-circle" size="32rpx" color="#10b981" />
+          </view>
+          <view class="growth-stat-body">
+            <text class="growth-stat-value">{{todayDoneCount}}</text>
+            <text class="growth-stat-label">今日完成</text>
+          </view>
+        </view>
+        <view class="growth-stat-divider"></view>
+        <view class="growth-stat-item">
+          <view class="growth-stat-icon" style="background: #fff7ed;">
+            <t-icon name="sunny" size="32rpx" color="#f59e0b" />
+          </view>
+          <view class="growth-stat-body">
+            <text class="growth-stat-value">{{streakDays}}</text>
+            <text class="growth-stat-label">连续使用</text>
           </view>
         </view>
       </view>
     </view>
 
-    <view class="info-card">
-      <view class="info-item">
-        <text class="info-label">用户ID</text>
-        <text class="info-value" bindtap="copyUserId" data-value="{{userId}}">{{userId || '未获取'}}</text>
+    <!-- 快捷操作网格 -->
+    <view class="action-grid">
+      <view class="action-item" data-url="/packageTools/datamanage/datamanage" bindtap="navigateTo" hover-class="action-hover">
+        <view class="action-icon-box" style="background: #e8f8f0;">
+          <t-icon name="data-display" size="36rpx" color="#00b26a" />
+        </view>
+        <text class="action-label">数据管理</text>
+        <text class="action-desc">导出 / 恢复</text>
       </view>
-      <view class="info-item">
-        <text class="info-label">OPENID</text>
-        <text class="info-value openid" bindtap="copyOpenid" data-value="{{openid}}">{{openid || '未获取'}}</text>
+      <view class="action-item" data-url="/packageTools/tag-manage/tag-manage" bindtap="navigateTo" hover-class="action-hover">
+        <view class="action-icon-box" style="background: #f0f0ff;">
+          <t-icon name="tag" size="36rpx" color="#6366f1" />
+        </view>
+        <text class="action-label">标签管理</text>
+        <text class="action-desc">分类与整理</text>
+      </view>
+      <view class="action-item" data-url="/packageTools/join-collab/join-collab" bindtap="navigateTo" hover-class="action-hover">
+        <view class="action-icon-box" style="background: #fef3f2;">
+          <t-icon name="user-add" size="36rpx" color="#e34d59" />
+        </view>
+        <text class="action-label">加入协作</text>
+        <text class="action-desc">共享待办组</text>
+      </view>
+      <view class="action-item" data-url="/packagePages/daily-stats/daily-stats" bindtap="navigateTo" hover-class="action-hover">
+        <view class="action-icon-box" style="background: #fff7ed;">
+          <t-icon name="map-checked" size="36rpx" color="#f59e0b" />
+        </view>
+        <text class="action-label">每日足迹</text>
+        <text class="action-desc">查看统计</text>
       </view>
     </view>
 
-    <view class="stats-card">
-      <view class="stat-item">
-        <text class="stat-value">{{todoCount}}</text>
-        <text class="stat-label">待办数量</text>
-        <text class="stat-limit">/ {{todoLimit}}</text>
+    <!-- 账号信息（可折叠） -->
+    <view class="collapse-section">
+      <view class="collapse-header" bindtap="toggleInfo">
+        <view class="collapse-header-left">
+          <t-icon name="personal-information" size="28rpx" color="#999" />
+          <text class="collapse-title">账号信息</text>
+        </view>
+        <t-icon name="{{showInfo ? 'chevron-up' : 'chevron-down'}}" size="28rpx" color="#ccc" />
       </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item">
-        <text class="stat-value">{{comboCount}}</text>
-        <text class="stat-label">我的组合</text>
-        <text class="stat-limit">/ {{comboLimit}}</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item">
-        <text class="stat-value">{{collabCount}}</text>
-        <text class="stat-label">协作组合</text>
-        <text class="stat-limit">/ {{collabLimit}}</text>
+      <view wx:if="{{showInfo}}" class="collapse-body">
+        <view class="info-row">
+          <text class="info-label">用户 ID</text>
+          <view class="info-value-wrap" bindtap="copyUserId" data-value="{{userId}}">
+            <text class="info-value">{{userId || '未获取'}}</text>
+            <t-icon name="copy" size="24rpx" color="#ccc" />
+          </view>
+        </view>
+        <view class="info-divider"></view>
+        <view class="info-row">
+          <text class="info-label">OPENID</text>
+          <view class="info-value-wrap" bindtap="copyOpenid" data-value="{{openid}}">
+            <text class="info-value openid">{{openid || '未获取'}}</text>
+            <t-icon name="copy" size="24rpx" color="#ccc" />
+          </view>
+        </view>
       </view>
     </view>
 
-    <t-cell-group class="menu-card" theme="card">
-      <t-cell 
-        title="数据管理" 
-        description="导出或恢复待办数据"
-        data-url="/packageTools/datamanage/datamanage"
-        bind:click="navigateTo"
-        arrow
-      >
-      </t-cell>
-      <t-cell 
-        title="标签管理" 
-        description="管理待办分类标签"
-        data-url="/packageTools/tag-manage/tag-manage"
-        bind:click="navigateTo"
-        arrow
-      >
-      </t-cell>
-      <t-cell 
-        title="加入协作" 
-        description="输入邀请码加入共享组"
-        data-url="/packageTools/join-collab/join-collab"
-        bind:click="navigateTo"
-        arrow
-      >
-      </t-cell>
-    </t-cell-group>
-
-    <view class="logout-btn" bindtap="handleLogout">
-      <t-icon name="logout" size="36rpx" color="#ff4d4f" />
-      <text>退出登录</text>
+    <!-- 退出登录 -->
+    <view class="logout-section">
+      <view class="logout-btn" bindtap="handleLogout" hover-class="logout-hover">
+        <t-icon name="logout" size="32rpx" color="#e34d59" />
+        <text class="logout-text">退出登录</text>
+      </view>
     </view>
+
   </view>
 </view>
