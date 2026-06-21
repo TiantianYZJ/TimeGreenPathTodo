@@ -42,7 +42,7 @@
 }
 
 /* ===========================
-   优先级左上角弧面包裹
+   优先级左侧弧度色条
    =========================== */
 .todo-item-wrapper {
   overflow: hidden;
@@ -66,10 +66,10 @@
 .todo-item-wrapper[data-priority]::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 0 0 32rpx 0;
+  left: -2rpx;
+  top: 14rpx;
+  width: 14rpx;
+  height: calc(100% - 28rpx);
+  border-radius: 0 16rpx 16rpx 0;
   z-index: 1;
 }
