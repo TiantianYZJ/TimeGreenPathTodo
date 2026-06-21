@@ -83,6 +83,24 @@ function deleteTodoById(id, deletedAt) {
   }
 }
 
+function getDeletedTodoList() {
+  migrateFromLegacyStorage();
+  const info = wx.getStorageInfoSync();
+  const allKeys = (info.keys || []).filter(k => k.startsWith(TODO_PREFIX));
+  const deleted = [];
+  for (const key of allKeys) {
+    const todo = wx.getStorageSync(key);
+    if (todo && todo.isDeleted && todo.deletedAt) {
+      deleted.push(todo);
+    }
+  }
+  return deleted.sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+}
+
+function permanentDeleteTodoById(id) {
+  wx.removeStorageSync(TODO_PREFIX + id);
+}
+
 // ========== 批量读写（兼容 sync 流程） ==========
 
 function getLocalTodos() {
@@ -621,5 +639,7 @@ module.exports = {
   saveTodo,
   deleteTodoById,
   migrateFromLegacyStorage,
-  reindexTodos
+  reindexTodos,
+  getDeletedTodoList,
+  permanentDeleteTodoById
 };

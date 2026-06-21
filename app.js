@@ -1,6 +1,6 @@
 // app.js
 require('./utils/logger');
-const { syncOnAppStart, loginWithCode, setToken, getToken } = require('./utils/sync.js');
+const { syncOnAppStart, loginWithCode, setToken, getToken, getLocalTodos } = require('./utils/sync.js');
 const { configApi } = require('./utils/api.js');
 
 App({
@@ -76,7 +76,7 @@ App({
     this.checkMiniProgramUpdate();
     this.loadAppConfig();
 
-    this.updateCalendarCache(wx.getStorageSync('todos') || []);
+    this.updateCalendarCache(getLocalTodos());
 
     const savedToken = wx.getStorageSync('authToken');
     if (savedToken) {

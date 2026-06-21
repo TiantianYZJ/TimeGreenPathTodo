@@ -1,4 +1,5 @@
 const { todosApi, isLoggedIn } = require('../../utils/api.js');
+const { getDeletedTodoList, permanentDeleteTodoById, saveTodo, getTodoById, getLocalTodos } = require('../../utils/sync.js');
 
 Page({
   data: {
@@ -50,8 +51,7 @@ Page({
 
   async loadDeletedTodos() {
     if (!isLoggedIn()) {
-      const localTodos = wx.getStorageSync('todos') || [];
-      const localDeleted = localTodos.filter(t => t.isDeleted && t.deletedAt);
+      const localDeleted = getDeletedTodoList();
       const deletedTodos = this.formatDeletedTodos(localDeleted);
       this.setData({ deletedTodos });
       return;
@@ -70,8 +70,7 @@ Page({
       logger.error('SYNC', 'DELETED', '从云端加载已删除待办失败', err);
     }
     
-    const localTodos = wx.getStorageSync('todos') || [];
-    const localDeleted = localTodos.filter(t => t.isDeleted && t.deletedAt);
+    const localDeleted = getDeletedTodoList();
     const deletedTodos = this.formatDeletedTodos(localDeleted);
     this.setData({ deletedTodos, loading: false });
   },
@@ -114,26 +113,16 @@ Page({
   },
 
   updateLocalTodo(todoId, updates, newTodo = null) {
-    const allTodos = wx.getStorageSync('todos') || [];
-    let found = false;
-    
-    const updatedTodos = allTodos.map(t => {
-      if (t.id === todoId) {
-        found = true;
-        return { ...t, ...updates };
-      }
-      return t;
-    });
-    
-    if (!found && newTodo) {
-      updatedTodos.push(newTodo);
+    const existing = getTodoById(todoId);
+    if (existing) {
+      saveTodo({ ...existing, ...updates });
+    } else if (newTodo) {
+      saveTodo({ ...newTodo, ...updates });
     }
-    
-    wx.setStorageSync('todos', updatedTodos);
     
     const app = getApp();
     if (app && app.updateCalendarCache) {
-      app.updateCalendarCache(updatedTodos.filter(t => !t.isDeleted));
+      app.updateCalendarCache(getLocalTodos());
     }
   },
 
@@ -180,8 +169,6 @@ Page({
   },
 
   removeLocalTodo(todoId) {
-    const allTodos = wx.getStorageSync('todos') || [];
-    const updatedTodos = allTodos.filter(t => t.id !== todoId);
-    wx.setStorageSync('todos', updatedTodos);
+    permanentDeleteTodoById(todoId);
   }
 });
