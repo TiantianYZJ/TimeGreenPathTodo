@@ -20,7 +20,7 @@ module.exports = {
 <view class="container">
   <view class="form-container">
     <view class="form-item">
-      <text class="question-title">待办事项内容<text class="required">*</text></text>
+      <text class="question-title">待办内容<text class="required">*</text></text>
       <t-input
         style="--td-input-bg-color: #f8f8f8"
         placeholder="请输入待办内容"
@@ -32,23 +32,21 @@ module.exports = {
     </view>
 
     <view class="form-item">
-      <text class="question-title">截止日期<text class="required">*</text></text>
-      <view class="picker-field" bindtap="showCalendar">
-        <text>{{setDate || '请选择日期'}}</text>
-        <t-icon name="calendar"></t-icon>
-      </view>
-    </view>
-
-    <view class="form-item">
       <text class="question-title">截止时间<text class="required">*</text></text>
-      <picker
-        mode="time"
-        value="{{setTime}}"
-        bindchange="bindTimeChange">
-        <view class="picker-field">
-          {{setTime || '请选择时间'}}
+      <view class="deadline">
+        <view class="picker-field" bindtap="showCalendar">
+          <text>{{setDate || '请选择日期'}}</text>
+          <t-icon name="calendar"></t-icon>
         </view>
-      </picker>
+        <picker
+          mode="time"
+          value="{{setTime}}"
+          bindchange="bindTimeChange">
+          <view class="picker-field">
+            {{setTime || '请选择时间'}}
+          </view>
+        </picker>
+      </view>
     </view>
 
     <t-calendar

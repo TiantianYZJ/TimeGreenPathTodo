@@ -1,6 +1,6 @@
 const app = getApp();
 const weatherKey = 'SdnJZGqS_c7zVlCnj';
-const { isLoggedIn, combosApi, collabApi, todosApi, configApi, notifyApi } = require('../../utils/api.js');
+const { isLoggedIn, combosApi, collabApi, todosApi, configApi, notifyApi, shareApi } = require('../../utils/api.js');
 const { addDeletedTodo, incrementalSync, getLocalTodos, setLocalTodos, checkSyncDiff, syncWithCloud, getTodoById, saveTodo, deleteTodoById } = require('../../utils/sync.js');
 const { formatFriendlyDate, formatDateTime } = require('../../utils/util.js');
 
@@ -106,6 +106,15 @@ Page({
     _actionMenuStyle: '',
     _actionMenuDir: 'down',
     _actionMenuShow: false,
+    _overlayShow: false,
+    // 复制弹窗
+    _showCopyPopup: false,
+    _copyInputValue: '',
+    _copyKeepCompleted: true,
+    _copyKeepStar: true,
+    _copySourceTodo: null,
+    // 分享弹窗
+    _showSharePopup: false,
   },
 
   // ===========================
@@ -492,6 +501,23 @@ Page({
    * 分享到微信朋友
    */
   onShareAppMessage() {
+    const todo = this._shareTodo;
+    if (todo && todo.id) {
+      if (this._pendingShareId) {
+        return {
+          title: '分享待办：' + todo.text,
+          path: '/packagePages/todo-detail/todo-detail?isShare=1&shareId=' + this._pendingShareId,
+        };
+      }
+      const locationStr = todo.location ? encodeURIComponent(JSON.stringify(todo.location)) : '';
+      const tagsStr = todo.tags ? encodeURIComponent(JSON.stringify(todo.tags)) : '';
+      const imagesStr = todo.images && todo.images.length > 0 ? encodeURIComponent(JSON.stringify(todo.images)) : '';
+      const sharePath = '/packagePages/todo-detail/todo-detail?isShare=1&text=' + encodeURIComponent(todo.text) + '&setDate=' + (todo.setDate || '') + '&setTime=' + (todo.setTime || '12:00') + '&remarks=' + encodeURIComponent(todo.remarks || '') + '&location=' + locationStr + '&time=' + (todo.time || Date.now()) + '&isStar=' + (todo.isStar || false) + '&priority=' + (todo.priority || 'p2') + '&tags=' + tagsStr + '&images=' + imagesStr;
+      return {
+        title: '分享待办：' + todo.text,
+        path: sharePath,
+      }
+    }
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
       path: '/pages/todo/todo',
@@ -1917,12 +1943,17 @@ Page({
    * 关闭卡片操作模式
    */
   closeCardAction() {
-    this.setData({
-      showCardAction: false,
-      actionTodo: null,
-      actionTodoIndex: -1,
-      _actionMenuShow: false
-    });
+    this.setData({ _overlayShow: false, _actionMenuShow: false });
+    setTimeout(() => {
+      this.setData({
+        showCardAction: false,
+        actionTodo: null,
+        actionTodoIndex: -1,
+        _actionCardTop: 0,
+        _actionCardLeft: 0,
+        _actionCardWidth: 0
+      });
+    }, 250);
   },
 
   /**
@@ -1957,6 +1988,7 @@ Page({
         showCardAction: true,
         actionTodo: todo,
         actionTodoIndex: index,
+        _overlayShow: false,
         _actionCardTop: rect.top,
         _actionCardLeft: rect.left,
         _actionCardWidth: rect.width,
@@ -1968,7 +2000,7 @@ Page({
       });
 
       setTimeout(() => {
-        this.setData({ _actionMenuShow: true });
+        this.setData({ _actionMenuShow: true, _overlayShow: true });
       }, 50);
     });
   },
@@ -1976,11 +2008,10 @@ Page({
   onCardShareAction(e) {
     const todo = this.data.actionTodo;
     if (!todo) return;
+    this._shareTodo = todo;
     this.closeCardAction();
-    wx.setClipboardData({
-      data: `我在「时光绿径待办」中有一个待办事项：${todo.text}`,
-      success: () => wx.showToast({ title: '已复制链接', icon: 'none' })
-    });
+    this.prepareShareSnapshotForTodo(todo);
+    this.setData({ _showSharePopup: true });
   },
 
   /**
@@ -1999,26 +2030,21 @@ Page({
         this.closeCardAction();
         setTimeout(() => this.deleteTodo(index), 100);
         break;
-      case 'detail':
+      case 'copy':
         this.closeCardAction();
-        const todo = this.data.actionTodo;
-        if (todo && todo.id) {
-          setTimeout(() => {
-            wx.navigateTo({
-              url: `/packagePages/todo-detail/todo-detail?todoId=${encodeURIComponent(todo.id)}`
-            });
-          }, 100);
+        const copyTodo = this.data.actionTodo;
+        if (copyTodo && copyTodo.id) {
+          setTimeout(() => this.showCopyPopup(copyTodo), 100);
         }
         break;
       case 'share':
         this.closeCardAction();
-        const shareTodo = this.data.actionTodo;
-        if (shareTodo && shareTodo.id) {
+        const shareTodo2 = this.data.actionTodo;
+        if (shareTodo2 && shareTodo2.id) {
           setTimeout(() => {
-            wx.setClipboardData({
-              data: `我在「时光绿径待办」中有一个待办事项：${shareTodo.text}`,
-              success: () => wx.showToast({ title: '已复制', icon: 'none' })
-            });
+            this._shareTodo = shareTodo2;
+            this.prepareShareSnapshotForTodo(shareTodo2);
+            this.setData({ _showSharePopup: true });
           }, 100);
         }
         break;
@@ -2028,6 +2054,141 @@ Page({
     }
   },
 
+
+  // ===========================
+  // 复制待办
+  // ===========================
+
+  showCopyPopup(todo) {
+    this.setData({
+      _showCopyPopup: true,
+      _copyInputValue: todo.text,
+      _copyKeepCompleted: true,
+      _copyKeepStar: true,
+      _copySourceTodo: todo
+    });
+  },
+
+  onCopyInput(e) {
+    this.setData({ _copyInputValue: e.detail.value });
+  },
+
+  onCopyKeepCompletedChange() {
+    this.setData({ _copyKeepCompleted: !this.data._copyKeepCompleted });
+  },
+
+  onCopyKeepStarChange() {
+    this.setData({ _copyKeepStar: !this.data._copyKeepStar });
+  },
+
+  onCopyCancel() {
+    this.setData({ _showCopyPopup: false, _copySourceTodo: null });
+  },
+
+  onCopyConfirm() {
+    const source = this.data._copySourceTodo;
+    const newText = this.data._copyInputValue.trim();
+    if (!source || !newText) {
+      wx.showToast({ title: '请输入待办名称', icon: 'none' });
+      return;
+    }
+    const keepCompleted = this.data._copyKeepCompleted;
+    const keepStar = this.data._copyKeepStar;
+    this.copyTodoWithSubtrees(source, newText, keepCompleted, keepStar);
+    this.setData({ _showCopyPopup: false, _copySourceTodo: null });
+    const allTodos = getLocalTodos();
+    const todos = this.formatAllTodos(allTodos.filter(item => !item.isDeleted && !item.parent_id));
+    this.setData({ todos, allTodos: todos });
+    getApp().updateCalendarCache(todos);
+    wx.showToast({ title: '已复制', icon: 'success' });
+  },
+
+  copyTodoWithSubtrees(source, newText, keepCompleted, keepStar) {
+    const now = Date.now();
+    const newRootId = 'todo_' + now + '_' + Math.random().toString(36).substring(2, 8);
+    const newRoot = {
+      ...source,
+      id: newRootId,
+      text: newText,
+      time: now,
+      completed: keepCompleted && source.completed ? source.completed : false,
+      isStar: keepStar && source.isStar ? source.isStar : false,
+      version: 1,
+      updatedAt: now
+    };
+    delete newRoot.parent_id;
+    saveTodo(newRoot);
+
+    const allTodos = getLocalTodos();
+    const queue = [{ oldId: source.id, newId: newRootId }];
+    while (queue.length > 0) {
+      const { oldId, newId } = queue.shift();
+      const children = allTodos.filter(t => t.parent_id === oldId && !t.isDeleted);
+      for (const child of children) {
+        const newChildId = 'todo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        saveTodo({
+          ...child,
+          id: newChildId,
+          parent_id: newId,
+          completed: keepCompleted && child.completed ? child.completed : false,
+          time: Date.now(),
+          version: 1,
+          updatedAt: Date.now()
+        });
+        queue.push({ oldId: child.id, newId: newChildId });
+      }
+    }
+  },
+
+  // ===========================
+  // 分享待办
+  // ===========================
+
+  onSharePopupClose() {
+    this.setData({ _showSharePopup: false });
+    this._shareTodo = null;
+    this._pendingShareId = null;
+  },
+
+  async prepareShareSnapshotForTodo(todo) {
+    if (!todo || !todo.id) return;
+    const allTodos = getLocalTodos();
+    const hasSubtasks = allTodos.some(t => t.parent_id === todo.id && !t.isDeleted);
+    if (!hasSubtasks) return;
+    const subtasks = {};
+    this.collectSubtaskTree(allTodos, todo.id, subtasks);
+    try {
+      const result = await shareApi.createSnapshot(todo, subtasks);
+      if (result && result.success) {
+        this._pendingShareId = result.shareId;
+      }
+    } catch (err) {
+      logger.debug('TODO', 'SHARE', '预加载分享快照失败', err);
+    }
+  },
+
+  collectSubtaskTree(allTodos, rootParentId, result) {
+    const children = allTodos.filter(t => t.parent_id === rootParentId && !t.isDeleted);
+    if (children.length === 0) return;
+    result[rootParentId] = children.map(t => ({
+      id: t.id,
+      text: t.text,
+      parent_id: t.parent_id,
+      completed: t.completed,
+      time: t.time,
+      setDate: t.setDate,
+      setTime: t.setTime,
+      priority: t.priority || 'p2',
+      remarks: t.remarks || '',
+      tags: t.tags || [],
+      images: t.images || [],
+      location: t.location || null,
+      isStar: t.isStar || false
+    }));
+    for (const child of children) {
+      this.collectSubtaskTree(allTodos, child.id, result);
+    }
+  },
   /**
    * 监听页面滚动
    */

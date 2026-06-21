@@ -156,8 +156,6 @@ Page({
             app.updateCalendarCache(finalData.filter(t => !t.isDeleted));
 
             if (isLoggedIn()) {
-            
-            if (isLoggedIn()) {
               wx.showLoading({ title: '同步中...', mask: true });
               try {
                 await syncWithCloud('merge');

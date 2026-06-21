@@ -206,6 +206,54 @@ wx:key="*this"
         ></ad-custom>
       </view>
     </block>
+  <!-- 复制弹窗 -->
+  <t-popup
+    visible="{{_showCopyPopup}}"
+    placement="center"
+    usingCustomNavbar="{{true}}"
+    bind:visible-change="onCopyCancel"
+    custom-style="border-radius: 32rpx; overflow: hidden;"
+  >
+    <view class="copy-popup">
+      <view class="copy-popup-title">复制待办</view>
+      <input class="copy-popup-input" value="{{_copyInputValue}}" bindinput="onCopyInput" placeholder="请输入待办名称" />
+      <view class="copy-popup-options">
+        <view class="copy-popup-checkbox-label" bindtap="onCopyKeepCompletedChange">
+          <view class="pseudo-checkbox {{_copyKeepCompleted ? 'checked' : ''}}">
+            <t-icon wx:if="{{_copyKeepCompleted}}" name="check" size="28rpx" color="#fff" />
+          </view>
+          <text>保留完成状态</text>
+        </view>
+        <view class="copy-popup-checkbox-label" bindtap="onCopyKeepStarChange">
+          <view class="pseudo-checkbox {{_copyKeepStar ? 'checked' : ''}}">
+            <t-icon wx:if="{{_copyKeepStar}}" name="check" size="28rpx" color="#fff" />
+          </view>
+          <text>保留收藏状态</text>
+        </view>
+      </view>
+      <view class="copy-popup-buttons">
+        <view class="copy-popup-btn copy-popup-btn-cancel" bindtap="onCopyCancel">取消</view>
+        <view class="copy-popup-btn copy-popup-btn-confirm" bindtap="onCopyConfirm">确认复制</view>
+      </view>
+    </view>
+  </t-popup>
+
+  <!-- 分享弹窗 -->
+  <t-popup
+    visible="{{_showSharePopup}}"
+    placement="center"
+    usingCustomNavbar="{{true}}"
+    bind:visible-change="onSharePopupClose"
+    custom-style="border-radius: 32rpx; overflow: hidden;"
+  >
+    <view class="share-popup">
+      <view class="share-popup-title">分享待办</view>
+      <view class="share-popup-desc">将待办分享给微信好友</view>
+      <button class="share-popup-btn" open-type="share">分享给朋友</button>
+      <view class="share-popup-cancel" bindtap="onSharePopupClose">取消</view>
+    </view>
+  </t-popup>
+
   </view>
 
   <view wx:if="{{currentTab === 'combos'}}" class="combo-list">
@@ -473,7 +521,7 @@ wx:key="*this"
 
 <block wx:if="{{showCardAction}}">
   <!-- 遮罩 -->
-  <view class="card-action-overlay" catchtouchmove="preventTouchMove" bindtap="closeCardAction"></view>
+  <view class="card-action-overlay {{_overlayShow ? 'overlay-show' : ''}}" catchtouchmove="preventTouchMove" bindtap="closeCardAction"></view>
 
   <!-- 原地克隆 cell（t-cell，无 swipe/radio） -->
   <view
@@ -523,9 +571,9 @@ wx:key="*this"
     style="{{_actionMenuStyle}}"
     catchtap=""
   >
-    <view class="menu-btn" data-action="detail" bindtap="onCardActionTap">
-      <t-icon name="info-circle" size="40rpx" color="#fff" />
-      <text class="menu-label">详情</text>
+    <view class="menu-btn" data-action="copy" bindtap="onCardActionTap">
+      <t-icon name="copy" size="40rpx" color="#fff" />
+      <text class="menu-label">复制</text>
     </view>
     <view class="menu-btn" data-action="share" bindtap="onCardActionTap">
       <t-icon name="share" size="40rpx" color="#fff" />

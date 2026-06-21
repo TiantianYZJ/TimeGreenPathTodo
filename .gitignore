@@ -15,3 +15,6 @@ node_modules/
 
 # AI Mode Skills - Environment
 tools/ai-mode-skills/wxa-skills-eval/.env
+
+# Brainstorming visual companion artifacts
+.superpowers/

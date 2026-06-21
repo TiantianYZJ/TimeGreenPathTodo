@@ -62,6 +62,11 @@
   font-size: 36rpx;
 }
 
+.deadline {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+}
+
 .picker-field {
   padding: 26rpx 32rpx;
   margin-left: 24rpx;
