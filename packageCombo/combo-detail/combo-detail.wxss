@@ -91,7 +91,6 @@
 .todo-item-wrapper {
   margin: 0;
   position: relative;
-  overflow: hidden;
 }
 
 .requests-section {
@@ -410,37 +409,3 @@
   border-bottom: none;
 }
 
-/* 覆盖 @import 导入的 .todo-item 伪元素色条（在子包中改用 wrapper::before） */
-.todo-item-wrapper[data-priority] .todo-item::before,
-.todo-item-wrapper:not([data-priority]) .todo-item::before {
-  content: none;
-}
-
-/* ===========================
-   优先级左侧弧度色条
-   =========================== */
-.todo-item-wrapper[data-priority="p1"]::before {
-  background: #e34d4d;
-}
-.todo-item-wrapper[data-priority="p2"]::before {
-  background: #2196F3;
-}
-.todo-item-wrapper[data-priority="p3"]::before {
-  background: #FF9800;
-}
-.todo-item-wrapper[data-priority="p4"]::before {
-  background: #999;
-}
-.todo-item-wrapper:not([data-priority])::before {
-  background: transparent;
-}
-.todo-item-wrapper[data-priority]::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 14rpx;
-  width: 8rpx;
-  height: calc(100% - 28rpx);
-  border-radius: 0 4rpx 4rpx 0;
-  z-index: 1;
-}
