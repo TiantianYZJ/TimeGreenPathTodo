@@ -1207,12 +1207,13 @@
 .todo-item-wrapper[data-priority] .todo-item::before {
   content: '';
   position: absolute;
-  left: -2rpx;
-  top: 14rpx;
-  width: 14rpx;
-  height: calc(100% - 28rpx);
-  border-radius: 0 16rpx 16rpx 0;
+  left: 0;
+  top: 10rpx;
+  width: 16rpx;
+  height: calc(100% - 20rpx);
   z-index: 1;
+  -webkit-mask: radial-gradient(circle at 12rpx center, transparent 6rpx, black 6rpx);
+  mask: radial-gradient(circle at 12rpx center, transparent 6rpx, black 6rpx);
 }
 
 /* ===========================
