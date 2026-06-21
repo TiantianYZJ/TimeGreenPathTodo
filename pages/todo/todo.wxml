@@ -295,8 +295,21 @@ wx:key="*this"
   style="right: 32rpx; bottom: 150rpx;"
 />
 
-<t-fab 
-  icon="add" 
+<!-- 语音识别遮罩 -->
+<view wx:if="{{isRecording}}" class="voice-overlay" catchtouchmove="preventTouchMove">
+  <view class="voice-overlay-inner {{overlayPhase === 'expand' ? 'expand' : (overlayPhase === 'collapse' ? 'collapse' : '')}}" style="--cx:{{fabCx}}px;--cy:{{fabCy}}px;">
+    <view class="voice-center">
+      <text class="voice-hint {{voiceText ? '' : 'placeholder'}}">{{voiceText || '正在聆听...'}}</text>
+    </view>
+    <view class="voice-wave">
+      <view wx:for="{{32}}" wx:key="*this" class="voice-wave-bar" style="left:{{index * 3.125}}%;animation-delay:{{index * 0.06}}s;"></view>
+    </view>
+    <view class="voice-glow"></view>
+  </view>
+</view>
+
+<t-fab
+  icon="add"
   bind:click="navigateToAdd" 
   style="right: 32rpx; bottom: 32rpx;"
 />
