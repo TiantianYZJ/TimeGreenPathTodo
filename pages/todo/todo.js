@@ -65,9 +65,7 @@ Page({
     content: '', // 识别的内容
     // 语音遮罩相关
     isRecording: false,   // 遮罩显隐控制
-    overlayPhase: '',     // 动画阶段: '' / 'expand' / 'collapse'
-    fabCx: 0,             // FAB 中心 X 坐标
-    fabCy: 0,             // FAB 中心 Y 坐标
+    overlayPhase: '',     // 动画阶段: '' / 'show'
     voiceText: '',        // 实时识别文字
     voiceWaveBars: [],    // 波浪 bar 数组（32 个元素）
 
@@ -1629,7 +1627,7 @@ Page({
     // 识别结束事件
     manager.onStop = function (res) {
       // 遮罩模式已处理，不重复执行
-      if (that.data.isRecording && that._voiceDone) return;
+      if (that._voiceDone) return;
 
       var text = res.result;
 
@@ -1659,27 +1657,17 @@ Page({
    * 开始录音
    */
   startRecording() {
-    const sysInfo = wx.getSystemInfoSync();
-    const ratio = sysInfo.windowWidth / 750;
-    const fabSize = 112 * ratio;         // TDesign FAB 尺寸 112rpx → px
-    const fabRight = 32 * ratio;
-    const fabBottom = 150 * ratio;
-    const cx = sysInfo.windowWidth - fabRight - fabSize / 2;
-    const cy = sysInfo.windowHeight - fabBottom - fabSize / 2;
-
-    // 两阶段展开：先插入 DOM（无 phase），再触发 transition
+    // 渐显插入 DOM
     this.setData({
       isRecording: true,
       overlayPhase: '',
       recordState: true,
       voiceText: '',
-      voiceWaveBars: new Array(32).fill(0),
-      fabCx: cx,
-      fabCy: cy
+      voiceWaveBars: new Array(32).fill(0)
     });
 
     setTimeout(() => {
-      this.setData({ overlayPhase: 'expand' });
+      this.setData({ overlayPhase: 'show' });
     }, 50);
 
     // 开始语音识别
@@ -1726,21 +1714,22 @@ Page({
   touchEnd(e) {
     if (!this.data.isRecording) return;
 
+    // 标记完成，防止 onStop 异步竞争跳转
+    this._voiceDone = true;
+
     // 停止语音识别
     manager.stop();
 
-    // 触发收缩动画
-    this.setData({ overlayPhase: 'collapse' });
+    // 触发 opacity 淡出
+    this.setData({ overlayPhase: '' });
 
-    // 等待收缩动画完成后再处理跳转
+    // 等 CSS transition 0.25s 完成后移除 DOM + 跳转
     this._collapseTimer = setTimeout(() => {
       this._collapseTimer = null;
       const text = this.data.voiceText;
 
-      // 先隐藏遮罩
       this.setData({
         isRecording: false,
-        overlayPhase: '',
         recordState: false,
         voiceWaveBars: []
       });
@@ -1752,7 +1741,7 @@ Page({
           url: `/packagePages/add-todo/add-todo?voiceText=${encodeURIComponent(text)}`
         });
       }
-    }, 350); // 略长于收缩动画时长（300ms），等动画完全结束
+    }, 280); // 略长于 0.25s opacity transition
   },
 
   // ===========================

@@ -297,9 +297,10 @@ wx:key="*this"
 
 <!-- 语音识别遮罩 -->
 <view wx:if="{{isRecording}}" class="voice-overlay" catchtouchmove="preventTouchMove">
-  <view class="voice-overlay-inner {{overlayPhase === 'expand' ? 'expand' : (overlayPhase === 'collapse' ? 'collapse' : '')}}" style="--cx:{{fabCx}}px;--cy:{{fabCy}}px;">
+  <view class="voice-overlay-inner {{overlayPhase === 'show' ? 'show' : ''}}">
     <view class="voice-center">
       <text class="voice-hint {{voiceText ? '' : 'placeholder'}}">{{voiceText || '正在聆听...'}}</text>
+      <text class="voice-hint-tip">识别可能需要几秒钟，松手即可结束</text>
     </view>
     <view class="voice-wave">
       <view wx:for="{{voiceWaveBars}}" wx:key="*this" class="voice-wave-bar" style="left:{{index / 32 * 100}}%;animation-delay:{{index * 0.06}}s;"></view>
