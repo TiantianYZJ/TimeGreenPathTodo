@@ -137,7 +137,7 @@ Page({
     for (const t of todos) {
       if (t.parent_id === parentId && !t.isDeleted) {
         this.upgradeSubtasksRecursive(t.id);
-        t.parent_id = '';
+        delete t.parent_id;
         t.updatedAt = Date.now();
         t.version = (t.version || 1) + 1;
         saveTodo(t);

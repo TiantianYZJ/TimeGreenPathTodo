@@ -766,7 +766,7 @@ Page({
     for (const t of todos) {
       if (t.parent_id === parentId && !t.isDeleted) {
         this.upgradeSubtasksRecursive(t.id);
-        t.parent_id = '';
+        delete t.parent_id;
         t.updatedAt = Date.now();
         t.version = (t.version || 1) + 1;
         saveTodo(t);
@@ -898,8 +898,45 @@ Page({
     };
 
     if (shareId) {
-      confirmRevokeIfShared(todo.id).then(revokeAction => {
-        if (revokeAction !== 'cancel') afterRevokeCheck();
+      // 内联撤回确认，完全避免 Promise 连
+      wx.showModal({
+        title: '待办已分享',
+        content: '该待办已分享给他人，是否撤回分享？',
+        cancelText: '取消',
+        confirmText: '撤回并删除',
+        confirmColor: '#ff4d4f',
+        success(res) {
+          if (res.confirm) {
+            shareApi.revokeSnapshot(shareId)
+              .then(() => {
+                try {
+                  const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
+                  delete stored[todo.id];
+                  wx.setStorageSync('_sharedSnapshotIds', stored);
+                } catch (e) {}
+                afterRevokeCheck();
+              })
+              .catch(() => afterRevokeCheck());
+          } else if (res.cancel) {
+            wx.showModal({
+              title: '确认',
+              content: '仅删除待办，不撤回分享？',
+              cancelText: '取消删除',
+              confirmText: '仅删除',
+              confirmColor: '#ff4d4f',
+              success(res2) {
+                if (res2.confirm) {
+                  try {
+                    const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
+                    delete stored[todo.id];
+                    wx.setStorageSync('_sharedSnapshotIds', stored);
+                  } catch (e) {}
+                  afterRevokeCheck();
+                }
+              }
+            });
+          }
+        }
       });
     } else {
       afterRevokeCheck();
