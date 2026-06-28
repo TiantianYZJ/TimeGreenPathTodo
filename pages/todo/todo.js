@@ -828,18 +828,18 @@ Page({
   /**
    * 删除待办事项（含子待办处理）
    */
-  async deleteTodo(index) {
+  deleteTodo(index) {
     const that = this;
     const todo = this.data.todos[index];
     const allIndex = this.data.allTodos.findIndex(t => t.id === todo.id);
 
     // 分享撤回检测
-    const revokeAction = await confirmRevokeIfShared(todo.id);
-    if (revokeAction === 'cancel') return;
+    confirmRevokeIfShared(todo.id).then(revokeAction => {
+      if (revokeAction === 'cancel') return;
 
-    const hasSubtasks = getLocalTodos().some(t => t.parent_id === todo.id && !t.isDeleted);
+      const hasSubtasks = getLocalTodos().some(t => t.parent_id === todo.id && !t.isDeleted);
 
-    if (hasSubtasks) {
+      if (hasSubtasks) {
       wx.showActionSheet({
         itemList: ['升级子待办为普通待办', '一并删除子待办', '取消'],
         cancelIndex: 2,
@@ -891,6 +891,7 @@ Page({
         }
       });
     }
+    });
   },
 
   /**
