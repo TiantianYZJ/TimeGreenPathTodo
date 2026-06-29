@@ -3,6 +3,7 @@
   "pages": [
     "pages/todo/todo",
     "pages/calendar/calendar",
+    "pages/community-home/community-home",
     "pages/stats/stats",
     "pages/more/more"
   ],
@@ -60,12 +61,24 @@
         "todo-search/todo-search",
         "user-center/user-center"
       ]
+    },
+    {
+      "root": "packageCommunity",
+      "name": "community",
+      "pages": [
+        "post-detail/post-detail",
+        "post-edit/post-edit"
+      ]
     }
   ],
   "preloadRule": {
     "pages/todo/todo": {
       "network": "all",
       "packages": ["combo", "pages"]
+    },
+    "pages/community-home/community-home": {
+      "network": "all",
+      "packages": ["community"]
     },
     "pages/more/more": {
       "network": "all",
@@ -95,6 +108,12 @@
         "text": "日历",
         "iconPath": "images/calendar.png",
         "selectedIconPath": "images/calendar-active.png"
+      },
+      {
+        "pagePath": "pages/community-home/community-home",
+        "text": "社区",
+        "iconPath": "images/community.png",
+        "selectedIconPath": "images/community-active.png"
       },
       {
         "pagePath": "pages/stats/stats",
