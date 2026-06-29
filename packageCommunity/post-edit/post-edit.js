@@ -57,8 +57,13 @@ Page({
     if (options.postId) this.loadEditData(options.postId);
     const draft = wx.getStorageSync('communityDraft');
     if (draft && !options.postId) {
+      const lines = (draft.content || '').split('\n');
+      const draftTitle = lines[0] || '';
+      const draftBody = lines.slice(1).join('\n').trim();
       this.setData({
-        content: draft.content || '', fileList: draft.fileList || [], imageUrls: draft.imageUrls || [],
+        content: draft.content || '', title: draftTitle.trim(), body: draftBody,
+        canPublish: draftTitle.trim().length > 0,
+        fileList: draft.fileList || [], imageUrls: draft.imageUrls || [],
         selectedTodoIds: draft.selectedTodoIds || [], selectedComboCode: draft.selectedComboCode || null, location: draft.location || null
       });
     }
@@ -84,7 +89,8 @@ Page({
           content: post.title + (post.body ? '\n' + post.body : ''),
           title: post.title, body: post.body || '',
           fileList, imageUrls: post.images || [],
-          selectedTodoIds: post.todoIds || [], selectedComboCode: post.shareCode || null, location: post.location || null
+          selectedTodoIds: post.todoIds || [], selectedComboCode: post.shareCode || null,
+          location: post.location ? { text: post.location } : null
         });
       }
     } catch (err) { wx.showToast({ title: '加载失败', icon: 'none' }); }

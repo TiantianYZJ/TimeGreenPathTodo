@@ -1,6 +1,16 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
+const getFullAvatarUrl = (avatarUrl) => {
+  if (!avatarUrl) return null;
+  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) return avatarUrl;
+  if (avatarUrl.startsWith('/uploads/')) {
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+    return `${baseUrl}${avatarUrl}`;
+  }
+  return null;
+};
+
 const toggle = async (req, res) => {
   const userId = req.user.id;
   const { postId } = req.body;
@@ -59,7 +69,7 @@ const getUsers = async (req, res) => {
       data: users.map(u => ({
         userId: u.id,
         nickname: u.nickname || '用户',
-        avatar: u.avatar_url,
+        avatar: getFullAvatarUrl(u.avatar_url),
         likedAt: u.liked_at
       }))
     });

@@ -90,7 +90,7 @@ Page({
     const url = e.currentTarget.dataset.url;
     const postId = e.currentTarget.dataset.postId;
     const post = this.data.postList.find(p => p.postId === postId);
-    if (post && post.images) wx.previewImage({ current: url, urls: post.images });
+    wx.previewImage({ current: url, urls: post && post.images ? post.images : [url] });
   },
 
   onSearch() { wx.showToast({ title: '搜索功能开发中', icon: 'none' }); },

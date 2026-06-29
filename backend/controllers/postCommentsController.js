@@ -47,20 +47,19 @@ const getList = async (req, res) => {
     const hasMore = mainComments.length > pageSize;
     if (hasMore) mainComments.pop();
 
-    const commentIds = mainComments.map(c => c.id);
     let allReplies = [];
-    if (commentIds.length > 0) {
-      allReplies = await query(
-        `SELECT c.*, u.nickname, u.avatar_url,
-                ru.nickname as reply_to_nickname
-         FROM post_comments c
-         LEFT JOIN users u ON c.user_id = u.id
-         LEFT JOIN users ru ON c.reply_to_user_id = ru.id
-         WHERE c.parent_id IN (?) AND c.is_deleted = 0
-         ORDER BY c.created_at ASC`,
-        [commentIds]
-      );
-    }
+    const replies = await query(
+      `SELECT c.*, u.nickname, u.avatar_url,
+              ru.nickname as reply_to_nickname
+       FROM post_comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       LEFT JOIN users ru ON c.reply_to_user_id = ru.id
+       WHERE c.post_id = ? AND c.parent_id IS NOT NULL AND c.is_deleted = 0
+       ORDER BY c.created_at ASC`,
+      [postDbId]
+    );
+    // buildTree handles all nesting levels from flat reply list
+    allReplies = replies;
 
     // Build nested tree (max 3 levels deep)
     function buildTree(comments, parentId, depth = 0) {

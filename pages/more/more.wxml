@@ -62,7 +62,7 @@
         leftIcon="delete" hover arrow
         note="{{deletedCount > 0 ? deletedCount + ' 项' : ''}}"
       />
-      <t-cell title="我的举报" bindtap="goToMyReports" leftIcon="flag" hover arrow />
+      <t-cell wx:if="{{isAdmin}}" title="举报管理" bindtap="goToMyReports" leftIcon="flag" hover arrow />
     </t-cell-group>
   </view>
 

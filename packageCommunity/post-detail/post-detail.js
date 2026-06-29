@@ -45,7 +45,7 @@ Page({
           commentCursor: res.data.nextCursor, hasMoreComments: res.data.hasMore, loadingComments: false
         });
       }
-    } catch (err) { this.setData({ loadingComments: false }); }
+    } catch (err) { this.setData({ loadingComments: false }); wx.showToast({ title: '评论加载失败', icon: 'none' }); }
   },
 
   onLoadMoreComments() { this.loadComments(false); },
@@ -138,7 +138,7 @@ Page({
     try {
       const res = await communityApi.getVisitors(this.data.postId);
       if (res.success) this.setData({ visitors: res.data.list || [] });
-    } catch (err) { console.error('获取访客记录失败', err); }
+    } catch (err) { console.error('获取访客记录失败', err); wx.showToast({ title: '加载失败', icon: 'none' }); this.setData({ showVisitorsPopup: false, visitors: [] }); }
   },
 
   closeVisitors() { this.setData({ showVisitorsPopup: false, visitors: [] }); },
