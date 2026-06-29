@@ -4,6 +4,9 @@ const { communityApi } = require('../../utils/api');
 Page({
   data: {
     navBarHeight: app.globalData.navBarHeight || 44,
+    menuRight: app.globalData.menuRight || 0,
+    scrollTop: 0,
+    showBackTop: false,
     postList: [],
     nextCursor: null,
     hasMore: true,
@@ -14,7 +17,8 @@ Page({
 
   onLoad() {
     this.setData({
-      navBarHeight: app.globalData.navBarHeight || 44
+      navBarHeight: app.globalData.navBarHeight || 44,
+      menuRight: app.globalData.menuRight || 0
     });
   },
 
@@ -94,6 +98,17 @@ Page({
   },
 
   onSearch() { wx.showToast({ title: '搜索功能开发中', icon: 'none' }); },
+
+  onScroll(e) {
+    const show = e.detail.scrollTop > 500;
+    if (this.data.showBackTop !== show) {
+      this.setData({ showBackTop: show });
+    }
+  },
+
+  onToTop() {
+    this.setData({ scrollTop: this.data.scrollTop === 0 ? 1 : 0, showBackTop: false });
+  },
 
   formatTime(dateStr) {
     if (!dateStr) return '';

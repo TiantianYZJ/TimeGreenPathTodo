@@ -1,12 +1,16 @@
-<t-navbar title="社区" bind:left-click="goBack">
-  <view slot="right">
-    <t-icon name="search" size="40rpx" bind:tap="onSearch" />
+<view class="top">
+  <view class="header" style="padding-top:{{navBarHeight-22}}px;padding-left:{{menuRight+20}}rpx">
+    <text class="title">社区</text>
+    <t-icon name="search" size="40rpx" color="#2d3436" bind:tap="onSearch" />
   </view>
-</t-navbar>
+</view>
 
 <scroll-view
   scroll-y
-  style="height: calc(100vh - {{navBarHeight}}px - 110rpx);"
+  scroll-top="{{scrollTop}}"
+  class="scroll-view"
+  style="height: calc(100vh - 170rpx);"
+  bind:scroll="onScroll"
   bind:scrolltolower="onLoadMore"
   refresher-enabled="{{true}}"
   refresher-triggered="{{refreshing}}"
@@ -67,4 +71,5 @@
   </view>
 </scroll-view>
 
-<t-fab icon="add" bind:click="goToEdit" style="right: 32rpx; bottom: 100rpx;" />
+<t-fab wx:if="{{showBackTop}}" icon="arrow-up" bind:click="onToTop" style="right: 32rpx; bottom: 150rpx;" />
+<t-fab icon="add" bind:click="goToEdit" style="right: 32rpx; bottom: 32rpx;" />
