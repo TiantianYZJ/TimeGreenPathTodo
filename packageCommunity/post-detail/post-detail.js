@@ -52,8 +52,8 @@ Page({
   onCommentInput(e) { this.setData({ commentText: e.detail.value }); },
 
   replyComment(e) {
-    const { id, user } = e.currentTarget.dataset;
-    this.setData({ replyTarget: user, replyParentId: id, replyToUserId: null });
+    const { id, user, userid } = e.currentTarget.dataset;
+    this.setData({ replyTarget: user, replyParentId: id, replyToUserId: userid || null });
   },
 
   cancelReply() { this.setData({ replyTarget: null, replyParentId: null, replyToUserId: null }); },

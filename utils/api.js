@@ -718,28 +718,28 @@ function confirmRevokeIfShared(todoId, onProceed) {
 
 const communityApi = {
   // Posts
-  createPost: (data) => request({ url: '/api/posts/create', method: 'POST', data }),
-  getPostList: (params) => request({ url: '/api/posts/list', method: 'GET', data: params }),
-  getPostById: (postId) => request({ url: `/api/posts/${postId}`, method: 'GET' }),
-  updatePost: (postId, data) => request({ url: `/api/posts/${postId}`, method: 'PUT', data }),
-  deletePost: (postId) => request({ url: `/api/posts/${postId}`, method: 'DELETE' }),
-  getVisitors: (postId, params) => request({ url: `/api/posts/${postId}/visitors`, method: 'GET', data: params }),
+  createPost: (data) => request({ url: '/posts/create', method: 'POST', data }),
+  getPostList: (params) => request({ url: '/posts/list', method: 'GET', data: params }),
+  getPostById: (postId) => request({ url: `/posts/${postId}`, method: 'GET' }),
+  updatePost: (postId, data) => request({ url: `/posts/${postId}`, method: 'PUT', data }),
+  deletePost: (postId) => request({ url: `/posts/${postId}`, method: 'DELETE' }),
+  getVisitors: (postId, params) => request({ url: `/posts/${postId}/visitors`, method: 'GET', data: params }),
 
   // Likes
-  toggleLike: (data) => request({ url: '/api/likes/toggle', method: 'POST', data }),
-  getLikeUsers: (postId) => request({ url: `/api/likes/${postId}/users`, method: 'GET' }),
+  toggleLike: (data) => request({ url: '/likes/toggle', method: 'POST', data }),
+  getLikeUsers: (postId) => request({ url: `/likes/${postId}/users`, method: 'GET' }),
 
   // Comments
-  getComments: (postId, params) => request({ url: `/api/post-comments/${postId}`, method: 'GET', data: params }),
-  createComment: (postId, data) => request({ url: `/api/post-comments/${postId}`, method: 'POST', data }),
-  deleteComment: (commentId) => request({ url: `/api/post-comments/${commentId}`, method: 'DELETE' }),
+  getComments: (postId, params) => request({ url: `/post-comments/${postId}`, method: 'GET', data: params }),
+  createComment: (postId, data) => request({ url: `/post-comments/${postId}`, method: 'POST', data }),
+  deleteComment: (commentId) => request({ url: `/post-comments/${commentId}`, method: 'DELETE' }),
 
   // Reports
-  createReport: (data) => request({ url: '/api/reports/create', method: 'POST', data }),
-  getMyReports: () => request({ url: '/api/reports/my', method: 'GET' }),
-  getReportList: (params) => request({ url: '/api/reports/list', method: 'GET', data: params }),
-  getReportDetail: (id) => request({ url: `/api/reports/${id}`, method: 'GET' }),
-  processReport: (id, data) => request({ url: `/api/reports/${id}/process`, method: 'POST', data }),
+  createReport: (data) => request({ url: '/reports/create', method: 'POST', data }),
+  getMyReports: () => request({ url: '/reports/my', method: 'GET' }),
+  getReportList: (params) => request({ url: '/reports/list', method: 'GET', data: params }),
+  getReportDetail: (id) => request({ url: `/reports/${id}`, method: 'GET' }),
+  processReport: (id, data) => request({ url: `/reports/${id}/process`, method: 'POST', data }),
 };
 
 module.exports = {

@@ -160,22 +160,24 @@ const getById = async (req, res) => {
 
     const post = rows[0];
 
-    if (!post.is_deleted) {
-      await query('UPDATE posts SET views_count = views_count + 1 WHERE post_id = ?', [postId]);
+    if (post.is_deleted) {
+      return res.json({ success: true, data: { isDeleted: true, postId } });
+    }
 
-      const alreadyViewed = await query(
-        'SELECT id FROM post_views WHERE post_id = ? AND user_id = ?',
-        [post.id, userId]
-      );
-      if (alreadyViewed.length === 0) {
-        await query('INSERT INTO post_views (post_id, user_id) VALUES (?, ?)', [post.id, userId]);
-      }
+    await query('UPDATE posts SET views_count = views_count + 1 WHERE post_id = ?', [postId]);
 
-      const viewerIds = post.viewer_ids ? JSON.parse(post.viewer_ids) : [];
-      if (!viewerIds.includes(userId)) {
-        viewerIds.push(userId);
-        await query('UPDATE posts SET viewer_ids = ? WHERE post_id = ?', [JSON.stringify(viewerIds), postId]);
-      }
+    const alreadyViewed = await query(
+      'SELECT id FROM post_views WHERE post_id = ? AND user_id = ?',
+      [post.id, userId]
+    );
+    if (alreadyViewed.length === 0) {
+      await query('INSERT INTO post_views (post_id, user_id) VALUES (?, ?)', [post.id, userId]);
+    }
+
+    const viewerIds = post.viewer_ids ? JSON.parse(post.viewer_ids) : [];
+    if (!viewerIds.includes(userId)) {
+      viewerIds.push(userId);
+      await query('UPDATE posts SET viewer_ids = ? WHERE post_id = ?', [JSON.stringify(viewerIds), postId]);
     }
 
     res.json({ success: true, data: formatPost(post, userId) });

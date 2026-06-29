@@ -48,7 +48,7 @@
               <text class="comment-nickname">{{item.user.nickname}}</text>
               <view class="comment-actions">
                 <text wx:if="{{item.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{item.id}}">删除</text>
-                <text class="action-btn" bind:tap="replyComment" data-id="{{item.id}}" data-user="{{item.user.nickname}}">回复</text>
+                <text class="action-btn" bind:tap="replyComment" data-id="{{item.id}}" data-user="{{item.user.nickname}}" data-userid="{{item.user.id}}">回复</text>
               </view>
             </view>
             <text class="comment-content">{{item.content}}</text>
@@ -65,7 +65,7 @@
                     <text wx:if="{{reply.replyToUser}}" class="reply-target">回复 @{{reply.replyToUser.nickname}}</text>
                     <view class="comment-actions">
                       <text wx:if="{{reply.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{reply.id}}">删除</text>
-                      <text class="action-btn" bind:tap="replyComment" data-id="{{item.id}}" data-user="{{reply.user.nickname}}">回复</text>
+                      <text class="action-btn" bind:tap="replyComment" data-id="{{reply.id}}" data-user="{{reply.user.nickname}}" data-userid="{{reply.user.id}}">回复</text>
                     </view>
                   </view>
                   <text class="reply-content">{{reply.content}}</text>

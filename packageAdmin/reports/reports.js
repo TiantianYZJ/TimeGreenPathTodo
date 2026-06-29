@@ -26,7 +26,7 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const res = await communityApi.getReportList({ status: this.data.currentTab });
+      const res = await communityApi.getReportList({ status: this.data.currentTab, page: this.data.page });
       if (res.success) {
         const list = res.data.list || [];
         if (reset) {
@@ -34,7 +34,7 @@ Page({
         } else {
           this.setData({ list: [...this.data.list, ...list] });
         }
-        this.setData({ hasMore: res.data.hasMore });
+        this.setData({ hasMore: res.data.hasMore, page: this.data.page + 1 });
       }
     } catch (err) {
       console.error('加载举报列表失败', err);
