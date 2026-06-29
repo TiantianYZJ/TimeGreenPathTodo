@@ -1,0 +1,70 @@
+<t-navbar title="社区" bind:left-click="goBack">
+  <view slot="right">
+    <t-icon name="search" size="40rpx" bind:tap="onSearch" />
+  </view>
+</t-navbar>
+
+<scroll-view
+  scroll-y
+  style="height: calc(100vh - {{navBarHeight}}px - 110rpx);"
+  bind:scrolltolower="onLoadMore"
+  refresher-enabled="{{true}}"
+  refresher-triggered="{{refreshing}}"
+  bind:refresherrefresh="onRefresh"
+>
+  <view class="feed-list">
+    <block wx:for="{{postList}}" wx:key="postId">
+      <view class="post-card" data-post-id="{{item.postId}}" bind:tap="goToDetail">
+        <view class="post-header">
+          <image class="post-avatar" src="{{item.user.avatar || '/images/default-avatar.png'}}" mode="aspectFill" />
+          <view class="post-user-info">
+            <text class="post-nickname">{{item.user.nickname}}</text>
+            <text class="post-time">{{formatTime(item.createdAt)}}</text>
+          </view>
+        </view>
+        <view class="post-title">{{item.title}}</view>
+        <view wx:if="{{item.body}}" class="post-body">{{item.body}}</view>
+        <view wx:if="{{item.images && item.images.length > 0}}" class="post-images">
+          <view class="grid-{{item.images.length === 1 ? 'single' : (item.images.length === 2 ? 'double' : 'triple')}}">
+            <image
+              wx:for="{{item.images}}" wx:key="*this"
+              src="{{item}}" mode="{{item.images.length === 1 ? 'widthFix' : 'aspectFill'}}"
+              class="post-image" bind:tap.stop="previewImage" data-url="{{item}}"
+            />
+          </view>
+        </view>
+        <view class="post-meta-row">
+          <text wx:if="{{item.location}}" class="post-location">📍 {{item.location}}</text>
+          <text wx:if="{{item.ipProvince}}" class="post-ip">IP属地 · {{item.ipProvince}}</text>
+        </view>
+        <view class="post-stats-row">
+          <view class="stat-item" bind:tap.stop="goToDetail" data-post-id="{{item.postId}}">
+            <t-icon name="chat" size="28rpx" />
+            <text>{{item.commentsCount || 0}}</text>
+          </view>
+          <view class="stat-item {{item.isLiked ? 'liked' : ''}}" bind:tap.stop="toggleLike" data-post-id="{{item.postId}}">
+            <t-icon name="{{item.isLiked ? 'heart-filled' : 'heart'}}" size="28rpx" />
+            <text>{{item.likesCount || 0}}</text>
+          </view>
+          <view class="stat-item">
+            <t-icon name="browse" size="28rpx" />
+            <text>{{item.viewsCount || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <t-loading loading="{{true}}" size="40rpx" />
+      <text>加载中...</text>
+    </view>
+    <view wx:if="{{!hasMore && postList.length > 0}}" class="no-more">
+      <text>— 没有更多了 —</text>
+    </view>
+    <view wx:if="{{!loading && postList.length === 0}}" class="empty-state">
+      <t-icon name="message" size="100rpx" />
+      <text>暂无帖子，快来发布第一条吧</text>
+    </view>
+  </view>
+</scroll-view>
+
+<t-fab icon="add" bind:click="goToEdit" style="right: 32rpx; bottom: 100rpx;" />
