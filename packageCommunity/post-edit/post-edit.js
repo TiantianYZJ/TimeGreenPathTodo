@@ -41,6 +41,7 @@ Page({
   data: {
     navBarHeight: app.globalData.navBarHeight || 44,
     menuRight: app.globalData.menuRight || 0,
+    menuWidth: app.globalData.menuWidth || 0,
     content: '', title: '', body: '',
     fileList: [], imageUrls: [],
     imageSource: 'media',
@@ -57,7 +58,8 @@ Page({
     this.setData({
       userInfo,
       navBarHeight: app.globalData.navBarHeight || 44,
-      menuRight: app.globalData.menuRight || 0
+      menuRight: app.globalData.menuRight || 0,
+      menuWidth: app.globalData.menuWidth || 0
     });
     if (options.postId) this.loadEditData(options.postId);
     const draft = wx.getStorageSync('communityDraft');
@@ -141,22 +143,12 @@ Page({
     }
   },
 
-  toggleImageSource() {
-    const src = this.data.imageSource === 'media' ? 'messageFile' : 'media';
+  toggleImageSource(e) {
+    const isMessageFile = e.detail.value;
+    const src = isMessageFile ? 'messageFile' : 'media';
     this.setData({
       imageSource: src,
       uploadConfig: { ...this.data.uploadConfig, sourceType: src === 'media' ? ['album', 'camera'] : ['album'] }
-    });
-  },
-
-  pickImage() {
-    wx.chooseMedia({
-      count: 9 - this.data.imageUrls.length, mediaType: ['image'],
-      sourceType: this.data.imageSource === 'media' ? ['album', 'camera'] : ['album'],
-      success: (res) => {
-        const files = res.tempFiles.map(f => ({ path: f.tempFilePath }));
-        this.handleImageAdd({ detail: { files } });
-      }
     });
   },
 

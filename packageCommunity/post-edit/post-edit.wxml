@@ -4,7 +4,7 @@
       <t-icon name="chevron-left" size="40rpx" color="#2d3436" />
     </view>
     <text class="title">{{editMode ? '编辑帖子' : '发帖'}}</text>
-    <view class="header-right">
+    <view class="action-group" style="right:{{menuRight + menuWidth + 10}}px">
       <t-button theme="primary" size="small" disabled="{{!canPublish}}" loading="{{submitting}}" bindtap="handleSubmit">
         {{editMode ? '保存' : '发布'}}
       </t-button>
@@ -31,6 +31,7 @@
   <view class="upload-section">
     <t-upload
       mediaType="{{['image']}}"
+      class="image-upload"
       source="{{imageSource}}"
       max="{{9}}"
       files="{{fileList}}"
@@ -41,9 +42,9 @@
       bind:remove="handleImageRemove"
       bind:click="handleImageClick"
     />
-    <view class="source-toggle" bind:tap="toggleImageSource">
-      <text class="source-text">{{imageSource === 'media' ? '📷 相册/拍照' : '💬 聊天记录'}}</text>
-      <t-switch checked="{{imageSource === 'media'}}" size="24" />
+    <view class="image-source-switch" wx:if="{{fileList.length < 9}}">
+      <text class="switch-label">从聊天记录选择</text>
+      <t-switch value="{{imageSource === 'messageFile'}}" bind:change="toggleImageSource" size="small" />
     </view>
   </view>
 
@@ -54,9 +55,6 @@
 </view>
 
 <view class="bottom-toolbar">
-  <view class="toolbar-item" bind:tap="pickImage">
-    <t-icon name="image" size="48rpx" /><text>图片</text>
-  </view>
   <view class="toolbar-item" bind:tap="pickTodos">
     <t-icon name="check-circle" size="48rpx" /><text>待办</text>
   </view>

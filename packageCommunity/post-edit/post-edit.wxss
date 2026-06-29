@@ -32,16 +32,12 @@
 .upload-section {
   margin-bottom: 20rpx;
 }
-.source-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16rpx 0;
-  margin-top: 8rpx;
-}
-.source-text {
-  font-size: 26rpx;
-  color: #666;
+.image-upload {
+  padding-left: 32rpx;
+  --td-upload-radius: 32rpx;
+  --td-upload-add-bg-color: #f8f8f8;
+  --td-grid-bg-color: #e3f5eb;
+  --td-grid-item-bg-color: #e3f5eb;
 }
 .word-count {
   font-size: 24rpx;
