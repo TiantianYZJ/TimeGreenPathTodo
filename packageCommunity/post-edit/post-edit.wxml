@@ -5,9 +5,9 @@
     </view>
     <text class="title">{{editMode ? '编辑帖子' : '发帖'}}</text>
     <view class="action-group" style="right:{{menuRight + menuWidth + 10}}px">
-      <t-button theme="primary" size="small" disabled="{{!canPublish}}" loading="{{submitting}}" bindtap="handleSubmit">
+      <button class="publish-btn" disabled="{{!canPublish}}" loading="{{submitting}}" bindtap="handleSubmit">
         {{editMode ? '保存' : '发布'}}
-      </t-button>
+      </button>
     </view>
   </view>
 </view>

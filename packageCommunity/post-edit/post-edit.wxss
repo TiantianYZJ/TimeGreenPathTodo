@@ -29,6 +29,26 @@
   color: #1a1a1a;
   margin-bottom: 20rpx;
 }
+.publish-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #fff;
+  background: #00b26a;
+  border: none;
+  border-radius: 12rpx;
+  line-height: 1;
+}
+.publish-btn[disabled] {
+  opacity: 0.4;
+}
+.publish-btn::after {
+  border: none;
+}
 .upload-section {
   margin-bottom: 20rpx;
 }
