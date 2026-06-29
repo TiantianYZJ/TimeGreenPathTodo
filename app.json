@@ -18,7 +18,9 @@
         "notices/notices",
         "notice-edit/notice-edit",
         "changelog/changelog",
-        "changelog-edit/changelog-edit"
+        "changelog-edit/changelog-edit",
+        "reports/reports",
+        "report-detail/report-detail"
       ]
     },
     {
