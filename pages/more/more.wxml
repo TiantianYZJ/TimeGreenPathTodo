@@ -56,12 +56,13 @@
         url="/packageTools/motivation/motivation" 
         leftIcon="folder-add" hover arrow 
       />
-      <t-cell 
+      <t-cell
         title="回收站"
         url="/packageTools/trash/trash"
         leftIcon="delete" hover arrow
         note="{{deletedCount > 0 ? deletedCount + ' 项' : ''}}"
       />
+      <t-cell title="我的举报" bindtap="goToMyReports" leftIcon="flag" hover arrow />
     </t-cell-group>
   </view>
 

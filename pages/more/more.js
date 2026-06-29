@@ -169,4 +169,8 @@ Page({
       url: '/packageTools/join-collab/join-collab'
     });
   },
+
+  goToMyReports() {
+    wx.navigateTo({ url: '/packageAdmin/reports/reports' });
+  },
 });
