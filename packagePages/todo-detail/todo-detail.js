@@ -86,26 +86,16 @@ Page({
         path: `/packagePages/todo-detail/todo-detail?isShare=1&shareId=${this.data.pendingShareId}`,
       };
     }
-
-    const locationStr = currentTodo.location ? encodeURIComponent(JSON.stringify(currentTodo.location)) : '';
-    const tagsStr = currentTodo.tags ? encodeURIComponent(JSON.stringify(currentTodo.tags)) : '';
-    const imagesStr = currentTodo.images && currentTodo.images.length > 0 ? encodeURIComponent(JSON.stringify(currentTodo.images)) : '';
-    const sharePath = `/packagePages/todo-detail/todo-detail?isShare=1&text=${encodeURIComponent(currentTodo.text)}&setDate=${currentTodo.setDate}&setTime=${currentTodo.setTime || '12:00'}&remarks=${encodeURIComponent(currentTodo.remarks || '')}&location=${locationStr}&time=${currentTodo.time || Date.now()}&isStar=${currentTodo.isStar || false}&priority=${currentTodo.priority || 'p2'}&tags=${tagsStr}&images=${imagesStr}`;
-    return {
-      title: '分享待办：' + currentTodo.text,
-      path: sharePath,
-    }
   },
 
   // 分享前静默上传子任务树到服务端
   async prepareShareSnapshotIfNeeded() {
     const todo = this.data.todo;
     if (!todo || !todo.id || this.data.isSharedTodo || this.data.adminView) return;
+    // 未登录不创建快照
+    if (!isLoggedIn()) return;
 
     const allTodos = getLocalTodos();
-    const hasSubtasks = allTodos.some(t => t.parent_id === todo.id && !t.isDeleted);
-    if (!hasSubtasks) return;
-
     const subtasks = {};
     this.collectSubtaskTree(allTodos, todo.id, subtasks);
 
@@ -685,11 +675,6 @@ Page({
       const result = await shareApi.getSnapshot(shareId);
       wx.hideLoading();
 
-      if (result.revoked) {
-        wx.showToast({ title: '该分享已被发布者撤回', icon: 'none' });
-        return;
-      }
-
       if (!result.success || !result.data) {
         wx.showToast({ title: '分享已过期', icon: 'none' });
         return;
@@ -734,7 +719,7 @@ Page({
         return;
       }
       logger.error('PAGE', 'SNAPSHOT', '加载分享快照失败', err);
-      this._loadByShare(options);
+      wx.showToast({ title: '分享加载失败', icon: 'none' });
     }
   },
 
@@ -1170,7 +1155,7 @@ Page({
   },
 
   // 撤回分享
-  async revokeShare() {
+  revokeShare() {
     const todo = this.data.todo;
     const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
     const shareId = storedIds[todo.id];
@@ -1182,20 +1167,21 @@ Page({
       content: '撤回后，已分享的链接将无法查看，确定撤回吗？',
       confirmText: '撤回',
       confirmColor: '#ff4d4f',
-      async success(res) {
+      success(res) {
         if (res.confirm) {
-          try {
-            wx.showLoading({ title: '撤回中...' });
-            await shareApi.revokeSnapshot(shareId);
-            wx.hideLoading();
-            delete storedIds[todo.id];
-            wx.setStorageSync('_sharedSnapshotIds', storedIds);
-            that.setData({ hasActiveShare: false });
-            wx.showToast({ title: '已撤回' });
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: err.message || '撤回失败', icon: 'none' });
-          }
+          wx.showLoading({ title: '撤回中...' });
+          shareApi.revokeSnapshot(shareId)
+            .then(() => {
+              wx.hideLoading();
+              delete storedIds[todo.id];
+              wx.setStorageSync('_sharedSnapshotIds', storedIds);
+              that.setData({ hasActiveShare: false, pendingShareId: null });
+              wx.showToast({ title: '已撤回' });
+            })
+            .catch((err) => {
+              wx.hideLoading();
+              wx.showToast({ title: (err && err.message) || '撤回失败', icon: 'none' });
+            });
         }
       }
     });
@@ -1278,9 +1264,7 @@ Page({
     };
 
     if (shareId) {
-      confirmRevokeIfShared(todo.id).then(revokeAction => {
-        if (revokeAction !== 'cancel') afterRevokeCheck();
-      });
+      confirmRevokeIfShared(todo.id, afterRevokeCheck);
     } else {
       afterRevokeCheck();
     }

@@ -780,9 +780,7 @@ Page({
     };
 
     if (shareId) {
-      confirmRevokeIfShared(todoId).then(revokeAction => {
-        if (revokeAction !== 'cancel') afterRevokeCheck();
-      });
+      confirmRevokeIfShared(todoId, afterRevokeCheck);
     } else {
       afterRevokeCheck();
     }

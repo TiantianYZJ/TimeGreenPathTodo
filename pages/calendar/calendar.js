@@ -259,9 +259,7 @@ Page({
     };
 
     if (shareId) {
-      confirmRevokeIfShared(currentTodo.id).then(revokeAction => {
-        if (revokeAction !== 'cancel') afterRevokeCheck();
-      });
+      confirmRevokeIfShared(currentTodo.id, afterRevokeCheck);
     } else {
       afterRevokeCheck();
     }

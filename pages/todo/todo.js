@@ -502,27 +502,12 @@ Page({
    */
   onShareAppMessage() {
     const todo = this._shareTodo;
-    if (todo && todo.id) {
-      if (this._pendingShareId) {
-        return {
-          title: '分享待办：' + todo.text,
-          path: '/packagePages/todo-detail/todo-detail?isShare=1&shareId=' + this._pendingShareId,
-        };
-      }
-      const locationStr = todo.location ? encodeURIComponent(JSON.stringify(todo.location)) : '';
-      const tagsStr = todo.tags ? encodeURIComponent(JSON.stringify(todo.tags)) : '';
-      const imagesStr = todo.images && todo.images.length > 0 ? encodeURIComponent(JSON.stringify(todo.images)) : '';
-      const sharePath = '/packagePages/todo-detail/todo-detail?isShare=1&text=' + encodeURIComponent(todo.text) + '&setDate=' + (todo.setDate || '') + '&setTime=' + (todo.setTime || '12:00') + '&remarks=' + encodeURIComponent(todo.remarks || '') + '&location=' + locationStr + '&time=' + (todo.time || Date.now()) + '&isStar=' + (todo.isStar || false) + '&priority=' + (todo.priority || 'p2') + '&tags=' + tagsStr + '&images=' + imagesStr;
+    if (todo && todo.id && this._pendingShareId) {
       return {
         title: '分享待办：' + todo.text,
-        path: sharePath,
-      }
+        path: '/packagePages/todo-detail/todo-detail?isShare=1&shareId=' + this._pendingShareId,
+      };
     }
-    return {
-      title: '时光绿径待办-您的每日任务足迹管家',
-      path: '/pages/todo/todo',
-      imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
-    };
   },
 
   /**
@@ -898,46 +883,7 @@ Page({
     };
 
     if (shareId) {
-      // 内联撤回确认，完全避免 Promise 连
-      wx.showModal({
-        title: '待办已分享',
-        content: '该待办已分享给他人，是否撤回分享？',
-        cancelText: '取消',
-        confirmText: '撤回并删除',
-        confirmColor: '#ff4d4f',
-        success(res) {
-          if (res.confirm) {
-            shareApi.revokeSnapshot(shareId)
-              .then(() => {
-                try {
-                  const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
-                  delete stored[todo.id];
-                  wx.setStorageSync('_sharedSnapshotIds', stored);
-                } catch (e) {}
-                afterRevokeCheck();
-              })
-              .catch(() => afterRevokeCheck());
-          } else if (res.cancel) {
-            wx.showModal({
-              title: '确认',
-              content: '仅删除待办，不撤回分享？',
-              cancelText: '取消删除',
-              confirmText: '仅删除',
-              confirmColor: '#ff4d4f',
-              success(res2) {
-                if (res2.confirm) {
-                  try {
-                    const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
-                    delete stored[todo.id];
-                    wx.setStorageSync('_sharedSnapshotIds', stored);
-                  } catch (e) {}
-                  afterRevokeCheck();
-                }
-              }
-            });
-          }
-        }
-      });
+      confirmRevokeIfShared(todo.id, afterRevokeCheck);
     } else {
       afterRevokeCheck();
     }
@@ -2069,12 +2015,26 @@ Page({
     });
   },
 
-  onCardShareAction(e) {
+  async onCardShareAction(e) {
     const todo = this.data.actionTodo;
     if (!todo) return;
+    if (!isLoggedIn()) {
+      wx.showModal({
+        title: '提示',
+        content: '分享需要登录账号，是否前往登录？',
+        success(r) { if (r.confirm) wx.navigateTo({ url: '/packagePages/login/login' }); }
+      });
+      return;
+    }
     this._shareTodo = todo;
     this.closeCardAction();
-    this.prepareShareSnapshotForTodo(todo);
+    wx.showLoading({ title: '准备分享...' });
+    await this.prepareShareSnapshotForTodo(todo);
+    wx.hideLoading();
+    if (!this._pendingShareId) {
+      wx.showToast({ title: '分享准备失败，请重试', icon: 'none' });
+      return;
+    }
     this.setData({ _showSharePopup: true });
   },
 
@@ -2105,9 +2065,23 @@ Page({
         this.closeCardAction();
         const shareTodo2 = this.data.actionTodo;
         if (shareTodo2 && shareTodo2.id) {
-          setTimeout(() => {
+          if (!isLoggedIn()) {
+            wx.showModal({
+              title: '提示',
+              content: '分享需要登录账号，是否前往登录？',
+              success(r) { if (r.confirm) wx.navigateTo({ url: '/packagePages/login/login' }); }
+            });
+            break;
+          }
+          setTimeout(async () => {
             this._shareTodo = shareTodo2;
-            this.prepareShareSnapshotForTodo(shareTodo2);
+            wx.showLoading({ title: '准备分享...' });
+            await this.prepareShareSnapshotForTodo(shareTodo2);
+            wx.hideLoading();
+            if (!this._pendingShareId) {
+              wx.showToast({ title: '分享准备失败，请重试', icon: 'none' });
+              return;
+            }
             this.setData({ _showSharePopup: true });
           }, 100);
         }
@@ -2217,14 +2191,18 @@ Page({
   async prepareShareSnapshotForTodo(todo) {
     if (!todo || !todo.id) return;
     const allTodos = getLocalTodos();
-    const hasSubtasks = allTodos.some(t => t.parent_id === todo.id && !t.isDeleted);
-    if (!hasSubtasks) return;
     const subtasks = {};
     this.collectSubtaskTree(allTodos, todo.id, subtasks);
     try {
       const result = await shareApi.createSnapshot(todo, subtasks);
       if (result && result.success) {
         this._pendingShareId = result.shareId;
+        // 持久化存储 shareId，用于撤回检测
+        try {
+          const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+          storedIds[todo.id] = result.shareId;
+          wx.setStorageSync('_sharedSnapshotIds', storedIds);
+        } catch (e) {}
       }
     } catch (err) {
       logger.debug('TODO', 'SHARE', '预加载分享快照失败', err);
