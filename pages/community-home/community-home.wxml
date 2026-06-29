@@ -1,7 +1,9 @@
 <view class="top">
-  <view class="header" style="padding-top:{{navBarHeight-22}}px;padding-left:{{menuRight+20}}rpx">
+  <view class="header" style="padding-top:{{navBarHeight-44}}px;padding-left:{{menuRight+20}}rpx">
     <text class="title">社区</text>
-    <t-icon name="search" size="40rpx" color="#2d3436" bind:tap="onSearch" />
+    <view class="action-group" style="right:{{menuRight + menuWidth + 10}}px">
+      <t-icon name="search" size="40rpx" color="#000" bindtap="onSearch" />
+    </view>
   </view>
 </view>
 

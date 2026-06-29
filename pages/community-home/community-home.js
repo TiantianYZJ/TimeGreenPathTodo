@@ -5,6 +5,7 @@ Page({
   data: {
     navBarHeight: app.globalData.navBarHeight || 44,
     menuRight: app.globalData.menuRight || 0,
+    menuWidth: app.globalData.menuWidth || 0,
     scrollTop: 0,
     showBackTop: false,
     postList: [],
@@ -18,7 +19,8 @@ Page({
   onLoad() {
     this.setData({
       navBarHeight: app.globalData.navBarHeight || 44,
-      menuRight: app.globalData.menuRight || 0
+      menuRight: app.globalData.menuRight || 0,
+      menuWidth: app.globalData.menuWidth || 0
     });
   },
 
