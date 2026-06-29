@@ -29,7 +29,7 @@
             <image
               wx:for="{{item.images}}" wx:key="*this"
               src="{{item}}" mode="{{item.images.length === 1 ? 'widthFix' : 'aspectFill'}}"
-              class="post-image" bind:tap.stop="previewImage" data-url="{{item}}"
+              class="post-image" catch:tap="previewImage" data-url="{{item}}"
             />
           </view>
         </view>
@@ -38,11 +38,11 @@
           <text wx:if="{{item.ipProvince}}" class="post-ip">IP属地 · {{item.ipProvince}}</text>
         </view>
         <view class="post-stats-row">
-          <view class="stat-item" bind:tap.stop="goToDetail" data-post-id="{{item.postId}}">
+          <view class="stat-item" catch:tap="goToDetail" data-post-id="{{item.postId}}">
             <t-icon name="chat" size="28rpx" />
             <text>{{item.commentsCount || 0}}</text>
           </view>
-          <view class="stat-item {{item.isLiked ? 'liked' : ''}}" bind:tap.stop="toggleLike" data-post-id="{{item.postId}}">
+          <view class="stat-item {{item.isLiked ? 'liked' : ''}}" catch:tap="toggleLike" data-post-id="{{item.postId}}">
             <t-icon name="{{item.isLiked ? 'heart-filled' : 'heart'}}" size="28rpx" />
             <text>{{item.likesCount || 0}}</text>
           </view>
