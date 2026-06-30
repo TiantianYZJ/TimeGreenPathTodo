@@ -48,8 +48,12 @@ Page({
 
       const res = await communityApi.getPostList(params);
       if (res.success) {
+        const list = (res.data.list || []).map(item => ({
+          ...item,
+          createdAt: item.createdAt || item.created_at || null
+        }));
         this.setData({
-          postList: reset ? res.data.list : [...this.data.postList, ...res.data.list],
+          postList: reset ? list : [...this.data.postList, ...list],
           nextCursor: res.data.nextCursor,
           hasMore: res.data.hasMore,
           loading: false, loadingMore: false, refreshing: false

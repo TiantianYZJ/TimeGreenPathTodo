@@ -103,7 +103,7 @@ Page({
   },
 
   loadTodos() {
-    const todos = getLocalTodos().filter(t => !t.isDeleted);
+    const todos = getLocalTodos().filter(t => !t.isDeleted && !t.parentId && !t.parent_id);
     this.setData({ allTodos: todos, filteredTodos: todos });
   },
 
@@ -147,7 +147,8 @@ Page({
         fileList, imageUrls: cached.images || [],
         selectedTodoIds: cached.todoIds || [], selectedComboCode: cached.shareCode || null,
         selectedComboName: comboName,
-        location: cached.location ? { text: cached.location } : null
+        location: cached.location ? { text: cached.location } : null,
+        canPublish: true
       });
       return;
     }
@@ -168,7 +169,8 @@ Page({
           fileList, imageUrls: post.images || [],
           selectedTodoIds: post.todoIds || [], selectedComboCode: post.shareCode || null,
           selectedComboName: comboName,
-          location: post.location ? { text: post.location } : null
+          location: post.location ? { text: post.location } : null,
+          canPublish: true
         });
       }
     } catch (err) { wx.showToast({ title: '加载失败', icon: 'none' }); }
@@ -176,7 +178,7 @@ Page({
 
   onTitleInput(e) {
     const title = e.detail.value ?? '';
-    this.setData({ title, canPublish: title.trim().length > 0 });
+    this.setData({ title, canPublish: this.data.editMode || title.trim().length > 0 });
   },
 
   onBodyInput(e) {
