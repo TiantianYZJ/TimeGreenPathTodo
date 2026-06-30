@@ -1,10 +1,8 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const axios = require('axios');
+const { getProvince } = require('../utils/ipLocator');
 
 const POST_LOG = 'POST';
-
-const IP_API_KEY = process.env.IP_API_KEY || '';
 
 const getFullAvatarUrl = (avatarUrl) => {
   if (!avatarUrl) return null;
@@ -64,16 +62,7 @@ const create = async (req, res) => {
   try {
     let ipProvince = null;
     if (clientIp && clientIp !== '127.0.0.1' && clientIp !== '::1') {
-      try {
-        const ipRes = await axios.get(`https://qryip.market.alicloudapi.com/locateip?ip=${clientIp}`, {
-          headers: { 'Authorization': `APPCODE ${IP_API_KEY}` }
-        });
-        if (ipRes.data && ipRes.data.province) {
-          ipProvince = ipRes.data.province;
-        }
-      } catch (ipErr) {
-        logger.warn(POST_LOG, 'IP查询', 'IP归属地查询失败', { error: ipErr.message });
-      }
+      ipProvince = getProvince(clientIp);
     }
 
     await query(
