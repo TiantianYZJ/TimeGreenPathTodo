@@ -1,0 +1,170 @@
+<view class="page">
+  <!-- Tab bar -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{activeTab === 'share' ? 'active' : ''}}"
+      data-tab="share"
+      bind:tap="onTabChange"
+    >分享好友</view>
+    <view
+      class="tab-item {{activeTab === 'community' ? 'active' : ''}}"
+      data-tab="community"
+      bind:tap="onTabChange"
+    >分享到社区</view>
+  </view>
+
+  <!-- ============ Tab 1: 分享好友 ============ -->
+  <view wx:if="{{activeTab === 'share'}}" class="tab-content">
+    <!-- Preview card -->
+    <view class="preview-card" wx:if="{{todo}}">
+      <view class="preview-title">{{todo.text}}</view>
+      <view wx:if="{{subtaskSummary}}" class="preview-subtasks">{{subtaskSummary}}</view>
+      <view class="preview-meta">
+        <text wx:if="{{tagText}}">#{{tagText}}</text>
+        <text wx:if="{{dateText}}">{{dateText}}</text>
+        <text wx:if="{{priorityText}}">{{priorityText}}</text>
+      </view>
+    </view>
+
+    <!-- Settings (before generation) -->
+    <view wx:if="{{!shareGenerated}}" class="settings-section">
+      <!-- 1. 有效期 -->
+      <t-cell title="有效期" arrow bind:tap="onExpiryTap">
+        <view slot="note">
+          <text wx:for="{{expiryOptions}}" wx:key="value">
+            <text wx:if="{{item.value === settings.expiry}}">{{item.label}}</text>
+          </text>
+        </view>
+      </t-cell>
+
+      <!-- 2. 访问密码 -->
+      <t-cell title="访问密码">
+        <t-input
+          slot="note"
+          class="cell-input"
+          placeholder="设置密码（可选）"
+          value="{{settings.password}}"
+          bind:change="onPasswordChange"
+        />
+      </t-cell>
+
+      <!-- 3. 最大次数 -->
+      <t-cell title="最大次数">
+        <t-input
+          slot="note"
+          class="cell-input-right"
+          placeholder="不限"
+          type="digit"
+          value="{{settings.maxViews}}"
+          bind:change="onMaxViewsChange"
+        />
+      </t-cell>
+
+      <!-- 4. 备注 -->
+      <t-cell title="备注">
+        <t-input
+          slot="note"
+          class="cell-input"
+          placeholder="分享描述（可选）"
+          value="{{settings.remark}}"
+          bind:change="onRemarkChange"
+        />
+      </t-cell>
+
+      <!-- 5. 允许复制 -->
+      <t-cell title="允许复制">
+        <t-switch
+          slot="note"
+          class="switch-inline"
+          checked="{{settings.allowCopy}}"
+          bind:change="onAllowCopyChange"
+        />
+      </t-cell>
+
+      <!-- 6. 访客记录 -->
+      <t-cell title="访客记录">
+        <t-switch
+          slot="note"
+          class="switch-inline"
+          checked="{{settings.trackVisitors}}"
+          bind:change="onTrackVisitorsChange"
+        />
+      </t-cell>
+      <view class="cell-description">开启后可查看访客的访问时间和次数</view>
+
+      <!-- Generate button -->
+      <view class="btn-generate">
+        <t-button
+          block
+          size="large"
+          theme="primary"
+          bind:tap="onGenerateShareCard"
+        >生成分享卡片</t-button>
+      </view>
+    </view>
+
+    <!-- Actions (after generation) -->
+    <view wx:if="{{shareGenerated}}" class="action-section">
+      <t-button
+        block
+        size="large"
+        theme="primary"
+        open-type="share"
+        data-channel="share"
+      >分享给朋友</t-button>
+      <t-button
+        block
+        size="large"
+        variant="outline"
+        bind:tap="onCopyLink"
+      >{{copySuccess ? '已复制' : '复制链接'}}</t-button>
+      <view wx:if="{{copySuccess}}" class="copy-success">链接已复制到剪贴板</view>
+    </view>
+  </view>
+
+  <!-- ============ Tab 2: 分享到社区 ============ -->
+  <view wx:if="{{activeTab === 'community'}}" class="tab-content">
+    <!-- Preview card (reuse same layout) -->
+    <view class="preview-card" wx:if="{{todo}}">
+      <view class="preview-title">{{todo.text}}</view>
+      <view wx:if="{{subtaskSummary}}" class="preview-subtasks">{{subtaskSummary}}</view>
+      <view class="preview-meta">
+        <text wx:if="{{tagText}}">#{{tagText}}</text>
+        <text wx:if="{{dateText}}">{{dateText}}</text>
+        <text wx:if="{{priorityText}}">{{priorityText}}</text>
+      </view>
+    </view>
+
+    <view class="community-desc">发布待办至社区，分享你的效率心得</view>
+
+    <view class="community-btn-area">
+      <view wx:if="{{!communityPublished}}">
+        <t-button
+          block
+          size="large"
+          theme="primary"
+          bind:tap="onPublishToCommunity"
+        >发布到社区</t-button>
+      </view>
+      <view wx:if="{{communityPublished}}">
+        <t-button
+          block
+          size="large"
+          variant="outline"
+          bind:tap="onOpenCommunity"
+        >打开社区</t-button>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ Expiry Picker (shared) ============ -->
+  <t-picker
+    visible="{{expiryVisible}}"
+    value="{{[settings.expiry]}}"
+    bind:confirm="onExpiryConfirm"
+    bind:cancel="onExpiryCancel"
+    title="选择有效期"
+  >
+    <t-picker-item options="{{expiryOptions}}" />
+  </t-picker>
+</view>

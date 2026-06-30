@@ -23,6 +23,8 @@ const postsRoutes = require('./routes/postsRoutes');
 const likesRoutes = require('./routes/likesRoutes');
 const postCommentsRoutes = require('./routes/postCommentsRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const shareController = require('./controllers/shareController');
+const { authMiddleware, optionalAuth } = require('./middleware/auth');
 const { startNotificationScheduler } = require('./services/wechatService');
 
 const app = express();
@@ -68,6 +70,10 @@ app.use('/likes', likesRoutes);
 app.use('/post-comments', postCommentsRoutes);
 app.use('/reports', reportsRoutes);
 
+app.post('/share/snapshot/verify-password/:shareId', optionalAuth, shareController.verifyPassword);
+app.post('/share/snapshot/record-add/:shareId', optionalAuth, shareController.recordAddAction);
+app.get('/share/snapshot/visitors/:shareId', authMiddleware, shareController.getVisitors);
+
 app.use((err, req, res, next) => {
   logger.systemError('全局错误处理', err.message, { stack: err.stack });
   res.status(500).json({
@@ -94,6 +100,11 @@ app.listen(PORT, () => {
 async function cleanupExpiredSnapshots() {
   try {
     const { query } = require('./config/database');
+    await query(
+      `DELETE sv FROM share_visitors sv
+       INNER JOIN share_snapshots ss ON sv.share_id = ss.share_id
+       WHERE ss.expires_at < NOW()`
+    );
     await query('DELETE FROM share_snapshots WHERE expires_at < NOW()');
   } catch (err) {
     logger.dbError('清理', '清理过期分享快照失败', { error: err.message });

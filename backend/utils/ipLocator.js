@@ -17,7 +17,12 @@ function getProvince(ip) {
     const s = getSearcher();
     const result = s.search(ip);
     if (!result) return null;
-    return result.province || result.country || null;
+    const province = result.province || '';
+    const city = result.city || '';
+    if (city && city !== province) {
+      return province + ' ' + city;
+    }
+    return province || result.country || null;
   } catch (err) {
     console.warn('[ipLocator] 查询失败', ip, err.message);
     return null;

@@ -74,6 +74,21 @@ Page({
     this.loadTodos();
     this.loadPickerCombos();
     if (options.postId) this.loadEditData(options.postId);
+
+    // 从 share-config 快速分享到社区：携带 todoId
+    if (options.todoId) {
+      const quickTodo = app.globalData.quickShareTodo || {};
+      if (quickTodo.id == options.todoId) {
+        this.setData({
+          title: quickTodo.text || '',
+          canPublish: true,
+          selectedTodoIds: [options.todoId]
+        });
+        app.globalData.quickShareTodo = null;
+      }
+      return;
+    }
+
     const draft = wx.getStorageSync('communityDraft');
     if (draft && !options.postId) {
       this.setData({

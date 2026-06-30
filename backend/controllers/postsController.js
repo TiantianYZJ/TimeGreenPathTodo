@@ -20,6 +20,12 @@ function formatPost(row, userId) {
   const locationText = row.location ? (JSON.parse(row.location).text || null) : null;
   const viewerIds = row.viewer_ids ? JSON.parse(row.viewer_ids) : [];
 
+  // 若 ip_province 为空但有 ip_address，实时查询补上
+  let ipProvince = row.ip_province;
+  if (!ipProvince && row.ip_address) {
+    ipProvince = getProvince(row.ip_address);
+  }
+
   return {
     postId: row.post_id,
     userId: row.user_id,
@@ -28,7 +34,7 @@ function formatPost(row, userId) {
     images,
     todoIds,
     shareCode: row.share_code,
-    ipProvince: row.ip_province,
+    ipProvince,
     location: locationText,
     likesCount: row.likes_count,
     commentsCount: row.comments_count,
@@ -60,10 +66,7 @@ const create = async (req, res) => {
   const clientIp = req.headers['x-forwarded-for'] || req.ip;
 
   try {
-    let ipProvince = null;
-    if (clientIp && clientIp !== '127.0.0.1' && clientIp !== '::1') {
-      ipProvince = getProvince(clientIp);
-    }
+    const ipProvince = getProvince(clientIp);
 
     await query(
       `INSERT INTO posts (post_id, user_id, title, body, images, todo_ids, share_code, ip_address, ip_province, location)

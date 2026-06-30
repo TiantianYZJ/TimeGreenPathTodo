@@ -50,7 +50,7 @@
     <view class="notice-content">
       <text class="notice-icon">📢</text>
       <text class="notice-text">{{latestNoticeTitle}}</text>
-      <view class="notice-action" catchtap="showLatestNotice">
+      <view class="notice-action">
         <text class="action-text">详情</text>
         <image src="/images/arrow-right.png" class="action-icon" />
       </view>

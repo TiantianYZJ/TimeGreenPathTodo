@@ -60,6 +60,7 @@
         "login/login",
         "notice/notice",
         "todo-detail/todo-detail",
+        "share-config/share-config",
         "todo-search/todo-search",
         "user-center/user-center"
       ]

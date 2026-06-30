@@ -641,10 +641,10 @@ const commentsApi = {
 };
 
 const shareApi = {
-  createSnapshot: (todo, subtasks) => request({
+  createSnapshot: (todo, subtasks, options = {}) => request({
     url: '/share/snapshot',
     method: 'POST',
-    data: { todo, subtasks }
+    data: { todo, subtasks, options }
   }),
 
   getSnapshot: (shareId) => request({
@@ -655,7 +655,23 @@ const shareApi = {
   revokeSnapshot: (shareId) => request({
     url: `/share/snapshot/revoke/${shareId}`,
     method: 'POST'
-  })
+  }),
+
+  verifySharePassword: (shareId, password) => request({
+    url: `/share/snapshot/verify-password/${shareId}`,
+    method: 'POST',
+    data: { password }
+  }),
+
+  recordShareAdd: (shareId) => request({
+    url: `/share/snapshot/record-add/${shareId}`,
+    method: 'POST'
+  }),
+
+  getShareVisitors: (shareId) => request({
+    url: `/share/snapshot/visitors/${shareId}`,
+    method: 'GET'
+  }),
 };
 
 // 分享撤回检测：删除前调用，如待办有活跃分享则询问用户

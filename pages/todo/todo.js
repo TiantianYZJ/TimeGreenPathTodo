@@ -28,7 +28,6 @@ Page({
     dropdownTop: 0,
 
     latestNoticeTitle: "",  // 最新公告标题
-    latestNoticeContent: "", // 最新公告内容
 
     currentTab: 'all',
     tabs: [
@@ -1909,18 +1908,6 @@ Page({
   },
 
   /**
-   * 显示最新公告
-   */
-  showLatestNotice() {
-    wx.showModal({
-      title: this.data.latestNoticeTitle,
-      content: this.data.latestNoticeContent.replace(/\n/g, '\n'),
-      showCancel: false,
-      confirmText: "知道了"
-    });
-  },
-
-  /**
    * 跳转到公告页面
    */
   navigateToNotice() {
@@ -2026,16 +2013,8 @@ Page({
       });
       return;
     }
-    this._shareTodo = todo;
     this.closeCardAction();
-    wx.showLoading({ title: '准备分享...' });
-    await this.prepareShareSnapshotForTodo(todo);
-    wx.hideLoading();
-    if (!this._pendingShareId) {
-      wx.showToast({ title: '分享准备失败，请重试', icon: 'none' });
-      return;
-    }
-    this.setData({ _showSharePopup: true });
+    wx.navigateTo({ url: '/packagePages/share-config/share-config?todoId=' + todo.id });
   },
 
   /**
@@ -2073,16 +2052,8 @@ Page({
             });
             break;
           }
-          setTimeout(async () => {
-            this._shareTodo = shareTodo2;
-            wx.showLoading({ title: '准备分享...' });
-            await this.prepareShareSnapshotForTodo(shareTodo2);
-            wx.hideLoading();
-            if (!this._pendingShareId) {
-              wx.showToast({ title: '分享准备失败，请重试', icon: 'none' });
-              return;
-            }
-            this.setData({ _showSharePopup: true });
+          setTimeout(() => {
+            wx.navigateTo({ url: '/packagePages/share-config/share-config?todoId=' + shareTodo2.id });
           }, 100);
         }
         break;

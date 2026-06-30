@@ -1160,3 +1160,68 @@
 .subtask-readonly-dot.checked {
   background: #00b26a;
 }
+
+.visitor-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 24rpx;
+  margin: 0 20rpx 140rpx;
+  background: #f0fdf6;
+  border-radius: 16rpx;
+  color: #00b26a;
+  font-size: 26rpx;
+}
+.visitor-popup-panel {
+  padding: 30rpx;
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+.visitor-popup-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+.visitor-popup-empty {
+  text-align: center;
+  color: #999;
+  font-size: 26rpx;
+  padding: 40rpx 0;
+}
+.visitor-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  font-size: 26rpx;
+}
+.visitor-popup-info {
+  flex: 1;
+  color: #333;
+}
+.visitor-popup-action {
+  color: #999;
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+}
+.visitor-popup-action.action-add {
+  color: #00b26a;
+  background: #f0fdf6;
+}
+.visitor-popup-time {
+  color: #999;
+  font-size: 20rpx;
+}
+.visitor-popup-close {
+  text-align: center;
+  padding: 20rpx 0 10rpx;
+  font-size: 28rpx;
+  color: #999;
+}

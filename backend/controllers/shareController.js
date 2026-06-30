@@ -12,7 +12,7 @@ function generateShareId() {
 
 const createSnapshot = async (req, res) => {
   const userId = req.user.id;
-  const { todo, subtasks } = req.body;
+  const { todo, subtasks, options = {} } = req.body;
 
   if (!todo || !todo.text) {
     return res.status(400).json({
@@ -23,11 +23,18 @@ const createSnapshot = async (req, res) => {
 
   try {
     const shareId = generateShareId();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiryMap = { '1h': 1, '6h': 6, '24h': 24, '3d': 72, '7d': 168 };
+    const hours = expiryMap[options.expiry] || 24;
+    const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+    const { password, maxViews, remark, allowCopy, trackVisitors } = options;
 
     await query(
-      'INSERT INTO share_snapshots (share_id, user_id, data, expires_at) VALUES (?, ?, ?, ?)',
-      [shareId, userId, JSON.stringify({ todo, subtasks }), expiresAt]
+      `INSERT INTO share_snapshots (share_id, user_id, data, expires_at, password, max_views, remark, allow_copy, track_visitors)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [shareId, userId, JSON.stringify({ todo, subtasks }), expiresAt,
+       password || null, maxViews || null, remark || null,
+       allowCopy !== false ? 1 : 0,
+       trackVisitors ? 1 : 0]
     );
 
     res.json({ success: true, shareId });
@@ -45,7 +52,9 @@ const getSnapshot = async (req, res) => {
 
   try {
     const snapshots = await query(
-      'SELECT data, revoked FROM share_snapshots WHERE share_id = ? AND expires_at > NOW()',
+      `SELECT data, revoked, password, max_views, current_views,
+              track_visitors, remark, allow_copy, user_id AS owner_id
+       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW()`,
       [shareId]
     );
 
@@ -65,7 +74,37 @@ const getSnapshot = async (req, res) => {
       });
     }
 
-    res.json({ success: true, data: JSON.parse(snapshot.data) });
+    if (snapshot.max_views && snapshot.current_views >= snapshot.max_views) {
+      return res.status(403).json({ success: false, message: '分享已超过最大查看次数' });
+    }
+
+    // 设置了密码，返回 needPassword（不计数查看次数）
+    if (snapshot.password) {
+      return res.json({
+        success: true, needPassword: true, shareId,
+        remark: snapshot.remark, allowCopy: !!snapshot.allow_copy
+      });
+    }
+
+    // 计数查看次数 + 访客记录（仅密码验证通过后或无密码时）
+    await query('UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ?', [shareId]);
+
+    if (snapshot.track_visitors) {
+      const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+      const visitorUserId = req.user?.id || null;
+      await query(
+        'INSERT INTO share_visitors (share_id, visitor_ip, visitor_user_id, action) VALUES (?, ?, ?, ?)',
+        [shareId, visitorIp, visitorUserId, 'view']
+      );
+    }
+
+    res.json({
+      success: true,
+      data: JSON.parse(snapshot.data),
+      remark: snapshot.remark,
+      allowCopy: !!snapshot.allow_copy,
+      trackVisitors: !!snapshot.track_visitors
+    });
   } catch (err) {
     logger.dbError('分享', '获取分享快照失败', { shareId, error: err.message });
     res.status(500).json({
@@ -102,8 +141,105 @@ const revokeSnapshot = async (req, res) => {
   }
 };
 
+const verifyPassword = async (req, res) => {
+  const { shareId } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ success: false, message: '请输入密码' });
+  }
+
+  try {
+    const snapshots = await query(
+      `SELECT password, data, max_views, current_views, track_visitors
+       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW()`,
+      [shareId]
+    );
+    if (snapshots.length === 0) {
+      return res.status(404).json({ success: false, message: '分享已过期或不存在' });
+    }
+    if (snapshots[0].password !== password) {
+      return res.status(403).json({ success: false, message: '密码错误' });
+    }
+
+    // 密码验证通过后计数查看次数
+    if (snapshots[0].max_views && snapshots[0].current_views >= snapshots[0].max_views) {
+      return res.status(403).json({ success: false, message: '分享已超过最大查看次数' });
+    }
+
+    await query('UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ?', [shareId]);
+
+    if (snapshots[0].track_visitors) {
+      const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+      const visitorUserId = req.user?.id || null;
+      await query(
+        'INSERT INTO share_visitors (share_id, visitor_ip, visitor_user_id, action) VALUES (?, ?, ?, ?)',
+        [shareId, visitorIp, visitorUserId, 'view']
+      );
+    }
+
+    res.json({ success: true, data: JSON.parse(snapshots[0].data) });
+  } catch (err) {
+    logger.dbError('分享', '验证密码失败', { shareId, error: err.message });
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+};
+
+const recordAddAction = async (req, res) => {
+  const { shareId } = req.params;
+  try {
+    const snapshots = await query(
+      'SELECT track_visitors FROM share_snapshots WHERE share_id = ?',
+      [shareId]
+    );
+    if (snapshots.length === 0 || !snapshots[0].track_visitors) {
+      return res.json({ success: true });
+    }
+    const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+    const visitorUserId = req.user?.id || null;
+    await query(
+      'INSERT INTO share_visitors (share_id, visitor_ip, visitor_user_id, action) VALUES (?, ?, ?, ?)',
+      [shareId, visitorIp, visitorUserId, 'add']
+    );
+    res.json({ success: true });
+  } catch (err) {
+    logger.dbError('分享', '记录访客添加失败', { shareId, error: err.message });
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+};
+
+const getVisitors = async (req, res) => {
+  const userId = req.user.id;
+  const { shareId } = req.params;
+  try {
+    const snapshots = await query(
+      'SELECT user_id FROM share_snapshots WHERE share_id = ?',
+      [shareId]
+    );
+    if (snapshots.length === 0) return res.status(404).json({ success: false, message: '分享不存在' });
+    if (snapshots[0].user_id !== userId) return res.status(403).json({ success: false, message: '无权查看' });
+
+    const visitors = await query(
+      `SELECT v.id, v.visitor_ip, v.visitor_user_id, v.action, v.created_at,
+              u.nickname AS visitor_nickname
+       FROM share_visitors v
+       LEFT JOIN users u ON v.visitor_user_id = u.id
+       WHERE v.share_id = ?
+       ORDER BY v.created_at DESC LIMIT 200`,
+      [shareId]
+    );
+    res.json({ success: true, data: visitors });
+  } catch (err) {
+    logger.dbError('分享', '获取访客记录失败', { shareId, userId, error: err.message });
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+};
+
 module.exports = {
   createSnapshot,
   getSnapshot,
-  revokeSnapshot
+  revokeSnapshot,
+  verifyPassword,
+  recordAddAction,
+  getVisitors
 };

@@ -57,6 +57,8 @@ Page({
     replyTarget: null,
 
     hasActiveShare: false,
+    showVisitorPopup: false,
+    visitorList: [],
 
     subtaskList: [],
     subtaskCollapsed: false,
@@ -94,6 +96,10 @@ Page({
     if (!todo || !todo.id || this.data.isSharedTodo || this.data.adminView) return;
     // 未登录不创建快照
     if (!isLoggedIn()) return;
+
+    // 如果已有从 share-config 配置的分享快照，不覆盖
+    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+    if (storedIds[todo.id]) return;
 
     const allTodos = getLocalTodos();
     const subtasks = {};
@@ -146,6 +152,12 @@ Page({
 
     const { todo, shareSnapshotSubtasks } = this.data;
     const now = Date.now();
+
+    // 记录"添加"操作到访客记录
+    const shareId = this.data.pendingShareId || wx.getStorageSync('_sharedSnapshotIds')?.[todo.id];
+    if (shareId) {
+      shareApi.recordShareAdd(shareId).catch(() => {});
+    }
     const newParentId = `todo_${now}_${Math.random().toString(36).substring(2, 8)}`;
 
     const newTodo = {
@@ -509,6 +521,7 @@ Page({
       this.loadNotification();
       this.loadSubtasks();
       this.prepareShareSnapshotIfNeeded();
+      this.checkActiveShare();
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -590,6 +603,7 @@ Page({
       this.loadNotification();
       this.loadSubtasks();
       this.prepareShareSnapshotIfNeeded();
+      this.checkActiveShare();
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -675,42 +689,25 @@ Page({
       const result = await shareApi.getSnapshot(shareId);
       wx.hideLoading();
 
-      if (!result.success || !result.data) {
+      if (!result.success) {
+        if (result.needPassword) {
+          this.handlePasswordProtectedShare(shareId, result);
+          return;
+        }
+        if (result.revoked) {
+          wx.showToast({ title: '该分享已被撤回', icon: 'none' });
+          return;
+        }
         wx.showToast({ title: '分享已过期', icon: 'none' });
         return;
       }
 
-      const { todo: sharedTodo, subtasks } = result.data;
-
-      let setDateObj;
-      if (sharedTodo.setDate) {
-        setDateObj = new Date(sharedTodo.setDate);
-        if (isNaN(setDateObj.getTime())) setDateObj = new Date();
-      } else {
-        setDateObj = new Date();
+      if (!result.data) {
+        wx.showToast({ title: '分享数据异常', icon: 'none' });
+        return;
       }
 
-      const formattedDate = this.formatRichDate(setDateObj);
-      let parsedImages = this.parseImages(sharedTodo.images);
-      let parsedTags = sharedTodo.tags || [];
-
-      this.setData({
-        todo: {
-          ...sharedTodo,
-          id: sharedTodo.id,
-          setDate: this.formatDate(setDateObj),
-          setTime: this.formatTime(sharedTodo.setTime),
-          completed: false
-        },
-        todoTags: this.getTagsByIds(parsedTags),
-        formattedDate,
-        formatDateTime: this.formatDateTime(Date.now()),
-        isShare: true,
-        imagesLayout: this.calculateImagesLayout(parsedImages),
-        shareSnapshotSubtasks: subtasks || {}
-      });
-
-      this.loadSubtasksFromSnapshot(subtasks || {}, sharedTodo.id);
+      this.processSnapshotData(result.data, shareId);
     } catch (err) {
       wx.hideLoading();
       const errMsg = (err && err.message) || '';
@@ -787,6 +784,7 @@ Page({
     this.loadNotification();
     this.loadSubtasks();
     this.prepareShareSnapshotIfNeeded();
+    this.checkActiveShare();
   },
 
   async loadSharedTodo(todoId, comboId) {
@@ -2272,5 +2270,112 @@ Page({
         }
       }
     });
-  }
+  },
+
+  async onViewVisitors() {
+    const todo = this.data.todo;
+    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+    const shareId = storedIds[todo.id];
+    if (!shareId) {
+      wx.showToast({ title: '暂无分享记录', icon: 'none' });
+      return;
+    }
+    this.setData({ showVisitorPopup: true });
+    try {
+      const { shareApi } = require('../../utils/api');
+      const res = await shareApi.getShareVisitors(shareId);
+      if (res.success) {
+        this.setData({ visitorList: res.data || [] });
+      } else {
+        wx.showToast({ title: '加载失败', icon: 'none' });
+        this.setData({ showVisitorPopup: false, visitorList: [] });
+      }
+    } catch (err) {
+      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ showVisitorPopup: false, visitorList: [] });
+    }
+  },
+
+  onCloseVisitorPopup() {
+    this.setData({ showVisitorPopup: false, visitorList: [] });
+  },
+
+  onVisitorPopupChange(e) {
+    if (!e.detail.visible) {
+      this.setData({ showVisitorPopup: false, visitorList: [] });
+    }
+  },
+
+  processSnapshotData(resultData, shareId) {
+    const { todo: sharedTodo, subtasks } = resultData;
+
+    let setDateObj;
+    if (sharedTodo.setDate) {
+      setDateObj = new Date(sharedTodo.setDate);
+      if (isNaN(setDateObj.getTime())) setDateObj = new Date();
+    } else {
+      setDateObj = new Date();
+    }
+
+    const formattedDate = this.formatRichDate(setDateObj);
+    let parsedImages = this.parseImages(sharedTodo.images);
+    let parsedTags = sharedTodo.tags || [];
+
+    this.setData({
+      todo: {
+        ...sharedTodo,
+        id: sharedTodo.id,
+        setDate: this.formatDate(setDateObj),
+        setTime: this.formatTime(sharedTodo.setTime),
+        completed: false
+      },
+      todoTags: this.getTagsByIds(parsedTags),
+      formattedDate,
+      formatDateTime: this.formatDateTime(Date.now()),
+      isShare: true,
+      imagesLayout: this.calculateImagesLayout(parsedImages),
+      shareSnapshotSubtasks: subtasks || {}
+    });
+
+    this.loadSubtasksFromSnapshot(subtasks || {}, sharedTodo.id);
+  },
+
+  handlePasswordProtectedShare(shareId, partialResult) {
+    const that = this;
+    wx.showModal({
+      title: '需要密码',
+      content: '该分享已设置访问密码',
+      editable: true,
+      placeholderText: '请输入密码',
+      success: async (res) => {
+        if (res.confirm && res.content) {
+          try {
+            wx.showLoading({ title: '验证中...' });
+            const { shareApi } = require('../../utils/api');
+            const verifyResult = await shareApi.verifySharePassword(shareId, res.content);
+            wx.hideLoading();
+            if (verifyResult.success && verifyResult.data) {
+              this.processSnapshotData(verifyResult.data, shareId);
+            } else {
+              wx.showToast({ title: '密码错误', icon: 'none' });
+              setTimeout(() => that.handlePasswordProtectedShare(shareId, partialResult), 500);
+            }
+          } catch (err) {
+            wx.hideLoading();
+            wx.showToast({ title: '验证失败', icon: 'none' });
+          }
+        } else {
+          wx.navigateBack();
+        }
+      }
+    });
+  },
+
+  goToShareConfig() {
+    const todo = this.data.todo;
+    if (!todo || !todo.id) return;
+    wx.navigateTo({
+      url: '/packagePages/share-config/share-config?todoId=' + todo.id
+    });
+  },
 })
