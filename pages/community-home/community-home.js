@@ -25,9 +25,7 @@ Page({
   },
 
   onShow() {
-    if (this.data.postList.length === 0) {
-      this.loadPosts(true);
-    }
+    this.loadPosts(true);
   },
 
   onPullDownRefresh() {

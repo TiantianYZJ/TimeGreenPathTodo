@@ -34,6 +34,16 @@
       <text wx:if="{{post.location}}"><t-icon name="location" size="24rpx" /> {{post.location}}</text>
       <text wx:if="{{post.ipProvince}}">IP属地 · {{post.ipProvince}}</text>
     </view>
+    <view wx:if="{{post.todoIds && post.todoIds.length > 0 || post.shareCode}}" class="post-tags">
+      <view wx:if="{{post.todoIds && post.todoIds.length > 0}}" class="tag-item">
+        <t-icon name="checklist" size="24rpx" color="#00b26a" />
+        <text>关联 {{post.todoIds.length}} 个待办</text>
+      </view>
+      <view wx:if="{{post.shareCode}}" class="tag-item">
+        <t-icon name="user-group" size="24rpx" color="#00b26a" />
+        <text>邀请加入组合</text>
+      </view>
+    </view>
     <view class="post-stats">
       <view class="stat-item"><t-icon name="browse" size="28rpx" /><text>{{post.viewsCount}}次浏览</text></view>
       <view class="stat-item"><t-icon name="heart" size="28rpx" /><text>{{post.likesCount}}人赞过</text></view>

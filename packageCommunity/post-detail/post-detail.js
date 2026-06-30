@@ -19,6 +19,10 @@ Page({
     this.loadPost();
   },
 
+  onShow() {
+    if (this.data.postId) this.loadPost();
+  },
+
   async loadPost() {
     try {
       const res = await communityApi.getPostById(this.data.postId);

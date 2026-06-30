@@ -112,6 +112,23 @@
   color: #00b26a;
 }
 
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 12rpx 0 8rpx;
+}
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 22rpx;
+  color: #00b26a;
+  background: #f0fdf6;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
 /* 评论区 */
 .comment-section {
   padding: 0 20rpx 20rpx;
