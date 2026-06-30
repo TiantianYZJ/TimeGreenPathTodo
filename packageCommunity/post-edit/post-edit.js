@@ -1,5 +1,6 @@
 const app = getApp();
-const { communityApi } = require('../../utils/api');
+const { communityApi, combosApi, isLoggedIn } = require('../../utils/api');
+const { getLocalTodos } = require('../../utils/sync');
 
 const compressImage = (filePath) => {
   return new Promise((resolve) => {
@@ -42,14 +43,23 @@ Page({
     navBarHeight: app.globalData.navBarHeight || 44,
     menuRight: app.globalData.menuRight || 0,
     menuWidth: app.globalData.menuWidth || 0,
-    content: '', title: '', body: '',
+    title: '', body: '',
     fileList: [], imageUrls: [],
     imageSource: 'media',
     gridConfig: { column: 3, width: 200, height: 200 },
     uploadConfig: { count: 9, sizeType: ['compressed'], sourceType: ['album', 'camera'] },
     submitting: false, editMode: false, editPostId: null,
     canPublish: false,
-    selectedTodoIds: [], selectedComboCode: null, location: null,
+    selectedTodoIds: [], selectedComboCode: null, selectedComboName: '',
+    location: null,
+    // picker state
+    showTodoPicker: false, showComboPicker: false,
+    temporarySelectedIds: [], temporarySelectedComboId: null,
+    filteredTodos: [], allTodos: [],
+    todoSearchKeyword: '', comboSearchKeyword: '',
+    pickerCombos: [], pickerSharedCombos: [],
+    filteredPickerCombos: [], filteredPickerSharedCombos: [],
+    selectedMap: {},
     userInfo: app.globalData.userInfo || {}
   },
 
@@ -61,71 +71,123 @@ Page({
       menuRight: app.globalData.menuRight || 0,
       menuWidth: app.globalData.menuWidth || 0
     });
+    this.loadTodos();
+    this.loadPickerCombos();
     if (options.postId) this.loadEditData(options.postId);
     const draft = wx.getStorageSync('communityDraft');
     if (draft && !options.postId) {
-      const lines = (draft.content || '').split('\n');
-      const draftTitle = lines[0] || '';
-      const draftBody = lines.slice(1).join('\n').trim();
       this.setData({
-        content: draft.content || '', title: draftTitle.trim(), body: draftBody,
-        canPublish: draftTitle.trim().length > 0,
+        title: draft.title || '', body: draft.body || '',
+        canPublish: (draft.title || '').trim().length > 0,
         fileList: draft.fileList || [], imageUrls: draft.imageUrls || [],
-        selectedTodoIds: draft.selectedTodoIds || [], selectedComboCode: draft.selectedComboCode || null, location: draft.location || null
+        selectedTodoIds: draft.selectedTodoIds || [], selectedComboCode: draft.selectedComboCode || null,
+        selectedComboName: draft.selectedComboName || '',
+        location: draft.location || null
       });
     }
   },
 
+  loadTodos() {
+    const todos = getLocalTodos().filter(t => !t.isDeleted);
+    this.setData({ allTodos: todos, filteredTodos: todos });
+  },
+
+  loadPickerCombos() {
+    const combos = app.globalData.combos || [];
+    const sharedCombos = app.globalData.sharedCombos || [];
+    // 私有组合：仅显示有 share_code 且 is_shared=1 的
+    const shareableCombos = combos.filter(c => c.share_code && (c.is_shared === 1 || c.isShared === 1));
+    // 共享组合：仅显示有邀请权限的
+    const inviteableShared = sharedCombos.filter(c =>
+      c.role === 'owner' || c.role === 'admin' || c.userRole === 'owner' || c.userRole === 'admin'
+    );
+    this.setData({ pickerCombos: shareableCombos, pickerSharedCombos: inviteableShared });
+  },
+
   onUnload() {
-    if (!this.data.editMode && this.data.content) {
+    if (!this.data.editMode && (this.data.title || this.data.body)) {
       wx.setStorageSync('communityDraft', {
-        content: this.data.content, fileList: this.data.fileList, imageUrls: this.data.imageUrls,
-        selectedTodoIds: this.data.selectedTodoIds, selectedComboCode: this.data.selectedComboCode, location: this.data.location
+        title: this.data.title, body: this.data.body, fileList: this.data.fileList, imageUrls: this.data.imageUrls,
+        selectedTodoIds: this.data.selectedTodoIds, selectedComboCode: this.data.selectedComboCode,
+        selectedComboName: this.data.selectedComboName, location: this.data.location
       });
-    } else if (!this.data.content) { wx.removeStorageSync('communityDraft'); }
+    } else if (!this.data.title && !this.data.body) { wx.removeStorageSync('communityDraft'); }
   },
 
   async loadEditData(postId) {
+    // 优先使用 post-detail 传递的完整数据
+    const cached = app.globalData.editPostData;
+    if (cached && cached.postId === postId) {
+      app.globalData.editPostData = null;
+      const fileList = (cached.images || []).map(url => ({ url }));
+      let comboName = '';
+      if (cached.shareCode) {
+        const allCombos = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
+        const found = allCombos.find(c => c.share_code === cached.shareCode);
+        if (found) comboName = found.name;
+      }
+      this.setData({
+        editMode: true, editPostId: postId,
+        title: cached.title || '', body: cached.body || '',
+        fileList, imageUrls: cached.images || [],
+        selectedTodoIds: cached.todoIds || [], selectedComboCode: cached.shareCode || null,
+        selectedComboName: comboName,
+        location: cached.location ? { text: cached.location } : null
+      });
+      return;
+    }
     try {
       const res = await communityApi.getPostById(postId);
       if (res.success && res.data) {
         const post = res.data;
         const fileList = (post.images || []).map(url => ({ url }));
+        let comboName = '';
+        if (post.shareCode) {
+          const allCombos = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
+          const found = allCombos.find(c => c.share_code === post.shareCode);
+          if (found) comboName = found.name;
+        }
         this.setData({
           editMode: true, editPostId: postId,
-          content: post.title + (post.body ? '\n' + post.body : ''),
-          title: post.title, body: post.body || '',
+          title: post.title || '', body: post.body || '',
           fileList, imageUrls: post.images || [],
           selectedTodoIds: post.todoIds || [], selectedComboCode: post.shareCode || null,
+          selectedComboName: comboName,
           location: post.location ? { text: post.location } : null
         });
       }
     } catch (err) { wx.showToast({ title: '加载失败', icon: 'none' }); }
   },
 
-  onContentInput(e) {
-    const content = e.detail.value ?? '';
-    const lines = content.split('\n');
-    const title = lines[0] || '';
-    const body = lines.slice(1).join('\n').trim();
-    this.setData({ content, title: title.trim(), body, canPublish: title.trim().length > 0 });
+  onTitleInput(e) {
+    const title = e.detail.value ?? '';
+    this.setData({ title, canPublish: title.trim().length > 0 });
+  },
+
+  onBodyInput(e) {
+    const body = e.detail.value ?? '';
+    this.setData({ body });
   },
 
   async handleImageAdd(e) {
-    const files = e.detail.files || [];
-    const newFiles = files.filter(f => !f.url);
-    for (const file of newFiles) {
+    const { files } = e.detail;
+    const currentCount = this.data.fileList.length;
+    if (currentCount >= 9) { wx.showToast({ title: '最多上传9张图片', icon: 'none' }); return; }
+    const filesToAdd = files.slice(0, 9 - currentCount);
+    if (filesToAdd.length === 0) return;
+    for (let i = 0; i < filesToAdd.length; i++) {
+      const file = filesToAdd[i];
+      wx.showLoading({ title: `上传中 ${i + 1}/${filesToAdd.length}`, mask: true });
       try {
-        const compressed = await compressImage(file.path || file.url);
+        const compressed = await compressImage(file.url);
         const url = await uploadImage(compressed);
-        if (url) {
-          this.setData({
-            fileList: [...this.data.fileList, { url }],
-            imageUrls: [...this.data.imageUrls, url]
-          });
-        }
-      } catch (err) { wx.showToast({ title: '图片上传失败', icon: 'none' }); }
+        const newItem = { url, name: `image_${Date.now()}_${i}`, type: 'image', status: 'done' };
+        this.setData({ fileList: [...this.data.fileList, newItem], imageUrls: [...this.data.imageUrls, url] });
+      } catch (err) {
+        wx.showToast({ title: '图片上传失败', icon: 'none' });
+      }
     }
+    wx.hideLoading();
   },
 
   handleImageRemove(e) {
@@ -162,6 +224,151 @@ Page({
     this.setData({ location: null });
   },
 
+  // ===== 待办选择弹窗 =====
+  showTodoPicker() {
+    const selectedMap = {};
+    this.data.selectedTodoIds.forEach(id => { selectedMap[id] = true; });
+    this.setData({
+      showTodoPicker: true,
+      temporarySelectedIds: [...this.data.selectedTodoIds],
+      selectedMap,
+      todoSearchKeyword: '',
+      filteredTodos: this.data.allTodos
+    });
+  },
+
+  hideTodoPicker() {
+    this.setData({ showTodoPicker: false });
+  },
+
+  onTodoPickerVisibleChange(e) {
+    if (!e.detail.visible) {
+      this.setData({ showTodoPicker: false });
+    }
+  },
+
+  onTodoSearch(e) {
+    const keyword = (e.detail.value || '').trim();
+    const filtered = keyword
+      ? this.data.allTodos.filter(t => t.text.indexOf(keyword) > -1)
+      : this.data.allTodos;
+    this.setData({ todoSearchKeyword: keyword, filteredTodos: filtered });
+  },
+
+  toggleTodoSelect(e) {
+    const todoId = e.currentTarget.dataset.id;
+    const tempIds = [...this.data.temporarySelectedIds];
+    const idx = tempIds.indexOf(todoId);
+    const selectedMap = { ...this.data.selectedMap };
+    if (idx > -1) {
+      tempIds.splice(idx, 1);
+      delete selectedMap[todoId];
+    } else {
+      tempIds.push(todoId);
+      selectedMap[todoId] = true;
+    }
+    this.setData({ temporarySelectedIds: tempIds, selectedMap });
+  },
+
+  confirmTodoSelection() {
+    this.setData({
+      selectedTodoIds: [...this.data.temporarySelectedIds],
+      showTodoPicker: false
+    });
+  },
+
+  clearSelectedTodos() {
+    this.setData({ selectedTodoIds: [], selectedMap: {} });
+  },
+
+  // ===== 组合选择弹窗 =====
+  showComboPicker() {
+    const combos = app.globalData.combos || [];
+    const sharedCombos = app.globalData.sharedCombos || [];
+    // 私有组合：有 share_code 且 is_shared=1 的
+    const shareableCombos = combos.filter(c => c.share_code && (c.is_shared === 1 || c.isShared === 1));
+    // 共享组合：有邀请权限的
+    const inviteableShared = sharedCombos.filter(c =>
+      c.role === 'owner' || c.role === 'admin' || c.userRole === 'owner' || c.userRole === 'admin'
+    );
+    this.setData({
+      showComboPicker: true,
+      temporarySelectedComboId: this.data.selectedComboCode
+        ? this.findComboIdByCode(this.data.selectedComboCode) : null,
+      pickerCombos: shareableCombos,
+      pickerSharedCombos: inviteableShared,
+      filteredPickerCombos: shareableCombos,
+      filteredPickerSharedCombos: inviteableShared,
+      comboSearchKeyword: ''
+    });
+  },
+
+  findComboIdByCode(code) {
+    if (!code) return null;
+    const all = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
+    const found = all.find(c => c.share_code === code);
+    return found ? String(found.id) : null;
+  },
+
+  findComboById(id) {
+    const all = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
+    return all.find(c => String(c.id) === String(id)) || null;
+  },
+
+  hideComboPicker() {
+    this.setData({ showComboPicker: false });
+  },
+
+  onComboPickerVisibleChange(e) {
+    if (!e.detail.visible) {
+      this.setData({ showComboPicker: false });
+    }
+  },
+
+  onComboSearch(e) {
+    const keyword = (e.detail.value || '').trim();
+    if (!keyword) {
+      this.setData({
+        comboSearchKeyword: '',
+        filteredPickerCombos: this.data.pickerCombos,
+        filteredPickerSharedCombos: this.data.pickerSharedCombos
+      });
+      return;
+    }
+    this.setData({
+      comboSearchKeyword: keyword,
+      filteredPickerCombos: this.data.pickerCombos.filter(c => c.name.indexOf(keyword) > -1),
+      filteredPickerSharedCombos: this.data.pickerSharedCombos.filter(c => c.name.indexOf(keyword) > -1)
+    });
+  },
+
+  selectTemporaryCombo(e) {
+    const comboId = e.currentTarget.dataset.id;
+    this.setData({
+      temporarySelectedComboId: this.data.temporarySelectedComboId === comboId ? null : comboId
+    });
+  },
+
+  confirmComboSelection() {
+    const id = this.data.temporarySelectedComboId;
+    if (id) {
+      const combo = this.findComboById(id);
+      if (combo) {
+        this.setData({
+          selectedComboCode: combo.share_code,
+          selectedComboName: combo.name
+        });
+      }
+    } else {
+      this.setData({ selectedComboCode: null, selectedComboName: '' });
+    }
+    this.setData({ showComboPicker: false });
+  },
+
+  clearSelectedCombo() {
+    this.setData({ selectedComboCode: null, selectedComboName: '' });
+  },
+
   async handleSubmit() {
     if (!this.data.title.trim()) { wx.showToast({ title: '请输入标题', icon: 'none' }); return; }
     this.setData({ submitting: true });
@@ -189,11 +396,15 @@ Page({
   },
 
   goBack() {
-    if (this.data.content) {
+    if (this.data.title || this.data.body) {
       wx.showModal({
         title: '提示', content: '确定放弃当前编辑吗？',
         success: (res) => { if (res.confirm) wx.navigateBack(); }
       });
     } else { wx.navigateBack(); }
+  },
+
+  onAvatarError() {
+    this.setData({ userAvatarFailed: true });
   }
 });

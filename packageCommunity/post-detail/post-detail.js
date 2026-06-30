@@ -93,6 +93,7 @@ Page({
 
   editPost() {
     this.setData({ showMenuPopup: false });
+    app.globalData.editPostData = this.data.post;
     wx.navigateTo({ url: '/packageCommunity/post-edit/post-edit?postId=' + this.data.postId });
   },
 

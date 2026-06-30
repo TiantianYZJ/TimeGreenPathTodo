@@ -2,7 +2,7 @@
 
 .edit-container {
   padding: 20rpx 30rpx;
-  padding-top: 190rpx;
+  padding-top: 200rpx;
   padding-bottom: 40rpx;
 }
 .user-row {
@@ -21,6 +21,20 @@
   color: #333;
   font-weight: 500;
 }
+.title-input {
+  width: 100%;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  padding: 16rpx 0 8rpx;
+  margin-bottom: 4rpx;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+.title-input::placeholder {
+  color: #bbb;
+}
 .content-textarea {
   width: 100%;
   min-height: 300rpx;
@@ -35,7 +49,8 @@
   justify-content: center;
   height: 60rpx;
   padding: 0 24rpx;
-  font-size: 24rpx;
+  font-size: 26rpx;
+  border-radius: 32rpx;
   font-weight: 500;
   color: #fff;
   background: #00b26a;
@@ -53,11 +68,22 @@
   margin-bottom: 20rpx;
 }
 .image-upload {
-  padding-left: 32rpx;
   --td-upload-radius: 32rpx;
   --td-upload-add-bg-color: #f8f8f8;
   --td-grid-bg-color: #e3f5eb;
   --td-grid-item-bg-color: #e3f5eb;
+}
+.image-source-switch {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+  padding-top: 24rpx;
+  padding-left: 12rpx;
+}
+.switch-label {
+  font-size: 24rpx;
+  color: #999;
 }
 .word-count {
   font-size: 24rpx;
@@ -65,27 +91,237 @@
   text-align: right;
   margin-top: 10rpx;
 }
-.word-count .hint {
-  color: #00b26a;
-  margin-left: 12rpx;
-}
-.location-section {
+.picker-row {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 12rpx;
   padding: 24rpx 0;
   border-top: 1rpx solid #f0f0f0;
-  margin-top: 16rpx;
 }
-.location-placeholder {
+.picker-row-selected {
+  background: #f0fdf6;
+  border-radius: 12rpx;
+  padding: 24rpx 20rpx;
+  border-top: none;
+  margin-top: 8rpx;
+}
+.picker-placeholder {
   font-size: 28rpx;
   color: #999;
 }
-.location-text {
+.picker-value {
+  flex: 1;
   font-size: 28rpx;
   color: #00b26a;
-  flex: 1;
 }
-.location-clear {
+.picker-clear {
   padding: 8rpx;
+}
+
+/* ===== 弹窗通用 ===== */
+.picker-popup {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  background: rgba(255,255,255,0.78);
+  backdrop-filter: blur(24rpx) saturate(180%);
+  -webkit-backdrop-filter: blur(24rpx) saturate(180%);
+  border-radius: 32rpx 32rpx 0 0;
+  border: 1rpx solid rgba(255,255,255,0.3);
+  overflow: hidden;
+}
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  flex-shrink: 0;
+}
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.popup-close {
+  padding: 8rpx;
+}
+.picker-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 16rpx 32rpx;
+  padding: 16rpx 20rpx;
+  background: #f5f5f5;
+  border-radius: 16rpx;
+  flex-shrink: 0;
+}
+.picker-search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+.picker-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+  border-top: 1rpx solid #f0f0f0;
+  flex-shrink: 0;
+}
+.picker-count {
+  font-size: 28rpx;
+  color: #999;
+}
+.picker-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 36rpx;
+  margin: 0;
+  font-size: 28rpx;
+  color: #fff;
+  background: #00b26a;
+  border: none;
+  border-radius: 12rpx;
+  line-height: 1;
+}
+.picker-confirm-btn::after {
+  border: none;
+}
+.picker-empty {
+  padding: 60rpx 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* ===== 待办选择卡片 ===== */
+.picker-popup .todo-item {
+  margin: 0 20rpx 4rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  position: relative;
+}
+.picker-popup .todo-item.completed {
+  background: linear-gradient(135deg, #ecfdf5 0%, #90e0b7 100%) !important;
+  box-shadow: 0 4rpx 16rpx rgba(76,175,80,0.15);
+}
+.picker-popup .todo-item.completed .t-cell__title {
+  color: #00b26a !important;
+  text-decoration: line-through;
+}
+.picker-popup .todo-item.completed .t-cell__description {
+  color: #6b7280 !important;
+  opacity: 0.7;
+}
+.picker-popup .todo-item.completed .t-cell__note {
+  color: #9ca3af !important;
+}
+.picker-popup .priority-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8rpx;
+  border-radius: 0 4rpx 4rpx 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.picker-popup .priority-bar[data-priority="p1"] { background: #e34d4d; }
+.picker-popup .priority-bar[data-priority="p2"] { background: #2196F3; }
+.picker-popup .priority-bar[data-priority="p3"] { background: #FF9800; }
+.picker-popup .priority-bar[data-priority="p4"],
+.picker-popup .priority-bar:not([data-priority]) { background: transparent; }
+.picker-popup .star-badge {
+  position: absolute;
+  top: 0;
+  right: 80rpx;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 40rpx 40rpx 0;
+  border-color: transparent #fbbf24 transparent transparent;
+}
+.picker-popup .star-badge t-icon {
+  position: absolute;
+  top: 2rpx;
+  right: -36rpx;
+}
+.picker-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  padding-left: 20rpx;
+}
+.picker-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 2rpx solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+.picker-checkbox.checked {
+  background: #00b26a;
+  border-color: #00b26a;
+}
+
+/* ===== 组合选择 ===== */
+.picker-popup .combo-section {
+  padding: 16rpx 0;
+}
+.picker-popup .section-label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  padding: 0 32rpx 12rpx;
+}
+.picker-popup .combo-option {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 32rpx;
+  margin: 0 20rpx;
+  border-radius: 12rpx;
+}
+.picker-popup .combo-option.selected {
+  background: #f0fdf6;
+}
+.combo-icon-small {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.combo-info-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 0;
+}
+.combo-name-text {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combo-count-text {
+  font-size: 22rpx;
+  color: #999;
 }

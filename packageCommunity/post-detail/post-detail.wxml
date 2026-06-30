@@ -1,45 +1,51 @@
-<t-navbar title="帖子" bind:left-click="goBack">
-  <view slot="right">
-    <t-icon name="more" size="40rpx" bind:tap="showMenu" />
+<view class="top">
+  <view class="header" style="padding-top:{{navBarHeight-44}}px;padding-left:{{menuRight+20}}rpx">
+    <view class="header-left" bindtap="goBack">
+      <t-icon name="chevron-left" size="40rpx" color="#2d3436" />
+    </view>
+    <text class="title">帖子</text>
+    <view class="action-group" style="right:{{menuRight + menuWidth + 10}}px">
+      <t-icon name="more" size="40rpx" color="#000" bindtap="showMenu" />
+    </view>
   </view>
-</t-navbar>
+</view>
 
-<scroll-view scroll-y style="height: calc(100vh - {{navBarHeight}}px - 100rpx);" bind:scrolltolower="onLoadMoreComments">
-  <view class="detail-container">
-    <view wx:if="{{isDeleted}}" class="deleted-notice">
-      <t-icon name="error-circle" size="60rpx" />
-      <text>该内容因违规已被删除</text>
-    </view>
+<scroll-view scroll-y class="scroll-view" style="height: calc(100vh - {{navBarHeight}}px - 100rpx);" bind:scrolltolower="onLoadMoreComments">
+  <view wx:if="{{isDeleted}}" class="deleted-notice">
+    <t-icon name="error-circle" size="60rpx" color="#999" />
+    <text>该内容因违规已被删除</text>
+  </view>
 
-    <view wx:else class="post-content">
-      <view class="post-user-row">
-        <image class="post-avatar" src="{{post.user.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
-        <view class="post-user-info">
-          <text class="post-nickname">{{post.user.nickname}}</text>
-          <text class="post-time">{{post.createdAt}}</text>
-        </view>
-      </view>
-      <view class="post-title">{{post.title}}</view>
-      <view wx:if="{{post.body}}" class="post-body">{{post.body}}</view>
-      <view wx:if="{{post.images && post.images.length > 0}}" class="post-images">
-        <image wx:for="{{post.images}}" wx:key="*this" src="{{item}}" mode="widthFix" class="detail-image" bind:tap="previewImage" data-url="{{item}}" />
-      </view>
-      <view class="post-meta">
-        <text wx:if="{{post.isEdited}}" class="edited-badge">已编辑</text>
-        <text wx:if="{{post.location}}"><t-icon name="location" size="24rpx" /> {{post.location}}</text>
-        <text wx:if="{{post.ipProvince}}">IP属地 · {{post.ipProvince}}</text>
-      </view>
-      <view class="post-stats">
-        <text><t-icon name="browse" size="24rpx" /> {{post.viewsCount}}次浏览</text>
-        <text><t-icon name="heart" size="24rpx" /> {{post.likesCount}}人赞过</text>
-        <text wx:if="{{isOwner}}" class="visitor-link" bind:tap="showVisitors">查看访客记录 →</text>
+  <view wx:else class="post-card">
+    <view class="post-user-row">
+      <image class="post-avatar" src="{{post.user.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
+      <view class="post-user-info">
+        <text class="post-nickname">{{post.user.nickname}}</text>
+        <text class="post-time">{{post.createdAt}}</text>
       </view>
     </view>
+    <view class="post-title">{{post.title}}</view>
+    <view wx:if="{{post.body}}" class="post-body">{{post.body}}</view>
+    <view wx:if="{{post.images && post.images.length > 0}}" class="post-images">
+      <image wx:for="{{post.images}}" wx:key="*this" src="{{item}}" mode="widthFix" class="detail-image" bind:tap="previewImage" data-url="{{item}}" />
+    </view>
+    <view class="post-meta">
+      <text wx:if="{{post.isEdited}}" class="edited-badge">已编辑</text>
+      <text wx:if="{{post.location}}"><t-icon name="location" size="24rpx" /> {{post.location}}</text>
+      <text wx:if="{{post.ipProvince}}">IP属地 · {{post.ipProvince}}</text>
+    </view>
+    <view class="post-stats">
+      <view class="stat-item"><t-icon name="browse" size="28rpx" /><text>{{post.viewsCount}}次浏览</text></view>
+      <view class="stat-item"><t-icon name="heart" size="28rpx" /><text>{{post.likesCount}}人赞过</text></view>
+      <view wx:if="{{isOwner}}" class="stat-item visitor-link" bind:tap="showVisitors"><t-icon name="visitors" size="28rpx" /><text>查看访客</text></view>
+    </view>
+  </view>
 
-    <view class="comment-section">
-      <view class="comment-header">评论 ({{post.commentsCount || 0}})</view>
-      <view wx:if="{{comments.length === 0 && !loadingComments}}" class="no-comments"><text>暂无评论，来说点什么吧</text></view>
-      <view wx:for="{{comments}}" wx:key="id" class="comment-item">
+  <view class="comment-section">
+    <view class="comment-header">评论 ({{post.commentsCount || 0}})</view>
+    <view wx:if="{{comments.length === 0 && !loadingComments}}" class="no-comments"><text>暂无评论，来说点什么吧</text></view>
+    <block wx:for="{{comments}}" wx:key="id">
+      <view class="comment-item">
         <view wx:if="{{item.isDeleted}}" class="comment-deleted"><text>该评论因违规已被删除</text></view>
         <view wx:else class="comment-normal">
           <image class="comment-avatar" src="{{item.user.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
@@ -57,37 +63,44 @@
             </view>
             <text class="comment-time">{{formatTime(item.createdAt)}}</text>
             <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-list">
-              <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id" class="reply-item">
-                <view wx:if="{{reply.isDeleted}}" class="comment-deleted"><text>该评论因违规已被删除</text></view>
-                <view wx:else>
-                  <view class="reply-header">
-                    <text class="reply-nickname">{{reply.user.nickname}}</text>
-                    <text wx:if="{{reply.replyToUser}}" class="reply-target">回复 @{{reply.replyToUser.nickname}}</text>
-                    <view class="comment-actions">
-                      <text wx:if="{{reply.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{reply.id}}">删除</text>
-                      <text class="action-btn" bind:tap="replyComment" data-id="{{reply.id}}" data-user="{{reply.user.nickname}}" data-userid="{{reply.user.id}}">回复</text>
+              <block wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id">
+                <view class="reply-item">
+                  <view wx:if="{{reply.isDeleted}}" class="comment-deleted"><text>该评论因违规已被删除</text></view>
+                  <view wx:else>
+                    <view class="reply-header">
+                      <text class="reply-nickname">{{reply.user.nickname}}</text>
+                      <text wx:if="{{reply.replyToUser}}" class="reply-target">回复 @{{reply.replyToUser.nickname}}</text>
+                      <view class="comment-actions">
+                        <text wx:if="{{reply.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{reply.id}}">删除</text>
+                        <text class="action-btn" bind:tap="replyComment" data-id="{{reply.id}}" data-user="{{reply.user.nickname}}" data-userid="{{reply.user.id}}">回复</text>
+                      </view>
                     </view>
+                    <text class="reply-content">{{reply.content}}</text>
+                    <text class="comment-time">{{formatTime(reply.createdAt)}}</text>
                   </view>
-                  <text class="reply-content">{{reply.content}}</text>
-                  <text class="comment-time">{{formatTime(reply.createdAt)}}</text>
                 </view>
-              </view>
+              </block>
             </view>
           </view>
         </view>
       </view>
-      <view wx:if="{{loadingComments}}" class="loading-comments"><t-loading loading="{{true}}" size="40rpx" /></view>
-    </view>
+    </block>
+    <view wx:if="{{loadingComments}}" class="loading-comments"><t-loading loading="{{true}}" size="40rpx" /></view>
   </view>
 </scroll-view>
 
 <view class="bottom-input-bar">
   <input class="comment-input" placeholder="{{replyTarget ? '回复 @' + replyTarget : '输入评论...'}}" value="{{commentText}}" bind:input="onCommentInput" confirm-type="send" bind:confirm="submitComment" />
-  <view wx:if="{{replyTarget}}" class="cancel-reply" bind:tap="cancelReply">取消</view>
-  <t-button size="small" bind:tap="submitComment" disabled="{{!commentText.trim()}}">发送</t-button>
+  <view wx:if="{{replyTarget}}" class="cancel-reply" catch:tap="cancelReply">取消回复</view>
+  <button class="send-btn" disabled="{{!commentText.trim()}}" bindtap="submitComment">发送</button>
 </view>
 
-<t-popup visible="{{showMenuPopup}}" placement="bottom" bind:visible-change="onMenuClose">
+<t-popup
+  visible="{{showMenuPopup}}"
+  placement="bottom"
+  bind:visible-change="onMenuClose"
+  usingCustomNavbar="{{true}}"
+>
   <view class="menu-items">
     <view wx:if="{{isOwner}}" class="menu-item" bind:tap="editPost"><t-icon name="edit" size="40rpx" /><text>编辑帖子</text></view>
     <view wx:if="{{isOwner}}" class="menu-item" bind:tap="deletePost"><t-icon name="delete" size="40rpx" /><text>删除帖子</text></view>
@@ -96,7 +109,12 @@
   </view>
 </t-popup>
 
-<t-popup visible="{{showReportPopup}}" placement="bottom" bind:visible-change="onReportClose">
+<t-popup
+  visible="{{showReportPopup}}"
+  placement="bottom"
+  bind:visible-change="onReportClose"
+  usingCustomNavbar="{{true}}"
+>
   <view class="report-panel">
     <view class="report-title">选择举报原因</view>
     <view wx:for="{{reportReasons}}" wx:key="*this" class="report-reason" bind:tap="submitReport" data-reason="{{item}}"><text>{{item}}</text></view>
@@ -104,17 +122,24 @@
   </view>
 </t-popup>
 
-<t-popup visible="{{showVisitorsPopup}}" placement="bottom" bind:visible-change="onVisitorsClose">
+<t-popup
+  visible="{{showVisitorsPopup}}"
+  placement="bottom"
+  bind:visible-change="onVisitorsClose"
+  usingCustomNavbar="{{true}}"
+>
   <view class="visitors-panel">
     <view class="visitors-title">访客记录</view>
     <view wx:if="{{visitors.length === 0}}" class="no-visitors"><text>暂无访客记录</text></view>
-    <view wx:for="{{visitors}}" wx:for-item="visitor" wx:key="userId" class="visitor-item">
-      <image class="visitor-avatar" src="{{visitor.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
-      <view class="visitor-info">
-        <text class="visitor-nickname">{{visitor.nickname}}</text>
-        <text class="visitor-time">{{visitor.viewedAt}}</text>
+    <block wx:for="{{visitors}}" wx:for-item="visitor" wx:key="userId">
+      <view class="visitor-item">
+        <image class="visitor-avatar" src="{{visitor.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
+        <view class="visitor-info">
+          <text class="visitor-nickname">{{visitor.nickname}}</text>
+          <text class="visitor-time">{{visitor.viewedAt}}</text>
+        </view>
       </view>
-    </view>
+    </block>
     <view class="report-cancel" bind:tap="closeVisitors">关闭</view>
   </view>
 </t-popup>
