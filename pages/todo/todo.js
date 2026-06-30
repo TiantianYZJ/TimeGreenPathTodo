@@ -28,6 +28,7 @@ Page({
     dropdownTop: 0,
 
     latestNoticeTitle: "",  // 最新公告标题
+    _hasNewNotice: false,  // 是否有未读的新公告
 
     currentTab: 'all',
     tabs: [
@@ -145,10 +146,13 @@ Page({
     
     const notices = app.globalData.notices || [];
     if (notices.length > 0) {
+      const lastRead = wx.getStorageSync('_lastReadNoticeDate') || '';
+      const hasNew = !lastRead || (notices[0].date && notices[0].date > lastRead);
       this.setData({
         latestNoticeTitle: notices[0].title + " ",
         latestNoticeContent: notices[0].content,
-        weather: getApp().globalData.weather 
+        _hasNewNotice: hasNew,
+        weather: getApp().globalData.weather
       });
     } else {
       this.loadNotices();
@@ -267,9 +271,13 @@ Page({
         app.globalData.notices = result.notices;
         const latestNotice = result.notices.find(n => n.title);
         if (latestNotice) {
+          // 判断是否有新公告：存的上次阅读日期 < 最新公告日期
+          const lastRead = wx.getStorageSync('_lastReadNoticeDate') || '';
+          const hasNew = !lastRead || (latestNotice.date && latestNotice.date > lastRead);
           this.setData({
             latestNoticeTitle: latestNotice.title,
-            latestNoticeContent: latestNotice.content
+            latestNoticeContent: latestNotice.content,
+            _hasNewNotice: hasNew
           });
         }
       }
@@ -1911,6 +1919,13 @@ Page({
    * 跳转到公告页面
    */
   navigateToNotice() {
+    // 点击后记录最新公告日期，下次不显示 NEW
+    const notices = app.globalData.notices || [];
+    const latestNotice = notices.find(n => n.title);
+    if (latestNotice && latestNotice.date) {
+      wx.setStorageSync('_lastReadNoticeDate', latestNotice.date);
+    }
+    this.setData({ _hasNewNotice: false });
     wx.navigateTo({
       url: '/packagePages/notice/notice'
     });
