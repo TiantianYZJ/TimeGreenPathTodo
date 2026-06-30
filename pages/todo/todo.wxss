@@ -97,14 +97,11 @@
 
 /* NEW 角标 */
 .notice-new-dot {
-  font-size: 18rpx;
-  font-weight: 700;
-  color: #fff;
+  width: 16rpx;
+  height: 16rpx;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  padding: 4rpx 14rpx;
-  border-radius: 20rpx;
+  border-radius: 50%;
   animation: noticeNewPulse 1.5s ease-in-out infinite;
-  letter-spacing: 0.5rpx;
 }
 
 @keyframes noticeNewPulse {

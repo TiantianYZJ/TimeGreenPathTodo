@@ -11,19 +11,19 @@
   margin-bottom: 20rpx;
 }
 .user-avatar {
-  width: 60rpx;
-  height: 60rpx;
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 50%;
   margin-right: 12rpx;
 }
 .user-nickname {
-  font-size: 28rpx;
+  font-size: 38rpx;
   color: #333;
   font-weight: 500;
 }
 .title-input {
   width: 100%;
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 700;
   color: #1a1a1a;
   padding: 16rpx 0 8rpx;
@@ -39,7 +39,7 @@
   width: 100%;
   min-height: 300rpx;
   font-size: 30rpx;
-  line-height: 1.6;
+  line-height: 1.3;
   color: #1a1a1a;
   margin-bottom: 20rpx;
 }
@@ -55,7 +55,6 @@
   color: #fff;
   background: #00b26a;
   border: none;
-  border-radius: 12rpx;
   line-height: 1;
 }
 .publish-btn[disabled] {
@@ -76,9 +75,9 @@
 .image-source-switch {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex;
   gap: 12rpx;
-  padding-top: 24rpx;
+  padding-top: 8rpx;
   padding-left: 12rpx;
 }
 .switch-label {
@@ -100,7 +99,7 @@
 }
 .picker-row-selected {
   background: #f0fdf6;
-  border-radius: 12rpx;
+  border-radius: 32rpx;
   padding: 24rpx 20rpx;
   border-top: none;
   margin-top: 8rpx;
@@ -153,7 +152,7 @@
   margin: 16rpx 32rpx;
   padding: 16rpx 20rpx;
   background: #f5f5f5;
-  border-radius: 16rpx;
+  border-radius: 32rpx;
   flex-shrink: 0;
 }
 .picker-search-input {
@@ -189,7 +188,7 @@
   color: #fff;
   background: #00b26a;
   border: none;
-  border-radius: 12rpx;
+  border-radius: 32rpx;
   line-height: 1;
 }
 .picker-confirm-btn::after {
@@ -206,7 +205,7 @@
 .picker-popup .todo-item {
   margin: 0 20rpx 4rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 32rpx;
   overflow: hidden;
   position: relative;
 }
@@ -231,7 +230,7 @@
   top: 0;
   bottom: 0;
   width: 8rpx;
-  border-radius: 0 4rpx 4rpx 0;
+  border-radius: 0 32rpx 32rpx 0;
   pointer-events: none;
   z-index: 2;
 }
@@ -292,7 +291,7 @@
   gap: 16rpx;
   padding: 20rpx 32rpx;
   margin: 0 20rpx;
-  border-radius: 12rpx;
+  border-radius: 32rpx;
 }
 .picker-popup .combo-option.selected {
   background: #f0fdf6;
@@ -300,7 +299,7 @@
 .combo-icon-small {
   width: 56rpx;
   height: 56rpx;
-  border-radius: 22rpx;
+  border-radius: 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;

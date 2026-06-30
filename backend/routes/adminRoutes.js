@@ -24,6 +24,7 @@ router.get('/users', authMiddleware, isAdmin, adminController.getUsers);
 router.get('/users/:id', authMiddleware, isAdmin, adminController.getUserDetail);
 router.put('/users/:id/limits', authMiddleware, isAdmin, adminController.updateUserLimits);
 router.put('/users/:id/nickname', authMiddleware, isAdmin, adminController.updateUserNickname);
+router.put('/users/:id/badges', authMiddleware, isAdmin, adminController.updateUserBadges);
 
 router.get('/notices', authMiddleware, isAdmin, adminController.getNotices);
 router.post('/notices', authMiddleware, isAdmin, adminController.createNotice);

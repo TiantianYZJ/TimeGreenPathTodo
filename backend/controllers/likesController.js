@@ -11,6 +11,17 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
+function getBadges(row) {
+  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
+  try {
+    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+    return { badgeTitles: titles, badgeColors: colors };
+  } catch {
+    return { badgeTitles: [], badgeColors: [] };
+  }
+}
+
 const toggle = async (req, res) => {
   const userId = req.user.id;
   const { postId } = req.body;
@@ -56,7 +67,7 @@ const getUsers = async (req, res) => {
     }
 
     const users = await query(
-      `SELECT u.id, u.nickname, u.avatar_url, pl.created_at as liked_at
+      `SELECT u.id, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors, pl.created_at as liked_at
        FROM post_likes pl
        LEFT JOIN users u ON pl.user_id = u.id
        WHERE pl.post_id = ?
@@ -70,7 +81,8 @@ const getUsers = async (req, res) => {
         userId: u.id,
         nickname: u.nickname || '用户',
         avatar: getFullAvatarUrl(u.avatar_url),
-        likedAt: u.liked_at
+        likedAt: u.liked_at,
+        ...getBadges(u)
       }))
     });
   } catch (err) {

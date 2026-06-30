@@ -23,7 +23,7 @@ Page({
     
     notification: null,
     showNotifyConfig: false,
-    pendingShareId: null,
+
     shareSnapshotSubtasks: null,
     notifyDateOffset: '0',
     notifyTime: '09:00',
@@ -82,64 +82,12 @@ Page({
       };
     }
 
-    if (this.data.pendingShareId) {
+    const shareId = currentTodo?.id ? (wx.getStorageSync('_sharedSnapshotIds') || {})[currentTodo.id] : null;
+    if (shareId) {
       return {
         title: '分享待办：' + currentTodo.text,
-        path: `/packagePages/todo-detail/todo-detail?isShare=1&shareId=${this.data.pendingShareId}`,
+        path: `/packagePages/todo-detail/todo-detail?isShare=1&shareId=${shareId}`,
       };
-    }
-  },
-
-  // 分享前静默上传子任务树到服务端
-  async prepareShareSnapshotIfNeeded() {
-    const todo = this.data.todo;
-    if (!todo || !todo.id || this.data.isSharedTodo || this.data.adminView) return;
-    // 未登录不创建快照
-    if (!isLoggedIn()) return;
-
-    // 如果已有从 share-config 配置的分享快照，不覆盖
-    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    if (storedIds[todo.id]) return;
-
-    const allTodos = getLocalTodos();
-    const subtasks = {};
-    this.collectSubtaskTree(allTodos, todo.id, subtasks);
-
-    try {
-      const result = await shareApi.createSnapshot(todo, subtasks);
-      if (result.success) {
-        this.setData({ pendingShareId: result.shareId });
-        // 持久化存储 shareId，用于撤回
-        const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-        storedIds[todo.id] = result.shareId;
-        wx.setStorageSync('_sharedSnapshotIds', storedIds);
-      }
-    } catch (err) {
-      logger.debug('PAGE', 'SNAPSHOT', '预加载分享快照失败', err);
-    }
-  },
-
-  // 递归构建 { [parentId]: [child, ...] } 映射
-  collectSubtaskTree(allTodos, rootParentId, result = {}) {
-    const children = allTodos.filter(t => t.parent_id === rootParentId && !t.isDeleted);
-    if (children.length === 0) return;
-    result[rootParentId] = children.map(t => ({
-      id: t.id,
-      text: t.text,
-      parent_id: t.parent_id,
-      completed: t.completed,
-      time: t.time,
-      setDate: t.setDate,
-      setTime: t.setTime,
-      priority: t.priority || 'p2',
-      remarks: t.remarks || '',
-      tags: t.tags || [],
-      images: t.images || [],
-      location: t.location || null,
-      isStar: t.isStar || false
-    }));
-    for (const child of children) {
-      this.collectSubtaskTree(allTodos, child.id, result);
     }
   },
 
@@ -154,7 +102,7 @@ Page({
     const now = Date.now();
 
     // 记录"添加"操作到访客记录
-    const shareId = this.data.pendingShareId || wx.getStorageSync('_sharedSnapshotIds')?.[todo.id];
+    const shareId = wx.getStorageSync('_sharedSnapshotIds')?.[todo.id];
     if (shareId) {
       shareApi.recordShareAdd(shareId).catch(() => {});
     }
@@ -520,7 +468,6 @@ Page({
 
       this.loadNotification();
       this.loadSubtasks();
-      this.prepareShareSnapshotIfNeeded();
       this.checkActiveShare();
     } else {
       wx.showToast({
@@ -602,7 +549,6 @@ Page({
 
       this.loadNotification();
       this.loadSubtasks();
-      this.prepareShareSnapshotIfNeeded();
       this.checkActiveShare();
     } else {
       wx.showToast({
@@ -689,11 +635,12 @@ Page({
       const result = await shareApi.getSnapshot(shareId);
       wx.hideLoading();
 
+      if (result.needPassword) {
+        this.handlePasswordProtectedShare(shareId, result);
+        return;
+      }
+
       if (!result.success) {
-        if (result.needPassword) {
-          this.handlePasswordProtectedShare(shareId, result);
-          return;
-        }
         if (result.revoked) {
           wx.showToast({ title: '该分享已被撤回', icon: 'none' });
           return;
@@ -716,7 +663,7 @@ Page({
         return;
       }
       logger.error('PAGE', 'SNAPSHOT', '加载分享快照失败', err);
-      wx.showToast({ title: '分享加载失败', icon: 'none' });
+      wx.showToast({ title: errMsg || '分享加载失败', icon: 'none' });
     }
   },
 
@@ -783,7 +730,6 @@ Page({
 
     this.loadNotification();
     this.loadSubtasks();
-    this.prepareShareSnapshotIfNeeded();
     this.checkActiveShare();
   },
 
@@ -1129,7 +1075,6 @@ Page({
     })
     
     this.loadSubtasks();
-    this.prepareShareSnapshotIfNeeded();
     this.checkActiveShare();
   },
 
@@ -1173,7 +1118,7 @@ Page({
               wx.hideLoading();
               delete storedIds[todo.id];
               wx.setStorageSync('_sharedSnapshotIds', storedIds);
-              that.setData({ hasActiveShare: false, pendingShareId: null });
+              that.setData({ hasActiveShare: false });
               wx.showToast({ title: '已撤回' });
             })
             .catch((err) => {
@@ -2340,11 +2285,18 @@ Page({
     this.loadSubtasksFromSnapshot(subtasks || {}, sharedTodo.id);
   },
 
-  handlePasswordProtectedShare(shareId, partialResult) {
+  handlePasswordProtectedShare(shareId, partialResult, attempt = 1) {
+    const MAX_RETRIES = 5;
+    if (attempt > MAX_RETRIES) {
+      wx.showToast({ title: '密码错误次数过多', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 1000);
+      return;
+    }
     const that = this;
+    const desc = partialResult.remark ? `备注：${partialResult.remark}\n该分享已设置访问密码，请输入密码查看` : '该分享已设置访问密码';
     wx.showModal({
       title: '需要密码',
-      content: '该分享已设置访问密码',
+      content: desc,
       editable: true,
       placeholderText: '请输入密码',
       success: async (res) => {
@@ -2358,7 +2310,7 @@ Page({
               this.processSnapshotData(verifyResult.data, shareId);
             } else {
               wx.showToast({ title: '密码错误', icon: 'none' });
-              setTimeout(() => that.handlePasswordProtectedShare(shareId, partialResult), 500);
+              setTimeout(() => that.handlePasswordProtectedShare(shareId, partialResult, attempt + 1), 500);
             }
           } catch (err) {
             wx.hideLoading();

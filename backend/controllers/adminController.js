@@ -1994,6 +1994,55 @@ const getTodoDetail = async (req, res) => {
     }
 };
 
+const updateUserBadges = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { badgeTitles, badgeColors } = req.body;
+
+        if (!Array.isArray(badgeTitles) || !Array.isArray(badgeColors)) {
+            return res.status(400).json({
+                success: false,
+                message: 'badgeTitles 和 badgeColors 必须是数组'
+            });
+        }
+
+        if (badgeTitles.length !== badgeColors.length) {
+            return res.status(400).json({
+                success: false,
+                message: '称号与颜色数量不匹配'
+            });
+        }
+
+        // 验证每个颜色为有效 hex 值
+        for (const color of badgeColors) {
+            if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `无效颜色值: ${color}，需为 #RRGGBB 格式`
+                });
+            }
+        }
+
+        await query(
+            'UPDATE users SET badge_titles = ?, badge_colors = ?, updated_at = NOW() WHERE id = ?',
+            [JSON.stringify(badgeTitles), JSON.stringify(badgeColors), id]
+        );
+
+        logger.adminInfo('更新徽标', '管理员修改用户徽标', { userId: id, titles: badgeTitles });
+
+        res.json({
+            success: true,
+            message: '徽标更新成功'
+        });
+    } catch (err) {
+        logger.adminError('更新徽标', '更新用户徽标失败', { userId: id, error: err.message });
+        res.status(500).json({
+            success: false,
+            message: '更新用户徽标失败'
+        });
+    }
+};
+
 module.exports = {
     getStats,
     getStatDetail,
@@ -2028,5 +2077,6 @@ module.exports = {
     getTagCompletionAnalysis,
     getNotificationEffectAnalysis,
     updateUserNickname,
+    updateUserBadges,
     getTodoDetail
 };

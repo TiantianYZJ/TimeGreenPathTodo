@@ -104,7 +104,39 @@
       <text>保存修改</text>
     </button>
   </view>
-  
+
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">徽标管理</text>
+      <t-tag theme="primary" variant="light" size="small">称号+颜色</t-tag>
+    </view>
+    <view class="badge-list">
+      <view wx:for="{{badgeTitles}}" wx:for-index="idx" wx:key="idx" class="badge-edit-item">
+        <view class="badge-preview" style="color: {{badgeColors[idx]}}; border-color: {{badgeColors[idx]}}">
+          <text>{{item}}</text>
+        </view>
+        <input class="badge-title-input" value="{{item}}" bindinput="onBadgeTitleInput" data-index="{{idx}}" placeholder="称号" />
+        <view class="badge-color-group">
+          <input class="badge-color-input" value="{{badgeColors[idx]}}" bindinput="onBadgeColorInput" data-index="{{idx}}" placeholder="#RRGGBB" />
+          <view class="badge-color-swatch" style="background: {{badgeColors[idx]}}"></view>
+        </view>
+        <view class="badge-remove" bindtap="removeBadge" data-index="{{idx}}">
+          <t-icon name="delete" size="28rpx" color="#ff4757" />
+        </view>
+      </view>
+    </view>
+    <view class="badge-actions">
+      <button class="badge-add-btn" bindtap="addBadge">
+        <t-icon name="add" size="28rpx" color="#667eea" />
+        <text>添加徽标</text>
+      </button>
+      <button class="save-btn" bindtap="saveBadges">
+        <t-icon name="check" size="32rpx" color="#fff" />
+        <text>保存徽标</text>
+      </button>
+    </view>
+  </view>
+
   <view class="section">
     <view class="section-header">
       <text class="section-title">待办列表</text>

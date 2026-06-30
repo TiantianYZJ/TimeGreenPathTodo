@@ -8,6 +8,11 @@ function getFullAvatarUrl(avatarUrl) {
   return API_BASE_URL + avatarUrl;
 }
 
+function parseBadgeArray(val) {
+  if (!val) return [];
+  try { return JSON.parse(val); } catch { return []; }
+}
+
 Page({
   data: {
     userId: null,
@@ -31,7 +36,9 @@ Page({
     },
     showAssignedMode: 'group',
     editNicknameVisible: false,
-    editNicknameValue: ''
+    editNicknameValue: '',
+    badgeTitles: [],
+    badgeColors: []
   },
 
   onLoad(options) {
@@ -68,7 +75,9 @@ Page({
           assignedTodos: result.assignedTodos || [],
           assignedTodosFlat: result.assignedTodosFlat || [],
           comments: result.comments || [],
-          stats: result.stats || { totalTodos: 0, completedTodos: 0, assignedTodosCount: 0, commentsCount: 0 }
+          stats: result.stats || { totalTodos: 0, completedTodos: 0, assignedTodosCount: 0, commentsCount: 0 },
+          badgeTitles: parseBadgeArray(result.user.badge_titles),
+          badgeColors: parseBadgeArray(result.user.badge_colors)
         });
       }
     } catch (err) {
@@ -172,6 +181,49 @@ Page({
       }
     } catch (err) {
       wx.showToast({ title: '修改失败', icon: 'none' });
+    }
+  },
+
+  addBadge() {
+    const titles = [...this.data.badgeTitles, '新称号'];
+    const colors = [...this.data.badgeColors, '#00b26a'];
+    this.setData({ badgeTitles: titles, badgeColors: colors });
+  },
+
+  removeBadge(e) {
+    const idx = e.currentTarget.dataset.index;
+    const titles = [...this.data.badgeTitles];
+    const colors = [...this.data.badgeColors];
+    titles.splice(idx, 1);
+    colors.splice(idx, 1);
+    this.setData({ badgeTitles: titles, badgeColors: colors });
+  },
+
+  onBadgeTitleInput(e) {
+    const idx = e.currentTarget.dataset.index;
+    const titles = [...this.data.badgeTitles];
+    titles[idx] = e.detail.value;
+    this.setData({ badgeTitles: titles });
+  },
+
+  onBadgeColorInput(e) {
+    const idx = e.currentTarget.dataset.index;
+    const colors = [...this.data.badgeColors];
+    colors[idx] = e.detail.value;
+    this.setData({ badgeColors: colors });
+  },
+
+  async saveBadges() {
+    try {
+      const result = await adminApi.updateUserBadges(this.data.userId, {
+        badgeTitles: this.data.badgeTitles,
+        badgeColors: this.data.badgeColors
+      });
+      if (result.success) {
+        wx.showToast({ title: '保存成功', icon: 'success' });
+      }
+    } catch (err) {
+      wx.showToast({ title: '保存失败', icon: 'none' });
     }
   }
 });

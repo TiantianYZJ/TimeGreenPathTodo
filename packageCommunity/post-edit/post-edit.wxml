@@ -79,7 +79,7 @@
 
   <view class="picker-row" wx:if="{{!selectedComboCode}}" bind:tap="showPicker" data-type="combo">
     <t-icon name="user-group" size="32rpx" color="#999" />
-    <text class="picker-placeholder">邀请组合</text>
+    <text class="picker-placeholder">选择组合</text>
   </view>
   <view wx:if="{{selectedComboCode}}" class="picker-row picker-row-selected" bind:tap="showPicker" data-type="combo">
     <t-icon name="user-group" size="32rpx" color="#00b26a" />

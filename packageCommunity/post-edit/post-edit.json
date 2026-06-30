@@ -10,5 +10,6 @@
     "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
     "t-loading": "tdesign-miniprogram/loading/loading"
   },
-  "navigationStyle": "custom"
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "帖子详情"
 }

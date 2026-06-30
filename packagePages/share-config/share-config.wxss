@@ -125,10 +125,3 @@
   margin-top: 40rpx;
 }
 
-/* Copy success feedback */
-.copy-success {
-  color: #00b26a;
-  font-size: 24rpx;
-  text-align: center;
-  margin-top: 12rpx;
-}

@@ -11,6 +11,17 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
+function getBadges(row) {
+  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
+  try {
+    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+    return { badgeTitles: titles, badgeColors: colors };
+  } catch {
+    return { badgeTitles: [], badgeColors: [] };
+  }
+}
+
 const getList = async (req, res) => {
   const { postId } = req.params;
   const userId = req.user.id;
@@ -35,7 +46,7 @@ const getList = async (req, res) => {
     }
 
     const mainComments = await query(
-      `SELECT c.*, u.nickname, u.avatar_url
+      `SELECT c.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors
        FROM post_comments c
        LEFT JOIN users u ON c.user_id = u.id
        WHERE c.post_id = ? AND c.parent_id IS NULL AND c.is_deleted = 0 ${cursorWhere}
@@ -49,7 +60,7 @@ const getList = async (req, res) => {
 
     let allReplies = [];
     const replies = await query(
-      `SELECT c.*, u.nickname, u.avatar_url,
+      `SELECT c.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
               ru.nickname as reply_to_nickname
        FROM post_comments c
        LEFT JOIN users u ON c.user_id = u.id
@@ -83,7 +94,8 @@ const getList = async (req, res) => {
           user: {
             id: c.user_id,
             nickname: c.nickname || '用户',
-            avatar: getFullAvatarUrl(c.avatar_url)
+            avatar: getFullAvatarUrl(c.avatar_url),
+            ...getBadges(c)
           },
           canDelete: c.user_id === userId || postCreatorId === userId,
           replies: buildTree(comments, c.id, depth + 1)
@@ -104,7 +116,8 @@ const getList = async (req, res) => {
       user: {
         id: c.user_id,
         nickname: c.nickname || '用户',
-        avatar: getFullAvatarUrl(c.avatar_url)
+        avatar: getFullAvatarUrl(c.avatar_url),
+        ...getBadges(c)
       },
       canDelete: c.user_id === userId || postCreatorId === userId,
       replies: buildTree(allReplies, c.id, 1)

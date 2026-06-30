@@ -55,7 +55,7 @@
         <text class="notice-text">{{latestNoticeTitle}}</text>
       </view>
       <view class="notice-action">
-        <view wx:if="{{_hasNewNotice}}" class="notice-new-dot">NEW</view>
+        <view wx:if="{{_hasNewNotice}}" class="notice-new-dot" />
         <t-icon name="chevron-right" size="32rpx" color="#94a3b8" />
       </view>
     </view>
@@ -242,21 +242,6 @@ wx:key="*this"
     </view>
   </t-popup>
 
-  <!-- 分享弹窗 -->
-  <t-popup
-    visible="{{_showSharePopup}}"
-    placement="center"
-    usingCustomNavbar="{{true}}"
-    bind:visible-change="onSharePopupClose"
-    custom-style="border-radius: 32rpx; overflow: hidden;"
-  >
-    <view class="share-popup">
-      <view class="share-popup-title">分享待办</view>
-      <view class="share-popup-desc">将待办分享给微信好友</view>
-      <button class="share-popup-btn" open-type="share">分享给朋友</button>
-      <view class="share-popup-cancel" bindtap="onSharePopupClose">取消</view>
-    </view>
-  </t-popup>
 
   </view>
 

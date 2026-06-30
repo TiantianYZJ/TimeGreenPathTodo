@@ -79,7 +79,7 @@ function request(options) {
           }
           reject(new Error('登录已过期，请重新登录'));
         } else if (res.statusCode === 403) {
-          reject(new Error('无管理员权限'));
+          reject(new Error(res.data?.message || '无管理员权限'));
         } else {
           logger.error('NETWORK', 'REQUEST', 'API请求失败', { url: url, status: res.statusCode, data: res.data });
           reject(new Error(res.data?.message || `请求失败(${res.statusCode})`));
@@ -498,9 +498,16 @@ const adminApi = {
     method: 'PUT',
     data: { nickname }
   }),
-  
+
+  updateUserBadges: (userId, data) => request({
+    url: `/admin/users/${userId}/badges`,
+    method: 'PUT',
+    data
+  }),
+
   getNotices: () => request({
     url: '/admin/notices',
+
     method: 'GET'
   }),
   

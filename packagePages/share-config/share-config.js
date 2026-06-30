@@ -33,7 +33,6 @@ Page({
     communityPublished: false,
 
     // Common
-    copySuccess: false,
     expiryVisible: false,
     expiryIndex: 1,
     expiryOptions: EXPIRY_OPTIONS,
@@ -229,16 +228,6 @@ Page({
     return { title: '时光绿径待办' };
   },
 
-  onCopyLink() {
-    wx.setClipboardData({
-      data: 'https://api.yzjtiantian.cn/share/snapshot/' + this.data.shareId,
-      success: () => {
-        this.setData({ copySuccess: true });
-        setTimeout(() => this.setData({ copySuccess: false }), 2000);
-      },
-    });
-  },
-
   // === Tab 2: Community ===
 
   onPublishToCommunity() {
@@ -253,10 +242,10 @@ Page({
       return;
     }
 
-    // Store todo data for post-detail to read
+    // Store todo data for post-edit to read
     app.globalData.quickShareTodo = todo;
     wx.navigateTo({
-      url: '/packageCommunity/post-detail/post-detail?todoId=' + todo.id,
+      url: '/packageCommunity/post-edit/post-edit?todoId=' + todo.id,
     });
   },
 

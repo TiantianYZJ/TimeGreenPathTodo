@@ -347,6 +347,22 @@
   font-size: 26rpx;
   color: #333;
 }
+
+.nickname-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.user-badge {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid;
+  white-space: nowrap;
+  line-height: 1.4;
+}
 .visitor-time {
   font-size: 20rpx;
   color: #999;

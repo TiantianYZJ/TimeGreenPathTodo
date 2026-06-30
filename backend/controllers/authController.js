@@ -77,6 +77,10 @@ const login = async (req, res) => {
     const adminIds = getAdminIds();
     const isAdmin = adminIds.includes(user.id);
     
+    let badgeTitles = [], badgeColors = [];
+    if (user.badge_titles) try { badgeTitles = JSON.parse(user.badge_titles); } catch {}
+    if (user.badge_colors) try { badgeColors = JSON.parse(user.badge_colors); } catch {}
+
     res.json({
       success: true,
       token,
@@ -88,7 +92,9 @@ const login = async (req, res) => {
         todoLimit: user.todo_limit,
         comboLimit: user.combo_limit,
         collabLimit: user.collab_limit,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        badgeTitles,
+        badgeColors
       }
     });
   } catch (err) {
@@ -149,6 +155,10 @@ const getUserInfo = async (req, res) => {
     const adminIds = getAdminIds();
     const isAdmin = adminIds.includes(user.id);
     
+    let badgeTitles = [], badgeColors = [];
+    if (user.badge_titles) try { badgeTitles = JSON.parse(user.badge_titles); } catch {}
+    if (user.badge_colors) try { badgeColors = JSON.parse(user.badge_colors); } catch {}
+
     res.json({
       success: true,
       user: {
@@ -159,7 +169,9 @@ const getUserInfo = async (req, res) => {
         todoLimit: user.todo_limit,
         comboLimit: user.combo_limit,
         collabLimit: user.collab_limit,
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        badgeTitles,
+        badgeColors
       }
     });
   } catch (err) {

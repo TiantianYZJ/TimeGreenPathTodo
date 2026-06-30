@@ -14,6 +14,17 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
+function parseBadges(row) {
+  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
+  try {
+    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+    return { badgeTitles: titles, badgeColors: colors };
+  } catch {
+    return { badgeTitles: [], badgeColors: [] };
+  }
+}
+
 function formatPost(row, userId) {
   const images = row.images ? JSON.parse(row.images) : [];
   const todoIds = row.todo_ids ? JSON.parse(row.todo_ids) : [];
@@ -47,7 +58,8 @@ function formatPost(row, userId) {
     user: {
       id: row.user_id,
       nickname: row.nickname || '用户',
-      avatar: getFullAvatarUrl(row.avatar_url)
+      avatar: getFullAvatarUrl(row.avatar_url),
+      ...parseBadges(row)
     }
   };
 }
@@ -106,7 +118,7 @@ const getList = async (req, res) => {
     }
 
     const rows = await query(
-      `SELECT p.*, u.nickname, u.avatar_url,
+      `SELECT p.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id
@@ -138,7 +150,7 @@ const getById = async (req, res) => {
 
   try {
     const rows = await query(
-      `SELECT p.*, u.nickname, u.avatar_url,
+      `SELECT p.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id
@@ -263,7 +275,7 @@ const getVisitors = async (req, res) => {
 
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
     const visitors = await query(
-      `SELECT pv.user_id, u.nickname, u.avatar_url, pv.viewed_at
+      `SELECT pv.user_id, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors, pv.viewed_at
        FROM post_views pv
        LEFT JOIN users u ON pv.user_id = u.id
        WHERE pv.post_id = ?
@@ -284,7 +296,8 @@ const getVisitors = async (req, res) => {
           userId: v.user_id,
           nickname: v.nickname || '用户',
           avatar: getFullAvatarUrl(v.avatar_url),
-          viewedAt: v.viewed_at
+          viewedAt: v.viewed_at,
+          ...parseBadges(v)
         })),
         total: totalResult[0].total,
         hasMore: offset + visitors.length < totalResult[0].total

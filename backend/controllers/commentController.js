@@ -13,6 +13,17 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
+function getBadges(row) {
+  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
+  try {
+    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+    return { badgeTitles: titles, badgeColors: colors };
+  } catch {
+    return { badgeTitles: [], badgeColors: [] };
+  }
+}
+
 const checkMembership = async (userId, sharedTodoId) => {
   const results = await query(
     `SELECT cm.role, cm.combo_id 
@@ -57,7 +68,7 @@ const getComments = async (req, res) => {
     const creatorId = sharedTodoInfo.length > 0 ? sharedTodoInfo[0].creator_id : null;
 
     const mainComments = await query(
-      `SELECT c.*, u.nickname, u.avatar_url,
+      `SELECT c.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
               cm.role as combo_role,
               sta.completed_at as assignment_completed_at
        FROM shared_todo_comments c
@@ -74,7 +85,7 @@ const getComments = async (req, res) => {
     let replies = [];
     if (commentIds.length > 0) {
       replies = await query(
-        `SELECT c.*, u.nickname, u.avatar_url,
+        `SELECT c.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
                 ru.nickname as reply_to_nickname,
                 cm.role as combo_role,
                 sta.completed_at as assignment_completed_at
@@ -115,7 +126,8 @@ const getComments = async (req, res) => {
         user: {
           id: r.user_id,
           nickname: r.nickname || '用户',
-          avatar: getFullAvatarUrl(r.avatar_url)
+          avatar: getFullAvatarUrl(r.avatar_url),
+          ...getBadges(r)
         },
         comboRole: r.combo_role || 'member',
         todoRole: getTodoRole(r.user_id, r.assignment_completed_at),
@@ -136,7 +148,8 @@ const getComments = async (req, res) => {
       user: {
         id: c.user_id,
         nickname: c.nickname || '用户',
-        avatar: getFullAvatarUrl(c.avatar_url)
+        avatar: getFullAvatarUrl(c.avatar_url),
+        ...getBadges(c)
       },
       comboRole: c.combo_role || 'member',
       todoRole: getTodoRole(c.user_id, c.assignment_completed_at),

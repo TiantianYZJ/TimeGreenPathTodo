@@ -507,3 +507,98 @@
 .cancel-btn::after, .confirm-btn::after {
   border: none;
 }
+
+/* ========== 徽标管理 ========== */
+
+.badge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.badge-edit-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+}
+
+.badge-preview {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-title-input {
+  flex: 1;
+  min-width: 0;
+  height: 60rpx;
+  background: #fff;
+  border-radius: 8rpx;
+  padding: 0 12rpx;
+  font-size: 24rpx;
+  color: #2d3436;
+}
+
+.badge-color-group {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.badge-color-input {
+  width: 130rpx;
+  height: 60rpx;
+  background: #fff;
+  border-radius: 8rpx;
+  padding: 0 12rpx;
+  font-size: 22rpx;
+  color: #2d3436;
+}
+
+.badge-color-swatch {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid #eee;
+  flex-shrink: 0;
+}
+
+.badge-remove {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.badge-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.badge-add-btn {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: #f0f0ff;
+  color: #667eea;
+  font-size: 28rpx;
+  border-radius: 32rpx;
+  border: none;
+}
+
+.badge-add-btn::after {
+  border: none;
+}

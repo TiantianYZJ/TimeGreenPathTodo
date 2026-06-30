@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
@@ -32,7 +33,8 @@ const createSnapshot = async (req, res) => {
       `INSERT INTO share_snapshots (share_id, user_id, data, expires_at, password, max_views, remark, allow_copy, track_visitors)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [shareId, userId, JSON.stringify({ todo, subtasks }), expiresAt,
-       password || null, maxViews || null, remark || null,
+       password ? crypto.createHash('sha256').update(password).digest('hex') : null,
+       parseInt(maxViews) || null, remark || null,
        allowCopy !== false ? 1 : 0,
        trackVisitors ? 1 : 0]
     );
@@ -54,7 +56,7 @@ const getSnapshot = async (req, res) => {
     const snapshots = await query(
       `SELECT data, revoked, password, max_views, current_views,
               track_visitors, remark, allow_copy, user_id AS owner_id
-       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW()`,
+       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW() AND revoked = FALSE`,
       [shareId]
     );
 
@@ -74,10 +76,6 @@ const getSnapshot = async (req, res) => {
       });
     }
 
-    if (snapshot.max_views && snapshot.current_views >= snapshot.max_views) {
-      return res.status(403).json({ success: false, message: '分享已超过最大查看次数' });
-    }
-
     // 设置了密码，返回 needPassword（不计数查看次数）
     if (snapshot.password) {
       return res.json({
@@ -86,8 +84,14 @@ const getSnapshot = async (req, res) => {
       });
     }
 
-    // 计数查看次数 + 访客记录（仅密码验证通过后或无密码时）
-    await query('UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ?', [shareId]);
+    // 原子更新：只在未超过上限时计数
+    const result = await query(
+      'UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ? AND (max_views IS NULL OR current_views < max_views)',
+      [shareId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(403).json({ success: false, message: '分享已超过最大查看次数' });
+    }
 
     if (snapshot.track_visitors) {
       const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
@@ -152,22 +156,25 @@ const verifyPassword = async (req, res) => {
   try {
     const snapshots = await query(
       `SELECT password, data, max_views, current_views, track_visitors
-       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW()`,
+       FROM share_snapshots WHERE share_id = ? AND expires_at > NOW() AND revoked = FALSE`,
       [shareId]
     );
     if (snapshots.length === 0) {
       return res.status(404).json({ success: false, message: '分享已过期或不存在' });
     }
-    if (snapshots[0].password !== password) {
+    const hashed = crypto.createHash('sha256').update(password).digest('hex');
+    if (snapshots[0].password !== hashed) {
       return res.status(403).json({ success: false, message: '密码错误' });
     }
 
-    // 密码验证通过后计数查看次数
-    if (snapshots[0].max_views && snapshots[0].current_views >= snapshots[0].max_views) {
+    // 原子更新：只在未超过上限时计数
+    const result = await query(
+      'UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ? AND (max_views IS NULL OR current_views < max_views)',
+      [shareId]
+    );
+    if (result.affectedRows === 0) {
       return res.status(403).json({ success: false, message: '分享已超过最大查看次数' });
     }
-
-    await query('UPDATE share_snapshots SET current_views = current_views + 1 WHERE share_id = ?', [shareId]);
 
     if (snapshots[0].track_visitors) {
       const visitorIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
