@@ -96,7 +96,7 @@ Page({
     const combos = app.globalData.combos || [];
     const sharedCombos = app.globalData.sharedCombos || [];
     // 私有组合：仅显示有 share_code 且 is_shared=1 的
-    const shareableCombos = combos.filter(c => c.share_code && (c.is_shared === 1 || c.isShared === 1));
+    const shareableCombos = combos.filter(c => c.shareCode && c.isShared);
     // 共享组合：仅显示有邀请权限的
     const inviteableShared = sharedCombos.filter(c =>
       c.role === 'owner' || c.role === 'admin' || c.userRole === 'owner' || c.userRole === 'admin'
@@ -123,7 +123,7 @@ Page({
       let comboName = '';
       if (cached.shareCode) {
         const allCombos = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
-        const found = allCombos.find(c => c.share_code === cached.shareCode);
+        const found = allCombos.find(c => c.shareCode === cached.shareCode);
         if (found) comboName = found.name;
       }
       this.setData({
@@ -144,7 +144,7 @@ Page({
         let comboName = '';
         if (post.shareCode) {
           const allCombos = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
-          const found = allCombos.find(c => c.share_code === post.shareCode);
+          const found = allCombos.find(c => c.shareCode === post.shareCode);
           if (found) comboName = found.name;
         }
         this.setData({
@@ -240,7 +240,7 @@ Page({
     } else if (type === 'combo') {
       const combos = app.globalData.combos || [];
       const sharedCombos = app.globalData.sharedCombos || [];
-      const shareableCombos = combos.filter(c => c.share_code && (c.is_shared === 1 || c.isShared === 1));
+      const shareableCombos = combos.filter(c => c.shareCode && c.isShared);
       const inviteableShared = sharedCombos.filter(c =>
         c.role === 'owner' || c.role === 'admin' || c.userRole === 'owner' || c.userRole === 'admin'
       );
@@ -302,7 +302,7 @@ Page({
   findComboIdByCode(code) {
     if (!code) return null;
     const all = [...(app.globalData.combos || []), ...(app.globalData.sharedCombos || [])];
-    const found = all.find(c => c.share_code === code);
+    const found = all.find(c => c.shareCode === code);
     return found ? String(found.id) : null;
   },
 
@@ -341,7 +341,7 @@ Page({
       const combo = this.findComboById(id);
       if (combo) {
         this.setData({
-          selectedComboCode: combo.share_code,
+          selectedComboCode: combo.shareCode,
           selectedComboName: combo.name
         });
       }
