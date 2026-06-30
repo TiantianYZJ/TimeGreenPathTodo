@@ -143,10 +143,10 @@ const create = async (req, res) => {
   const userId = req.user.id;
   const { content, images, parentId, replyToUserId, replyToContent } = req.body;
 
-  if (!content || content.trim().length === 0) {
+  if ((!content || content.trim().length === 0) && (!images || images.length === 0)) {
     return res.status(400).json({ success: false, message: '评论内容不能为空' });
   }
-  if (content.length > 500) {
+  if (content && content.length > 500) {
     return res.status(400).json({ success: false, message: '评论内容不能超过500字' });
   }
 
@@ -174,7 +174,7 @@ const create = async (req, res) => {
       `INSERT INTO post_comments (post_id, user_id, content, images, parent_id, reply_to_user_id, reply_to_content)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
-        postDbId, userId, content.trim(),
+        postDbId, userId, (content || '').trim(),
         images && images.length ? JSON.stringify(images) : null,
         parentId || null, replyToUserId || null, replyToContent || null
       ]
