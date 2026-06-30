@@ -9,7 +9,7 @@
       <image class="post-avatar" src="{{post.user.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
       <view class="post-user-info">
         <text class="post-nickname">{{post.user.nickname}}</text>
-        <text class="post-time">{{post.createdAt}}</text>
+        <text class="post-time">{{formatTime(post.createdAt)}}</text>
       </view>
     </view>
     <view class="post-title">{{post.title}}</view>

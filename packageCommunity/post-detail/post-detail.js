@@ -1,9 +1,10 @@
 const app = getApp();
-const { communityApi } = require('../../utils/api');
+const { communityApi, todosApi } = require('../../utils/api');
 
 Page({
   data: {
     postId: null, post: {}, isDeleted: false, isOwner: false,
+    todoId: null, todoData: null,
     comments: [], commentCursor: null, hasMoreComments: true, loadingComments: false,
     commentText: '', replyTarget: null, replyParentId: null, replyToUserId: null,
     showVisitorsPopup: false,
@@ -13,9 +14,48 @@ Page({
 
   onLoad(options) {
     const postId = options.postId;
-    if (!postId) { wx.showToast({ title: '参数错误', icon: 'none' }); return; }
-    this.setData({ postId });
-    this.loadPost();
+    const todoId = options.todoId;
+    if (postId) {
+      this.setData({ postId });
+      this.loadPost();
+    } else if (todoId) {
+      this.setData({ todoId });
+      this.loadTodoPost(todoId);
+    } else {
+      wx.showToast({ title: '参数错误', icon: 'none' });
+    }
+  },
+
+  // 从 todoId 加载：获取待办数据，预填标题并跳转发布页
+  async loadTodoPost(todoId) {
+    try {
+      const res = await todosApi.getById(todoId);
+      if (res.success && res.data) {
+        const todo = res.data;
+        // 存储到全局用于 post-edit 读取
+        app.globalData.quickShareTodo = todo;
+        wx.showModal({
+          title: '基于待办发布',
+          content: '是否以「' + todo.text + '」为标题发布到社区？',
+          success: (r) => {
+            if (r.confirm) {
+              // 携带 todoId 跳转发布页，post-edit 自动填入标题
+              wx.redirectTo({
+                url: '/packageCommunity/post-edit/post-edit?todoId=' + todoId
+              });
+            } else {
+              wx.navigateBack();
+            }
+          }
+        });
+      } else {
+        wx.showToast({ title: '待办不存在', icon: 'none' });
+        setTimeout(() => wx.navigateBack(), 1500);
+      }
+    } catch (err) {
+      wx.showToast({ title: '加载待办失败', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 1500);
+    }
   },
 
   onShow() {
