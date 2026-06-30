@@ -231,7 +231,18 @@ Page({
 
   pickLocation() {
     wx.chooseLocation({
-      success: (res) => { this.setData({ location: { text: res.name || res.address } }); }
+      success: (res) => {
+        const locText = res.name || res.address || '';
+        this.setData({
+          location: {
+            name: res.name || '',
+            address: res.address || '',
+            latitude: res.latitude,
+            longitude: res.longitude,
+            text: locText
+          }
+        });
+      }
     });
   },
 

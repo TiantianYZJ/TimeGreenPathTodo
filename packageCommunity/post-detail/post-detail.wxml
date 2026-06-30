@@ -19,8 +19,11 @@
     </view>
     <view class="post-meta">
       <text wx:if="{{post.isEdited}}" class="edited-badge">已编辑</text>
-      <text wx:if="{{post.location}}"><t-icon name="location" size="24rpx" /> {{post.location}}</text>
       <text wx:if="{{post.ipProvince}}">IP属地 · {{post.ipProvince}}</text>
+    </view>
+    <view wx:if="{{post.location}}" class="location-card" catch:tap="openLocation" data-lat="{{post.location.latitude}}" data-lng="{{post.location.longitude}}" data-name="{{post.location.name || post.location}}">
+      <t-icon name="location" size="28rpx" color="#00b26a" />
+      <text class="location-text">{{post.location.name || post.location.address || post.location.text || post.location}}</text>
     </view>
     <view wx:if="{{post.todoIds && post.todoIds.length > 0 || post.shareCode}}" class="post-tags">
       <view wx:if="{{post.todoIds && post.todoIds.length > 0}}" class="tag-item">
