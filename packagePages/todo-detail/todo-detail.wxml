@@ -319,27 +319,16 @@
 </view>
 
 
-<!-- <t-fab wx:if="{{!isShare}}" icon="edit" text="" style="right: 32rpx; bottom: 386rpx;" bind:click="editTodo"/> -->
-<!-- 管理员查看模式：仅显示评论按钮（共享待办） -->
-<block wx:if="{{adminView && isSharedTodo}}">
-  <t-fab icon="chat" text="" style="right: 32rpx; bottom: 32rpx;" bind:click="openCommentPopup"/>
-</block>
-
-<!-- 管理员查看模式不显示FAB按钮 -->
-<block wx:if="{{!adminView}}">
-  <t-fab wx:if="{{!isShare && !isSharedTodo}}" icon="edit" text="" style="right: 150rpx; bottom: 186rpx;" bind:click="editTodo"/>
-  <t-fab wx:if="{{!isShare && !isSharedTodo}}" icon="delete" text="" style="right: 268rpx; bottom: 186rpx;" bind:click="deleteTodo"/>
-  <t-fab wx:if="{{!isShare && isSharedTodo && (userRole === 'owner' || userRole === 'admin')}}" icon="edit" text="" style="right: 150rpx; bottom: 186rpx;" bind:click="editTodo"/>
-  <t-fab wx:if="{{!isShare && isSharedTodo && (userRole === 'owner' || userRole === 'admin')}}" icon="delete" text="" style="right: 268rpx; bottom: 186rpx;" bind:click="deleteTodo"/>
-  <!-- 评论按钮（仅共享待办显示） -->
-  <t-fab wx:if="{{!isShare && isSharedTodo}}" icon="chat" text="" style="right: 32rpx; bottom: 32rpx;" bind:click="openCommentPopup"/>
-  <t-fab wx:if="{{!isShare}}" icon="{{todo.isStar ? 'star-filled' : 'star'}}" style="right: 32rpx; bottom: 186rpx;" bind:click="toggleStar"/>
-  <t-fab wx:if="{{!isShare && hasActiveShare && !isSharedTodo}}" icon="unfold-less" style="right: 150rpx; bottom: 32rpx;" bind:click="revokeShare" text="撤回分享" />
-  <!-- 分享配置入口（个人待办始终可见） -->
-  <t-fab wx:if="{{!isShare && !isSharedTodo}}" icon="share" style="right: 32rpx; bottom: 32rpx;" bind:click="goToShareConfig" text="分享" />
-<t-fab wx:if="{{!isShare && isSharedTodo}}" icon="share" style="right: 150rpx; bottom: 32rpx;" button-props="{{shareButton}}" bind:click="onShareAppMessage" text="分享给朋友" />
-  <t-fab wx:if="{{isShare && !isSharedTodo}}" icon="add" text="添加到我的待办" style="right: 32rpx; bottom: 32rpx;" bind:click="addToMyTodos"/>
-  <t-fab wx:if="{{isFromShare}}" icon="home" text="返回首页" style="right: 32rpx; bottom: 186rpx;" bind:click="goHome"/>
+<!-- FAB 按钮组（由 JS _computeFabActions 计算） -->
+<block wx:for="{{fabActions}}" wx:key="id">
+  <t-fab
+    icon="{{item.icon}}"
+    text="{{item.text || ''}}"
+    style="right: {{item.right}}rpx; bottom: {{item.bottom}}rpx;"
+    button-props="{{item.buttonProps}}"
+    data-id="{{item.id}}"
+    bind:click="onFabAction"
+  />
 </block>
 
 <!-- 评论弹窗 -->
@@ -467,6 +456,30 @@
     </view>
   </view>
 </t-popup>
+
+<!-- 分享快照遮罩 -->
+<view wx:if="{{shareOverlay}}" class="share-overlay {{shareOverlay}}">
+  <view class="overlay-content">
+    <t-icon name="lock-on" size="80rpx" color="#00b26a" />
+    <text class="overlay-title" wx:if="{{shareOverlay === 'password'}}">该分享已加密</text>
+    <text class="overlay-title" wx:if="{{shareOverlay === 'exhausted'}}">访问数量已达分享者设置上限</text>
+    <text class="overlay-subtitle" wx:if="{{shareOverlay === 'password'}}">请输入访问密码</text>
+
+    <view wx:if="{{shareOverlay === 'password'}}" class="overlay-input-group">
+      <input class="overlay-input" type="text" password placeholder="" value="{{overlayPassword}}" bindinput="onOverlayPasswordInput" />
+      <view class="overlay-btn-row">
+        <button class="overlay-confirm-btn" catchtap="onOverlayConfirmPassword">确认</button>
+        <button class="overlay-cancel-btn" catchtap="onOverlayGoHome">取消</button>
+      </view>
+      <text wx:if="{{overlayError}}" class="overlay-error">{{overlayError}}</text>
+    </view>
+
+    <view wx:if="{{shareOverlay === 'exhausted'}}" class="overlay-exhausted-actions">
+      <view class="overlay-exhausted-hint">请联系分享者重新分享</view>
+      <button class="overlay-home-btn" catchtap="onOverlayGoHome">返回首页</button>
+    </view>
+  </view>
+</view>
 
 <!-- 访客记录按钮 -->
 <view wx:if="{{hasActiveShare && !isSharedTodo && !adminView}}" class="visitor-btn" bind:tap="onViewVisitors">

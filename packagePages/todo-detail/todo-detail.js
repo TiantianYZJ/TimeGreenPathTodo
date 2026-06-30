@@ -17,10 +17,6 @@ Page({
     sharedTodoId: null,
     comboId: null,
     currentIndex: -1,
-    shareButton: {
-      openType: 'share'
-    },
-    
     notification: null,
     showNotifyConfig: false,
 
@@ -59,6 +55,13 @@ Page({
     hasActiveShare: false,
     showVisitorPopup: false,
     visitorList: [],
+    allowAdd: false,
+
+    fabActions: [],
+
+    shareOverlay: null,
+    overlayPassword: '',
+    overlayError: '',
 
     subtaskList: [],
     subtaskCollapsed: false,
@@ -89,6 +92,152 @@ Page({
         path: `/packagePages/todo-detail/todo-detail?isShare=1&shareId=${shareId}`,
       };
     }
+  },
+
+  // ==================== FAB 按钮组 ====================
+
+  // 根据当前视图计算 FAB 按钮列表
+  _computeFabActions() {
+    const { adminView, isSharedTodo, isShare, isFromShare, hasActiveShare, userRole, todo, allowAdd } = this.data;
+    const buttons = [];
+
+    if (adminView) {
+      if (isSharedTodo) {
+        buttons.push({ id: 'comment', icon: 'chat', method: 'openCommentPopup', row: 0 });
+      }
+      return this._layoutFabButtons(buttons);
+    }
+
+    if (isShare && !isSharedTodo) {
+      if (allowAdd) {
+        buttons.push({ id: 'add', icon: 'add', text: '添加到我的待办', method: 'addToMyTodos', row: 0 });
+      }
+      if (isFromShare) {
+        buttons.push({ id: 'home', icon: 'home', text: '返回首页', method: 'goHome', row: 0 });
+      }
+      return this._layoutFabButtons(buttons);
+    }
+
+    // 第0行：底部功能按钮
+    if (isSharedTodo) {
+      buttons.push({ id: 'comment', icon: 'chat', method: 'openCommentPopup', row: 0 });
+    }
+    if (!isSharedTodo) {
+      buttons.push({ id: 'share', icon: 'share', text: '分享', method: 'goToShareConfig', row: 0 });
+    } else {
+      buttons.push({ id: 'share', icon: 'share', text: '分享给朋友', row: 0, openType: true });
+    }
+    if (!isSharedTodo && hasActiveShare) {
+      buttons.push({ id: 'revoke', icon: 'unfold-less', text: '撤回分享', method: 'revokeShare', row: 0 });
+    }
+
+    // 第1行：操作按钮
+    buttons.push({ id: 'star', icon: todo.isStar ? 'star-filled' : 'star', method: 'toggleStar', row: 1 });
+    if (!isSharedTodo || userRole === 'owner' || userRole === 'admin') {
+      buttons.push({ id: 'edit', icon: 'edit', method: 'editTodo', row: 1 });
+      buttons.push({ id: 'delete', icon: 'delete', method: 'deleteTodo', row: 1 });
+    }
+    if (isFromShare) {
+      buttons.push({ id: 'home', icon: 'home', text: '返回首页', method: 'goHome', row: 1 });
+    }
+
+    return this._layoutFabButtons(buttons);
+  },
+
+  // 为按钮分配位置（right/bottom）并处理特殊属性
+  _layoutFabButtons(buttons) {
+    const rows = {};
+    buttons.forEach(b => {
+      if (!rows[b.row]) rows[b.row] = [];
+      rows[b.row].push(b);
+    });
+    const rowBottoms = [32, 186, 340];
+    Object.keys(rows).forEach(row => {
+      rows[row].forEach((b, i) => {
+        b.right = 32 + i * 118;
+        b.bottom = rowBottoms[row] || 32;
+        if (b.openType) {
+          b.buttonProps = { openType: 'share' };
+          delete b.openType;
+        }
+      });
+    });
+    this.setData({ fabActions: buttons });
+    return buttons;
+  },
+
+  // FAB 点击统一分发
+  onFabAction(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id === 'share' && this.data.isSharedTodo) return;
+    const map = {
+      star: 'toggleStar', edit: 'editTodo', delete: 'deleteTodo',
+      comment: 'openCommentPopup', revoke: 'revokeShare',
+      share: 'goToShareConfig', add: 'addToMyTodos', home: 'goHome',
+    };
+    const method = map[id];
+    if (method) this[method]();
+  },
+
+  // ==================== 分享快照遮罩 ====================
+
+  onOverlayPasswordInput(e) {
+    this.setData({ overlayPassword: e.detail.value, overlayError: '' });
+  },
+
+  onOverlayConfirmPassword() {
+    const password = this.data.overlayPassword;
+    if (!password) {
+      this.setData({ overlayError: '请输入密码' });
+      return;
+    }
+    const shareId = this.data.shareId;
+    const that = this;
+    this._attemptVerifyPassword(shareId, password, 1);
+  },
+
+  _attemptVerifyPassword(shareId, password, attempt) {
+    const MAX_RETRIES = 5;
+    if (attempt > MAX_RETRIES) {
+      this.setData({ overlayError: '密码错误次数过多' });
+      setTimeout(() => this.onOverlayGoHome(), 1500);
+      return;
+    }
+    wx.showLoading({ title: '验证中...' });
+    shareApi.verifySharePassword(shareId, password)
+      .then(result => {
+        wx.hideLoading();
+        if (result.success && result.data) {
+          this.setData({ overlayPassword: '', overlayError: '' });
+          // 渐隐遮罩后加载数据
+          this.setData({ shareOverlay: 'fadeout' });
+          setTimeout(() => {
+            this.setData({ shareOverlay: null });
+            this.processSnapshotData(result.data, shareId, result.allowCopy);
+          }, 300);
+        } else {
+          this.setData({ overlayError: '密码错误' });
+          setTimeout(() => this._attemptVerifyPassword(shareId, password, attempt + 1), 500);
+        }
+      })
+      .catch(err => {
+        wx.hideLoading();
+        const errMsg = (err && err.message) || '';
+        if (errMsg.includes('超过最大查看次数')) {
+          this.setData({ shareOverlay: 'exhausted' });
+          return;
+        }
+        if (errMsg.includes('已过期') || errMsg.includes('撤回')) {
+          wx.showToast({ title: errMsg, icon: 'none' });
+          setTimeout(() => this.onOverlayGoHome(), 1500);
+          return;
+        }
+        this.setData({ overlayError: errMsg || '验证失败' });
+      });
+  },
+
+  onOverlayGoHome() {
+    wx.reLaunch({ url: '/pages/todo/todo' });
   },
 
   // 添加到我的待办 — 根据来源路由
@@ -359,6 +508,7 @@ Page({
         todoId: todo.todo_id || todoId,
         detailUserId: userId
       });
+      this._computeFabActions();
       wx.stopPullDownRefresh();
     } catch (err) {
       logger.error('ADMIN', 'API', '管理员API加载待办失败', err);
@@ -410,6 +560,7 @@ Page({
         formatCompletedTime: todoData.completed ? this.formatAdminDateTime(todoData.completed) : '',
         imagesLayout: this.calculateImagesLayout(parsedImages)
       });
+      this._computeFabActions();
     } catch (err) {
       logger.error('ADMIN', 'DATA', '解析管理员查看数据失败', err);
     }
@@ -469,6 +620,7 @@ Page({
       this.loadNotification();
       this.loadSubtasks();
       this.checkActiveShare();
+      this._computeFabActions();
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -550,6 +702,7 @@ Page({
       this.loadNotification();
       this.loadSubtasks();
       this.checkActiveShare();
+      this._computeFabActions();
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -636,7 +789,11 @@ Page({
       wx.hideLoading();
 
       if (result.needPassword) {
-        this.handlePasswordProtectedShare(shareId, result);
+        this.setData({
+          shareOverlay: 'password',
+          shareId: shareId,
+          allowAdd: result.allowCopy !== false
+        });
         return;
       }
 
@@ -654,7 +811,7 @@ Page({
         return;
       }
 
-      this.processSnapshotData(result.data, shareId);
+      this.processSnapshotData(result.data, shareId, result.allowCopy);
     } catch (err) {
       wx.hideLoading();
       const errMsg = (err && err.message) || '';
@@ -662,8 +819,12 @@ Page({
         wx.showToast({ title: errMsg, icon: 'none' });
         return;
       }
+      if (errMsg.includes('超过最大查看次数')) {
+        this.setData({ shareOverlay: 'exhausted' });
+        return;
+      }
       logger.error('PAGE', 'SNAPSHOT', '加载分享快照失败', err);
-      wx.showToast({ title: errMsg || '分享加载失败', icon: 'none' });
+      this.setData({ shareOverlay: 'exhausted' });
     }
   },
 
@@ -731,6 +892,7 @@ Page({
     this.loadNotification();
     this.loadSubtasks();
     this.checkActiveShare();
+    this._computeFabActions();
   },
 
   async loadSharedTodo(todoId, comboId) {
@@ -854,6 +1016,7 @@ Page({
       this.updateCompletionStats();
       
       wx.hideLoading();
+      this._computeFabActions();
       wx.stopPullDownRefresh();
     } catch (err) {
       logger.error('COLLAB', 'LOAD', '加载共享待办失败', err);
@@ -1076,6 +1239,7 @@ Page({
     
     this.loadSubtasks();
     this.checkActiveShare();
+    this._computeFabActions();
   },
 
   countSubtasks(todos, parentId) {
@@ -1119,6 +1283,7 @@ Page({
               delete storedIds[todo.id];
               wx.setStorageSync('_sharedSnapshotIds', storedIds);
               that.setData({ hasActiveShare: false });
+              that._computeFabActions();
               wx.showToast({ title: '已撤回' });
             })
             .catch((err) => {
@@ -1453,6 +1618,7 @@ Page({
         title: newStarState ? '已收藏' : '已取消收藏',
         icon: 'none'
       });
+      this._computeFabActions();
     });
   },
 
@@ -2251,7 +2417,7 @@ Page({
     }
   },
 
-  processSnapshotData(resultData, shareId) {
+  processSnapshotData(resultData, shareId, allowCopy) {
     const { todo: sharedTodo, subtasks } = resultData;
 
     let setDateObj;
@@ -2279,12 +2445,15 @@ Page({
       formatDateTime: this.formatDateTime(Date.now()),
       isShare: true,
       imagesLayout: this.calculateImagesLayout(parsedImages),
-      shareSnapshotSubtasks: subtasks || {}
+      shareSnapshotSubtasks: subtasks || {},
+      allowAdd: allowCopy !== false
     });
 
     this.loadSubtasksFromSnapshot(subtasks || {}, sharedTodo.id);
+    this._computeFabActions();
   },
 
+  // 已废弃：由遮罩系统代替
   handlePasswordProtectedShare(shareId, partialResult, attempt = 1) {
     const MAX_RETRIES = 5;
     if (attempt > MAX_RETRIES) {
