@@ -1,5 +1,5 @@
 const app = getApp();
-const { communityApi } = require('../../utils/api');
+const { communityApi, todosApi } = require('../../utils/api');
 
 Page({
   data: {
@@ -13,7 +13,9 @@ Page({
     hasMore: true,
     loading: false,
     loadingMore: false,
-    refreshing: false
+    refreshing: false,
+    expandedPostId: null,
+    postTodoMap: {}
   },
 
   onLoad() {
@@ -76,6 +78,44 @@ Page({
     const token = wx.getStorageSync('authToken');
     if (!token) { wx.navigateTo({ url: '/packagePages/login/login' }); return; }
     wx.navigateTo({ url: '/packageCommunity/post-edit/post-edit' });
+  },
+
+  async toggleTodoExpand(e) {
+    const postId = e.currentTarget.dataset.postId;
+    const post = this.data.postList.find(p => p.postId === postId);
+    if (!post || !post.todoIds || post.todoIds.length === 0) return;
+
+    if (this.data.expandedPostId === postId) {
+      this.setData({ expandedPostId: null });
+      return;
+    }
+
+    // fetch todo titles if not cached
+    if (!this.data.postTodoMap[postId]) {
+      try {
+        const res = await todosApi.getTodosBatch(post.todoIds);
+        if (res.success && res.data) {
+          this.data.postTodoMap[postId] = res.data;
+          this.setData({ postTodoMap: this.data.postTodoMap, expandedPostId: postId });
+        }
+      } catch (err) {
+        wx.showToast({ title: '加载待办失败', icon: 'none' });
+      }
+    } else {
+      this.setData({ expandedPostId: postId });
+    }
+  },
+
+  handleComboTap(e) {
+    const shareCode = e.currentTarget.dataset.code;
+    if (!shareCode) return;
+    wx.setStorageSync('pendingShareData', {
+      type: 'combo_invite',
+      code: shareCode,
+      auto: false,
+      timestamp: Date.now()
+    });
+    wx.switchTab({ url: '/pages/todo/todo' });
   },
 
   async toggleLike(e) {

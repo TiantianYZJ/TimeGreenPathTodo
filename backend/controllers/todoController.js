@@ -905,6 +905,31 @@ const restoreTodo = async (req, res) => {
   }
 };
 
+const getTodosBatch = async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.json({ success: true, data: [] });
+  }
+  try {
+    const placeholders = ids.map(() => '?').join(',');
+    const numericIds = ids.map(id => { const n = Number(id); return isNaN(n) ? -1 : n; });
+    const todos = await query(
+      `SELECT todo_id, id, text, priority, completed FROM todos
+       WHERE (todo_id IN (${placeholders}) OR id IN (${placeholders})) AND is_deleted = 0`,
+      [...ids, ...numericIds]
+    );
+    res.json({ success: true, data: todos.map(t => ({
+      id: t.todo_id || String(t.id),
+      text: t.text,
+      priority: t.priority,
+      completed: !!t.completed
+    })) });
+  } catch (err) {
+    logger.todoError('批量获取', '批量获取待办失败', { error: err.message });
+    res.status(500).json({ success: false, message: '获取失败' });
+  }
+};
+
 module.exports = {
   getList,
   getById,
@@ -917,5 +942,6 @@ module.exports = {
   cleanupDeletedTodos,
   getDeletedList,
   permanentDelete,
-  restoreTodo
+  restoreTodo,
+  getTodosBatch
 };

@@ -10,6 +10,7 @@ Page({
     showVisitorsPopup: false,
     visitors: [],
     refreshing: false,
+    todoExpanded: false, todoItems: [],
     reportReasons: ['垃圾广告', '色情低俗', '人身攻击', '违法信息', '其他']
   },
 
@@ -138,6 +139,33 @@ Page({
         }
       }
     });
+  },
+
+  async toggleTodoExpand() {
+    const post = this.data.post;
+    if (!post || !post.todoIds || post.todoIds.length === 0) return;
+    if (this.data.todoExpanded) { this.setData({ todoExpanded: false }); return; }
+    if (this.data.todoItems.length === 0) {
+      try {
+        const res = await todosApi.getTodosBatch(post.todoIds);
+        if (res.success && res.data) {
+          this.setData({ todoItems: res.data, todoExpanded: true });
+          return;
+        }
+      } catch (err) {
+        console.error('[toggleTodoExpand] batch error:', err);
+        wx.showToast({ title: '加载待办失败', icon: 'none' });
+        return;
+      }
+    }
+    this.setData({ todoExpanded: true });
+  },
+
+  handleComboTap() {
+    const code = this.data.post.shareCode;
+    if (!code) return;
+    wx.setStorageSync('pendingShareData', { type: 'combo_invite', code, auto: false, timestamp: Date.now() });
+    wx.switchTab({ url: '/pages/todo/todo' });
   },
 
   onMore() {

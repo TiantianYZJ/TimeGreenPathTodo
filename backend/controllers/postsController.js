@@ -45,6 +45,7 @@ function formatPost(row, userId) {
     images,
     todoIds,
     shareCode: row.share_code,
+    shareComboName: row.share_combo_name || null,
     ipProvince,
     location: locationText,
     likesCount: row.likes_count,
@@ -122,6 +123,7 @@ const getList = async (req, res) => {
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id
+       LEFT JOIN combos c ON p.share_code = c.share_code
        WHERE p.is_deleted = 0 ${cursorWhere}
        ORDER BY p.created_at DESC, p.id DESC
        LIMIT ?`,
@@ -154,6 +156,7 @@ const getById = async (req, res) => {
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id
+       LEFT JOIN combos c ON p.share_code = c.share_code
        WHERE p.post_id = ?`,
       [userId, postId]
     );

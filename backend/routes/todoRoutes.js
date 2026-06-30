@@ -12,6 +12,7 @@ router.put('/:id', authMiddleware, todoController.update);
 router.delete('/:id', authMiddleware, todoController.deleteTodo);
 router.post('/batch-move', authMiddleware, todoController.batchMove);
 router.post('/sync', authMiddleware, todoController.sync);
+router.post('/batch', authMiddleware, todoController.getTodosBatch);
 router.post('/restore/:todoId', authMiddleware, todoController.restoreTodo);
 router.delete('/permanent/:todoId', authMiddleware, todoController.permanentDelete);
 

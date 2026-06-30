@@ -34,13 +34,27 @@
       <text class="location-text">{{post.location.name || post.location.address || post.location.text || post.location}}</text>
     </view>
     <view wx:if="{{post.todoIds && post.todoIds.length > 0 || post.shareCode}}" class="post-tags">
-      <view wx:if="{{post.todoIds && post.todoIds.length > 0}}" class="tag-item">
-        <t-icon name="checklist" size="24rpx" color="#00b26a" />
-        <text>关联 {{post.todoIds.length}} 个待办</text>
+      <view wx:if="{{post.todoIds && post.todoIds.length > 0}}" class="tag-card" catch:tap="toggleTodoExpand">
+        <view class="tag-card-header">
+          <t-icon name="checklist" size="22rpx" color="#00b26a" />
+          <text class="tag-card-title">{{post.todoIds.length}}个待办</text>
+          <t-icon name="{{todoExpanded ? 'chevron-up' : 'chevron-down'}}" size="28rpx" color="#999" />
+        </view>
+        <view wx:if="{{todoExpanded}}" class="tag-card-body">
+          <block wx:if="{{todoItems.length > 0}}">
+            <block wx:for="{{todoItems}}" wx:for-item="todoItem" wx:key="id">
+              <view class="todo-mini-item">
+                <view class="todo-mini-dot" data-priority="{{todoItem.priority}}"></view>
+                <text class="todo-mini-text">{{todoItem.text}}</text>
+              </view>
+            </block>
+          </block>
+          <view wx:else class="tag-card-empty">加载中...</view>
+        </view>
       </view>
-      <view wx:if="{{post.shareCode}}" class="tag-item">
+      <view wx:if="{{post.shareCode}}" class="tag-item tag-combo" catch:tap="handleComboTap" data-code="{{post.shareCode}}">
         <t-icon name="user-group" size="24rpx" color="#00b26a" />
-        <text>邀请加入组合</text>
+        <text>{{post.shareComboName || '加入组合'}}</text>
       </view>
     </view>
     <view class="post-stats">

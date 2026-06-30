@@ -193,6 +193,12 @@ const todosApi = {
     method: 'POST',
     data: { todoIds, comboId }
   }),
+
+  getTodosBatch: (ids) => request({
+    url: '/todos/batch',
+    method: 'POST',
+    data: { ids }
+  }),
   
   sync: ({ localChanges, localDeletedIds, lastSyncAt }) => request({
     url: '/todos/sync',

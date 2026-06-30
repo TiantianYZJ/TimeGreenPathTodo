@@ -52,13 +52,27 @@
           <text class="location-text">{{item.location.name || item.location.address || item.location.text || item.location}}</text>
         </view>
         <view wx:if="{{item.todoIds && item.todoIds.length > 0 || item.shareCode}}" class="post-tags">
-          <view wx:if="{{item.todoIds && item.todoIds.length > 0}}" class="tag-item">
-            <t-icon name="checklist" size="22rpx" color="#00b26a" />
-            <text>{{item.todoIds.length}}个待办</text>
+          <view wx:if="{{item.todoIds && item.todoIds.length > 0}}" class="tag-card" catch:tap="toggleTodoExpand" data-post-id="{{item.postId}}">
+            <view class="tag-card-header">
+              <t-icon name="checklist" size="22rpx" color="#00b26a" />
+              <text class="tag-card-title">{{item.todoIds.length}}个待办</text>
+              <t-icon name="{{expandedPostId === item.postId ? 'chevron-up' : 'chevron-down'}}" size="28rpx" color="#999" />
+            </view>
+            <view wx:if="{{expandedPostId === item.postId}}" class="tag-card-body">
+              <block wx:if="{{postTodoMap[item.postId] && postTodoMap[item.postId].length > 0}}">
+                <block wx:for="{{postTodoMap[item.postId]}}" wx:for-item="todoItem" wx:key="id">
+                  <view class="todo-mini-item">
+                    <view class="todo-mini-dot" data-priority="{{todoItem.priority}}"></view>
+                    <text class="todo-mini-text">{{todoItem.text}}</text>
+                  </view>
+                </block>
+              </block>
+              <view wx:else class="tag-card-empty">加载中...</view>
+            </view>
           </view>
-          <view wx:if="{{item.shareCode}}" class="tag-item">
+          <view wx:if="{{item.shareCode}}" class="tag-item tag-combo" catch:tap="handleComboTap" data-code="{{item.shareCode}}">
             <t-icon name="user-group" size="22rpx" color="#00b26a" />
-            <text>组合</text>
+            <text>{{item.shareComboName || '加入组合'}}</text>
           </view>
         </view>
         <view class="post-stats-row">
