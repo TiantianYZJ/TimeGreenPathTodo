@@ -152,9 +152,10 @@ Page({
       rows[b.row].push(b);
     });
     const rowBottoms = [32, 186, 340];
+    const colGap = 156; // 带文字的 t-fab 宽约 150-180rpx，需足够间距避免遮挡
     Object.keys(rows).forEach(row => {
       rows[row].forEach((b, i) => {
-        b.right = 32 + i * 118;
+        b.right = 32 + i * colGap;
         b.bottom = rowBottoms[row] || 32;
         if (b.openType) {
           b.buttonProps = { openType: 'share' };
