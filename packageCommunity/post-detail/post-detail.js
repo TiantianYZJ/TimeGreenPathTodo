@@ -9,6 +9,7 @@ Page({
     commentText: '', replyTarget: null, replyParentId: null, replyToUserId: null,
     showVisitorsPopup: false,
     visitors: [],
+    refreshing: false,
     reportReasons: ['垃圾广告', '色情低俗', '人身攻击', '违法信息', '其他']
   },
 
@@ -67,11 +68,18 @@ Page({
       const res = await communityApi.getPostById(this.data.postId);
       if (res.success && res.data) {
         const post = res.data;
+        post._createdAtDisplay = this.formatTime(post.createdAt);
+        post._updatedAtDisplay = this.formatTime(post.updatedAt);
         const userInfo = app.globalData.userInfo || wx.getStorageSync('user') || {};
         this.setData({ post, isDeleted: post.isDeleted, isOwner: post.userId === userInfo.id });
         this.loadComments(true);
       } else { this.setData({ isDeleted: true }); }
     } catch (err) { wx.showToast({ title: '加载失败', icon: 'none' }); }
+  },
+
+  onRefresh() {
+    this.setData({ refreshing: true });
+    this.loadPost().then(() => this.setData({ refreshing: false }));
   },
 
   async loadComments(reset = false) {
@@ -83,8 +91,10 @@ Page({
       if (!reset && this.data.commentCursor) params.cursor = this.data.commentCursor;
       const res = await communityApi.getComments(this.data.postId, params);
       if (res.success) {
+        const mapItem = c => { c._createdDisplay = this.formatTime(c.createdAt); if (c.replies) c.replies.forEach(r => { r._createdDisplay = this.formatTime(r.createdAt); }); return c; };
+        const list = (res.data.list || []).map(mapItem);
         this.setData({
-          comments: reset ? res.data.list : [...this.data.comments, ...res.data.list],
+          comments: reset ? list : [...this.data.comments, ...list],
           commentCursor: res.data.nextCursor, hasMoreComments: res.data.hasMore, loadingComments: false
         });
       }
@@ -131,7 +141,7 @@ Page({
   },
 
   onMore() {
-    const itemList = this.data.isOwner ? ['编辑帖子', '删除帖子', '取消'] : ['举报', '取消'];
+    const itemList = this.data.isOwner ? ['编辑帖子', '删除帖子'] : ['举报'];
     wx.showActionSheet({
       itemList,
       success: (res) => {
@@ -191,7 +201,10 @@ Page({
     this.setData({ showVisitorsPopup: true });
     try {
       const res = await communityApi.getVisitors(this.data.postId);
-      if (res.success) this.setData({ visitors: res.data.list || [] });
+      if (res.success) {
+        const visitors = (res.data.list || []).map(v => { v._viewedDisplay = this.formatTime(v.viewedAt); return v; });
+        this.setData({ visitors });
+      }
     } catch (err) { console.error('获取访客记录失败', err); wx.showToast({ title: '加载失败', icon: 'none' }); this.setData({ showVisitorsPopup: false, visitors: [] }); }
   },
 
@@ -212,11 +225,21 @@ Page({
 
   formatTime(dateStr) {
     if (!dateStr) return '';
-    const date = new Date(dateStr.replace(' ', 'T'));
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    return m + '月' + d + '日 ' + h + ':' + min;
+    try {
+      let date;
+      if (typeof dateStr === 'string') {
+        const s = dateStr.replace('T', ' ').replace(/\.\d+Z$/, '');
+        const p = s.split(/[- :]/);
+        date = new Date(+p[0], +p[1] - 1, +p[2], +(p[3]||0), +(p[4]||0), +(p[5]||0));
+      } else {
+        date = new Date(dateStr);
+      }
+      if (isNaN(date.getTime())) { console.warn('[post-detail formatTime] Invalid date:', dateStr); return ''; }
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      return m + '月' + d + '日 ' + h + ':' + min;
+    } catch (e) { console.warn('[post-detail formatTime] error:', e, dateStr); return ''; }
   }
 });

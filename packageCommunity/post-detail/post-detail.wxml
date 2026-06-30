@@ -1,4 +1,5 @@
-<scroll-view scroll-y class="scroll-view" style="height: calc(100vh - 100rpx);" bind:scrolltolower="onLoadMoreComments">
+<scroll-view scroll-y class="scroll-view" style="height: calc(100vh - 100rpx);" bind:scrolltolower="onLoadMoreComments"
+  refresher-enabled="{{true}}" refresher-triggered="{{refreshing}}" bind:refresherrefresh="onRefresh">
   <view wx:if="{{isDeleted}}" class="deleted-notice">
     <t-icon name="error-circle" size="60rpx" color="#999" />
     <text>该内容因违规已被删除</text>
@@ -14,7 +15,10 @@
             <text class="user-badge" style="color: {{post.user.badgeColors[index]}}; border-color: {{post.user.badgeColors[index]}}">{{badge}}</text>
           </block>
         </view>
-        <text class="post-time">{{formatTime(post.createdAt)}}</text>
+        <view class="time-row">
+          <text class="post-time">{{post._createdAtDisplay}}</text>
+          <text wx:if="{{post.ipProvince}}" class="post-ip">IP属地 · {{post.ipProvince}}</text>
+        </view>
       </view>
     </view>
     <view class="post-title">{{post.title}}</view>
@@ -22,9 +26,8 @@
     <view wx:if="{{post.images && post.images.length > 0}}" class="post-images">
       <image wx:for="{{post.images}}" wx:key="*this" src="{{item}}" mode="widthFix" class="detail-image" bind:tap="previewImage" data-url="{{item}}" />
     </view>
-    <view class="post-meta">
+    <view wx:if="{{post.isEdited}}" class="post-meta">
       <text wx:if="{{post.isEdited}}" class="edited-badge">已编辑</text>
-      <text wx:if="{{post.ipProvince}}">IP属地 · {{post.ipProvince}}</text>
     </view>
     <view wx:if="{{post.location}}" class="location-card" catch:tap="openLocation" data-lat="{{post.location.latitude}}" data-lng="{{post.location.longitude}}" data-name="{{post.location.name || post.location}}">
       <t-icon name="location" size="28rpx" color="#00b26a" />
@@ -72,7 +75,7 @@
             <view wx:if="{{item.images && item.images.length > 0}}" class="comment-images">
               <image wx:for="{{item.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="comment-image" bind:tap="previewImage" data-url="{{item}}" />
             </view>
-            <text class="comment-time">{{formatTime(item.createdAt)}}</text>
+            <text class="comment-time">{{item._createdDisplay}}</text>
             <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-list">
               <block wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id">
                 <view class="reply-item">
@@ -92,7 +95,7 @@
                       </view>
                     </view>
                     <text class="reply-content">{{reply.content}}</text>
-                    <text class="comment-time">{{formatTime(reply.createdAt)}}</text>
+                    <text class="comment-time">{{reply._createdDisplay}}</text>
                   </view>
                 </view>
               </block>
@@ -129,7 +132,7 @@
               <text class="user-badge" style="color: {{visitor.badgeColors[index]}}; border-color: {{visitor.badgeColors[index]}}">{{badge}}</text>
             </block>
           </view>
-          <text class="visitor-time">{{formatTime(visitor.viewedAt)}}</text>
+          <text class="visitor-time">{{visitor._viewedDisplay}}</text>
         </view>
       </view>
     </block>

@@ -214,10 +214,10 @@ const update = async (req, res) => {
       [
         title || posts[0].title,
         body || null,
-        images ? JSON.stringify(images) : posts[0].images,
-        todoIds ? JSON.stringify(todoIds) : posts[0].todo_ids,
-        shareCode || posts[0].share_code,
-        location ? JSON.stringify(location) : posts[0].location,
+        images && images.length > 0 ? JSON.stringify(images) : null,
+        todoIds && todoIds.length > 0 ? JSON.stringify(todoIds) : null,
+        shareCode || null,
+        location ? JSON.stringify(location) : null,
         postId
       ]
     );

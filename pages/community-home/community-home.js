@@ -48,10 +48,10 @@ Page({
 
       const res = await communityApi.getPostList(params);
       if (res.success) {
-        const list = (res.data.list || []).map(item => ({
-          ...item,
-          createdAt: item.createdAt || item.created_at || null
-        }));
+        const list = (res.data.list || []).map(item => {
+          const ts = item.createdAt || item.created_at || null;
+          return { ...item, createdAt: ts, createdAtDisplay: this.formatTime(ts) };
+        });
         this.setData({
           postList: reset ? list : [...this.data.postList, ...list],
           nextCursor: res.data.nextCursor,
@@ -121,8 +121,15 @@ Page({
   formatTime(dateStr) {
     if (!dateStr) return '';
     try {
-      const date = typeof dateStr === 'string' ? new Date(dateStr.replace(' ', 'T')) : new Date(dateStr);
-      if (isNaN(date.getTime())) return '';
+      let date;
+      if (typeof dateStr === 'string') {
+        const s = dateStr.replace('T', ' ').replace(/\.\d+Z$/, '');
+        const p = s.split(/[- :]/);
+        date = new Date(+p[0], +p[1] - 1, +p[2], +(p[3]||0), +(p[4]||0), +(p[5]||0));
+      } else {
+        date = new Date(dateStr);
+      }
+      if (isNaN(date.getTime())) { console.warn('[formatTime] Invalid date:', dateStr); return ''; }
       const now = Date.now();
       const diff = Math.floor((now - date.getTime()) / 1000);
       if (diff < 60) return '刚刚';
@@ -132,7 +139,7 @@ Page({
       const m = date.getMonth() + 1;
       const d = date.getDate();
       return m + '月' + d + '日';
-    } catch { return ''; }
+    } catch (e) { console.warn('[formatTime] error:', e, dateStr); return ''; }
   },
 
   onShareAppMessage() {

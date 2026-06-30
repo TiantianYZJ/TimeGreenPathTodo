@@ -93,6 +93,23 @@
   margin-top: 4rpx;
 }
 
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 4rpx;
+}
+
+.time-row .post-time {
+  margin-top: 0;
+}
+
+.time-row .post-ip {
+  margin-left: auto;
+  font-size: 20rpx;
+  color: #bbb;
+}
+
 .post-title {
   font-size: 32rpx;
   font-weight: 600;
