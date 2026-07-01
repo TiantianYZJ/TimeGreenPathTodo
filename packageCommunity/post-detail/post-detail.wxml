@@ -98,7 +98,75 @@
             </view>
             <view wx:if="{{item.replies && item.replies.length > 0}}" class="replies-list">
               <view wx:for="{{item.replies}}" wx:for-item="reply" wx:key="id">
-                <template is="replyItem" data="{{...reply}}" />
+                <view class="reply-item">
+                  <block wx:if="{{reply.isDeleted}}">
+                    <view class="comment-deleted"><text>该评论因违规已被删除</text></view>
+                  </block>
+                  <block wx:else>
+                    <view class="reply-normal">
+                      <image class="reply-avatar" src="{{reply.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+                      <view class="reply-body">
+                        <view class="reply-meta">
+                          <view class="nickname-row">
+                            <text class="reply-nickname">{{reply.user.nickname}}</text>
+                            <block wx:for="{{reply.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
+                              <text class="user-badge" style="color: {{reply.user.badgeColors[index]}}; border-color: {{reply.user.badgeColors[index]}}">{{badge}}</text>
+                            </block>
+                          </view>
+                          <text class="reply-time">{{reply._createdDisplay}}</text>
+                        </view>
+                        <text class="reply-content">{{reply.content}}</text>
+                        <view wx:if="{{reply.images && reply.images.length > 0}}" class="comment-images">
+                          <image wx:for="{{reply.images}}" wx:for-item="rimg" wx:key="*this" src="{{rimg}}" mode="aspectFill" class="comment-image" bind:tap="previewImage" data-url="{{rimg}}" />
+                        </view>
+                        <view class="reply-footer">
+                          <view class="comment-like {{reply.isLiked ? 'liked' : ''}}" catch:tap="toggleCommentLike" data-id="{{reply.id}}">
+                            <t-icon name="{{reply.isLiked ? 'heart-filled' : 'heart'}}" size="24rpx" />
+                            <text wx:if="{{reply.likesCount > 0}}" class="like-count">{{reply.likesCount}}</text>
+                          </view>
+                          <view class="reply-actions">
+                            <text wx:if="{{reply.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{reply.id}}">删除</text>
+                            <text class="action-btn" catch:tap="replyComment" data-id="{{reply.id}}" data-user="{{reply.user.nickname}}" data-userid="{{reply.user.id}}">回复</text>
+                          </view>
+                        </view>
+                        <view wx:if="{{reply.replies && reply.replies.length > 0}}" class="replies-list">
+                          <view wx:for="{{reply.replies}}" wx:for-item="r2" wx:key="id">
+                            <view class="reply-item">
+                              <view class="reply-normal">
+                                <image class="reply-avatar" src="{{r2.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+                                <view class="reply-body">
+                                  <view class="reply-meta">
+                                    <view class="nickname-row">
+                                      <text class="reply-nickname">{{r2.user.nickname}}</text>
+                                      <block wx:for="{{r2.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
+                                        <text class="user-badge" style="color: {{r2.user.badgeColors[index]}}; border-color: {{r2.user.badgeColors[index]}}">{{badge}}</text>
+                                      </block>
+                                    </view>
+                                    <text class="reply-time">{{r2._createdDisplay}}</text>
+                                  </view>
+                                  <text class="reply-content">{{r2.content}}</text>
+                                  <view wx:if="{{r2.images && r2.images.length > 0}}" class="comment-images">
+                                    <image wx:for="{{r2.images}}" wx:for-item="rimg" wx:key="*this" src="{{rimg}}" mode="aspectFill" class="comment-image" bind:tap="previewImage" data-url="{{rimg}}" />
+                                  </view>
+                                  <view class="reply-footer">
+                                    <view class="comment-like {{r2.isLiked ? 'liked' : ''}}" catch:tap="toggleCommentLike" data-id="{{r2.id}}">
+                                      <t-icon name="{{r2.isLiked ? 'heart-filled' : 'heart'}}" size="24rpx" />
+                                      <text wx:if="{{r2.likesCount > 0}}" class="like-count">{{r2.likesCount}}</text>
+                                    </view>
+                                    <view class="reply-actions">
+                                      <text wx:if="{{r2.canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{r2.id}}">删除</text>
+                                      <text class="action-btn" catch:tap="replyComment" data-id="{{r2.id}}" data-user="{{r2.user.nickname}}" data-userid="{{r2.user.id}}">回复</text>
+                                    </view>
+                                  </view>
+                                </view>
+                              </view>
+                            </view>
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+                  </block>
+                </view>
               </view>
             </view>
           </view>
@@ -159,46 +227,3 @@
     </block>
   </view>
 </t-popup>
-
-<template name="replyItem">
-  <view class="reply-item">
-    <block wx:if="{{isDeleted}}">
-      <view class="comment-deleted"><text>该评论因违规已被删除</text></view>
-    </block>
-    <block wx:else>
-      <view class="reply-normal">
-        <image class="reply-avatar" src="{{user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
-        <view class="reply-body">
-          <view class="reply-meta">
-            <view class="nickname-row">
-              <text class="reply-nickname">{{user.nickname}}</text>
-              <block wx:for="{{user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
-                <text class="user-badge" style="color: {{user.badgeColors[index]}}; border-color: {{user.badgeColors[index]}}">{{badge}}</text>
-              </block>
-            </view>
-            <text class="reply-time">{{_createdDisplay}}</text>
-          </view>
-          <text class="reply-content">{{content}}</text>
-          <view wx:if="{{images && images.length > 0}}" class="comment-images">
-            <image wx:for="{{images}}" wx:for-item="rimg" wx:key="*this" src="{{rimg}}" mode="aspectFill" class="comment-image" bind:tap="previewImage" data-url="{{rimg}}" />
-          </view>
-          <view class="reply-footer">
-            <view class="comment-like {{isLiked ? 'liked' : ''}}" catch:tap="toggleCommentLike" data-id="{{id}}">
-              <t-icon name="{{isLiked ? 'heart-filled' : 'heart'}}" size="24rpx" />
-              <text wx:if="{{likesCount > 0}}" class="like-count">{{likesCount}}</text>
-            </view>
-            <view class="reply-actions">
-              <text wx:if="{{canDelete}}" class="action-btn" bind:tap="deleteComment" data-id="{{id}}">删除</text>
-              <text class="action-btn" catch:tap="replyComment" data-id="{{id}}" data-user="{{user.nickname}}" data-userid="{{user.id}}">回复</text>
-            </view>
-          </view>
-          <view wx:if="{{replies && replies.length > 0}}" class="replies-list">
-            <view wx:for="{{replies}}" wx:for-item="r" wx:key="id">
-              <template is="replyItem" data="{{...r}}" />
-            </view>
-          </view>
-        </view>
-      </view>
-    </block>
-  </view>
-</template>
