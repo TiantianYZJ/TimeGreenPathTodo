@@ -115,6 +115,9 @@
                       </view>
                     </view>
                     <text class="reply-content">{{reply.content}}</text>
+                    <view wx:if="{{reply.images && reply.images.length > 0}}" class="comment-images">
+                      <image wx:for="{{reply.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" class="comment-image" bind:tap="previewImage" data-url="{{item}}" />
+                    </view>
                     <view class="comment-footer">
                       <text class="comment-time">{{reply._createdDisplay}}</text>
                       <view class="comment-like {{reply.isLiked ? 'liked' : ''}}" catch:tap="toggleCommentLike" data-id="{{reply.id}}">
@@ -149,7 +152,7 @@
 </view>
 
 <view class="bottom-input-bar">
-  <t-icon name="image" size="40rpx" color="#999" catch:tap="toggleImagePicker" />
+  <view catch:tap="toggleImagePicker"><t-icon name="image" size="40rpx" color="#999" /></view>
   <input class="comment-input" placeholder="{{replyTarget ? '回复 @' + replyTarget : '输入评论...'}}" value="{{commentText}}" bind:input="onCommentInput" confirm-type="send" bind:confirm="submitComment" />
   <view wx:if="{{replyTarget}}" class="cancel-reply" catch:tap="cancelReply">取消回复</view>
   <button class="send-btn" disabled="{{!commentText.trim() && commentImageUrls.length === 0}}" bindtap="submitComment">发送</button>

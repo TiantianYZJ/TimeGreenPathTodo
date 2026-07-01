@@ -299,7 +299,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4rpx;
+  margin-top: 8rpx;
 }
 .comment-like {
   display: flex;
@@ -319,11 +319,14 @@
 }
 .replies-list {
   margin-top: 12rpx;
-  padding-left: 16rpx;
-  border-left: 2rpx solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
 .reply-item {
-  margin-bottom: 10rpx;
+  background: #f8f8f8;
+  padding: 14rpx;
+  border-radius: 16rpx;
 }
 .reply-header {
   display: flex;
