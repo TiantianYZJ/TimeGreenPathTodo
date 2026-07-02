@@ -120,6 +120,7 @@ const getList = async (req, res) => {
 
     const rows = await query(
       `SELECT p.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
+              c.name as share_combo_name,
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id
@@ -153,6 +154,7 @@ const getById = async (req, res) => {
   try {
     const rows = await query(
       `SELECT p.*, u.nickname, u.avatar_url, u.badge_titles, u.badge_colors,
+              c.name as share_combo_name,
               (SELECT id FROM post_likes WHERE post_id = p.id AND user_id = ?) as user_like_id
        FROM posts p
        LEFT JOIN users u ON p.user_id = u.id

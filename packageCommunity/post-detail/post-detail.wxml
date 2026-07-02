@@ -54,7 +54,8 @@
       </view>
       <view wx:if="{{post.shareCode}}" class="tag-item tag-combo" catch:tap="handleComboTap" data-code="{{post.shareCode}}">
         <t-icon name="user-group" size="24rpx" color="#00b26a" />
-        <text>{{post.shareComboName || '加入组合'}}</text>
+        <text wx:if="{{post.shareComboName}}">分享了组合：{{post.shareComboName}}</text>
+        <text wx:else>加入组合</text>
       </view>
     </view>
     <view class="post-stats">
