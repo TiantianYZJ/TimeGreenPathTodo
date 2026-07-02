@@ -269,6 +269,7 @@
 .comment-actions {
   display: flex;
   align-items: center;
+  gap: 12rpx;
 }
 .action-btn {
   font-size: 22rpx;
@@ -316,7 +317,7 @@
   padding: 4rpx;
 }
 .comment-like.liked {
-  color: #00b26a;
+  color: #ff4d4f;
 }
 .like-count {
   font-size: 20rpx;
@@ -392,6 +393,7 @@
 .reply-actions {
   display: flex;
   align-items: center;
+  gap: 12rpx;
 }
 
 .loading-comments {
