@@ -268,11 +268,14 @@
 }
 .comment-actions {
   display: flex;
-  gap: 16rpx;
+  align-items: center;
 }
 .action-btn {
   font-size: 22rpx;
   color: #00b26a;
+}
+.delete-btn {
+  color: #ff4d4f;
 }
 .comment-content {
   font-size: 26rpx;
@@ -386,12 +389,8 @@
 .reply-actions {
   display: flex;
   align-items: center;
-  gap: 8rpx;
 }
 
-.delete-btn {
-  color: #ff4d4f !important;
-}
 .loading-comments {
   display: flex;
   justify-content: center;
