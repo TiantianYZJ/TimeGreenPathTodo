@@ -129,7 +129,11 @@ Page({
     const inviteableShared = sharedCombos.filter(c =>
       c.role === 'owner' || c.role === 'admin' || c.userRole === 'owner' || c.userRole === 'admin'
     );
-    const allPickerCombos = [...shareableCombos, ...inviteableShared];
+    const seen = new Map();
+    [...shareableCombos, ...inviteableShared].forEach(c => {
+      if (!seen.has(c.id)) seen.set(c.id, c);
+    });
+    const allPickerCombos = Array.from(seen.values());
     this.setData({ allPickerCombos, filteredAllPickerCombos: allPickerCombos });
   },
 
