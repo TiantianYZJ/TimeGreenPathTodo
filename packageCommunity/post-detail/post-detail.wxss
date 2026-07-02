@@ -367,6 +367,7 @@
 .reply-time {
   font-size: 20rpx;
   color: #bbb;
+  display: block;
 }
 
 .reply-content {
@@ -378,14 +379,18 @@
 .reply-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 16rpx;
+  justify-content: space-between;
   margin-top: 6rpx;
 }
 
 .reply-actions {
   display: flex;
-  gap: 12rpx;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.delete-btn {
+  color: #ff4d4f !important;
 }
 .loading-comments {
   display: flex;
