@@ -152,7 +152,7 @@ Page({
         combo,
         members,
         requests: [],
-        userRole: 'owner',
+        userRole: 'admin',
         shareCode: shareCode,
         qrCodeValue: `TIMEGREEN:${shareCode}`,
         qrCodeUrl: qrCodeUrl

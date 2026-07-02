@@ -94,7 +94,7 @@
         <text class="setting-label">转让超管</text>
         <t-icon name="chevron-right" size="32rpx" color="#3c3c3c" />
       </view>
-      <view class="setting-item danger" bindtap="dissolveCombo">
+      <view wx:if="{{!adminView}}" class="setting-item danger" bindtap="dissolveCombo">
         <text class="setting-label">{{adminView ? '解散协作组' : '解散协作组'}}</text>
         <t-icon name="chevron-right" size="32rpx" color="#ff4d4f" />
       </view>

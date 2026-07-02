@@ -37,7 +37,8 @@ Page({
         this.setData({ hasMore: res.data.hasMore, page: this.data.page + 1 });
       }
     } catch (err) {
-      console.error('加载举报列表失败', err);
+      logger.error('ADMIN', 'REPORTS', '加载举报列表失败', err);
+        wx.showToast({ title: '加载失败', icon: 'none' });
     }
 
     this.setData({ loading: false });

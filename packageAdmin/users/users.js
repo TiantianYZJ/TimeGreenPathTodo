@@ -69,6 +69,7 @@ Page({
       }
     } catch (err) {
       logger.error('ADMIN', 'USERS', '加载用户列表失败', err);
+      wx.showToast({ title: '加载用户列表失败', icon: 'none' });
     } finally {
       this.setData({ loading: false });
     }

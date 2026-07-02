@@ -82,6 +82,7 @@ Page({
       }
     } catch (err) {
       logger.error('ADMIN', 'USER', '加载用户详情失败', err);
+      wx.showToast({ title: '加载用户详情失败', icon: 'none' });
     }
   },
 

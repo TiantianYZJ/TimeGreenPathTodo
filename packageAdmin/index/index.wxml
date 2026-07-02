@@ -269,7 +269,7 @@
     </view>
     <view class="hourly-chart" wx:if="{{stats.todoHourlyDistribution.length > 0}}">
       <view class="hourly-bar" wx:for="{{stats.todoHourlyDistribution}}" wx:key="hour">
-        <view class="hourly-bar-fill" style="height: {{item.count > 0 ? (item.count / stats.peakHours[0].count * 100) : 0}}%"></view>
+        <view class="hourly-bar-fill" style="height: {{item.count > 0 && stats.peakHours[0] ? (item.count / stats.peakHours[0].count * 100) : 0}}%"></view>
         <text class="hourly-label" wx:if="{{item.hour % 6 === 0}}">{{item.hourLabel}}</text>
       </view>
     </view>

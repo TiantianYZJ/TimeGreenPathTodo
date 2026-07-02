@@ -510,6 +510,7 @@ Page({
       wx.stopPullDownRefresh();
     } catch (err) {
       logger.error('ADMIN', 'API', '管理员API加载待办失败', err);
+      wx.showToast({ title: '加载失败', icon: 'none' });
     }
   },
 

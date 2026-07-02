@@ -227,7 +227,7 @@ const getStatDetail = async (req, res) => {
         switch (type) {
             case 'todayNewUsers':
                 data = await query(`
-                    SELECT id, openid, nickname, avatar_url, created_at 
+                    SELECT id, nickname, avatar_url, created_at
                     FROM users 
                     WHERE created_at >= ? 
                     ORDER BY created_at DESC
@@ -793,7 +793,7 @@ const getUserDetail = async (req, res) => {
             }
         });
     } catch (err) {
-        logger.adminError('用户详情', '获取用户详情失败', { userId, error: err.message });
+        logger.adminError('用户详情', '获取用户详情失败', { id, error: err.message });
         res.status(500).json({
             success: false,
             message: '获取用户详情失败'
@@ -839,7 +839,7 @@ const updateUserLimits = async (req, res) => {
             message: '更新成功'
         });
     } catch (err) {
-        logger.adminError('更新限制', '更新用户限制失败', { userId, error: err.message });
+        logger.adminError('更新限制', '更新用户限制失败', { id, error: err.message });
         res.status(500).json({
             success: false,
             message: '更新用户限制失败'
@@ -876,7 +876,7 @@ const updateUserNickname = async (req, res) => {
             nickname: nickname.trim()
         });
     } catch (err) {
-        logger.adminError('更新昵称', '更新用户昵称失败', { userId, error: err.message });
+        logger.adminError('更新昵称', '更新用户昵称失败', { id, error: err.message });
         res.status(500).json({
             success: false,
             message: '更新用户昵称失败'
@@ -986,7 +986,7 @@ const updateNotice = async (req, res) => {
             data: notices[idx]
         });
     } catch (err) {
-        logger.adminError('更新公告', '更新公告失败', { id, error: err.message });
+        logger.adminError('更新公告', '更新公告失败', { index, error: err.message });
         res.status(500).json({
             success: false,
             message: '更新公告失败'
@@ -1016,7 +1016,7 @@ const deleteNotice = async (req, res) => {
             message: '删除成功'
         });
     } catch (err) {
-        logger.adminError('删除公告', '删除公告失败', { id, error: err.message });
+        logger.adminError('删除公告', '删除公告失败', { index, error: err.message });
         res.status(500).json({
             success: false,
             message: '删除公告失败'
@@ -1105,7 +1105,7 @@ const updateChangelog = async (req, res) => {
             data: changelog[idx]
         });
     } catch (err) {
-        logger.adminError('更新日志', '更新更新日志失败', { id, error: err.message });
+        logger.adminError('更新日志', '更新更新日志失败', { index, error: err.message });
         res.status(500).json({
             success: false,
             message: '更新更新日志失败'
@@ -1135,7 +1135,7 @@ const deleteChangelog = async (req, res) => {
             message: '删除成功'
         });
     } catch (err) {
-        logger.adminError('删除日志', '删除更新日志失败', { id, error: err.message });
+        logger.adminError('删除日志', '删除更新日志失败', { index, error: err.message });
         res.status(500).json({
             success: false,
             message: '删除更新日志失败'
@@ -1291,7 +1291,7 @@ const deleteComment = async (req, res) => {
             message: '删除成功'
         });
     } catch (err) {
-        logger.adminError('删除评论', '删除评论失败', { commentId, error: err.message });
+        logger.adminError('删除评论', '删除评论失败', { id, error: err.message });
         res.status(500).json({
             success: false,
             message: '删除评论失败'

@@ -180,6 +180,7 @@ Page({
       }
     } catch (err) {
       logger.error('ADMIN', 'STATS', '加载统计数据失败', err);
+      wx.showToast({ title: '加载统计数据失败', icon: 'none' });
     }
   },
 
@@ -269,6 +270,7 @@ Page({
       this.setData(updates);
     } catch (err) {
       logger.error('ADMIN', 'STATS', '加载分析数据失败', err);
+      wx.showToast({ title: '加载统计数据失败', icon: 'none' });
     }
   },
 
@@ -435,7 +437,7 @@ Page({
               });
               
               const stats = this.data.stats;
-              if (this.data.popupData.key.includes('today')) {
+              if (this.data.popupData.key.startsWith('today')) {
                 stats.todayNewComments = Math.max(0, (stats.todayNewComments || 0) - 1);
               }
               stats.commentCount = Math.max(0, (stats.commentCount || 0) - 1);

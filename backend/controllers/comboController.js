@@ -85,7 +85,7 @@ const getById = async (req, res) => {
 
   // 检测当前用户是否为管理员
   const adminIds = getAdminIds();
-  const isAdminUser = adminIds.includes(Number(userId));
+  const isAdminUser = adminIds.includes(parseInt(userId, 10));
 
   try {
     const combos = await query(
