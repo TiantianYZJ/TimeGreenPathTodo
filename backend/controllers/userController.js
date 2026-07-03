@@ -1,7 +1,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
-const USER_LOG = '用户';
+const USER_LOG = 'USER';
 
 function getFullAvatarUrl(avatarUrl) {
   if (!avatarUrl) return null;
