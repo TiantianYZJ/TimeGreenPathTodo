@@ -112,9 +112,7 @@ Page({
       if (allowAdd) {
         buttons.push({ id: 'add', icon: 'add', text: '添加到我的待办', method: 'addToMyTodos', row: 0 });
       }
-      if (isFromShare) {
-        buttons.push({ id: 'home', icon: 'home', text: '返回首页', method: 'goHome', row: 0 });
-      }
+      buttons.push({ id: 'home', icon: 'home', text: '返回首页', method: 'goHome', row: 0 });
       return this._layoutFabButtons(buttons);
     }
 
@@ -151,12 +149,18 @@ Page({
       if (!rows[b.row]) rows[b.row] = [];
       rows[b.row].push(b);
     });
-    const rowBottoms = [32, 186, 340];
-    const colGap = 156; // 带文字的 t-fab 宽约 150-180rpx，需足够间距避免遮挡
-    Object.keys(rows).forEach(row => {
-      rows[row].forEach((b, i) => {
-        b.right = 32 + i * colGap;
-        b.bottom = rowBottoms[row] || 32;
+    // 补空位：将非空行连续排列，避免行号跳跃导致空白
+    const compactRows = Object.keys(rows).sort((a, b) => a - b);
+    const rowBottoms = [32, 148, 264];
+    const gap = 20;
+    const iconBtnW = 88;
+    const textBtnW = 172;
+    compactRows.forEach((origRow, idx) => {
+      let right = 32;
+      rows[origRow].forEach(b => {
+        b.right = right;
+        b.bottom = rowBottoms[idx] || 32;
+        right += (b.text ? textBtnW : iconBtnW) + gap;
         if (b.openType) {
           b.buttonProps = { openType: 'share' };
           delete b.openType;
@@ -2454,53 +2458,6 @@ Page({
 
     this.loadSubtasksFromSnapshot(subtasks || {}, sharedTodo.id);
     this._computeFabActions();
-  },
-
-  // 已废弃：由遮罩系统代替
-  handlePasswordProtectedShare(shareId, partialResult, attempt = 1) {
-    const MAX_RETRIES = 5;
-    if (attempt > MAX_RETRIES) {
-      wx.showToast({ title: '密码错误次数过多', icon: 'none' });
-      setTimeout(() => wx.navigateBack(), 1000);
-      return;
-    }
-    const that = this;
-    const desc = partialResult.remark ? `备注：${partialResult.remark}\n该分享已设置访问密码，请输入密码查看` : '该分享已设置访问密码';
-    wx.showModal({
-      title: '需要密码',
-      content: desc,
-      editable: true,
-      placeholderText: '请输入密码',
-      success: async (res) => {
-        if (res.confirm && res.content) {
-          try {
-            wx.showLoading({ title: '验证中...' });
-            const { shareApi } = require('../../utils/api');
-            const verifyResult = await shareApi.verifySharePassword(shareId, res.content);
-            wx.hideLoading();
-            if (verifyResult.success && verifyResult.data) {
-              this.processSnapshotData(verifyResult.data, shareId);
-            } else {
-              wx.showToast({ title: '密码错误', icon: 'none' });
-              setTimeout(() => that.handlePasswordProtectedShare(shareId, partialResult, attempt + 1), 500);
-            }
-          } catch (err) {
-            wx.hideLoading();
-            wx.showToast({ title: '验证失败', icon: 'none' });
-          }
-        } else {
-          wx.navigateBack();
-        }
-      }
-    });
-  },
-
-  goToShareConfig() {
-    const todo = this.data.todo;
-    if (!todo || !todo.id) return;
-    wx.navigateTo({
-      url: '/packagePages/share-config/share-config?todoId=' + todo.id
-    });
   },
 
   // 路径: 社区帖子待办预览

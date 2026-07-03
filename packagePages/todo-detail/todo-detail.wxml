@@ -268,7 +268,6 @@
   </view>
 </view>
 
-
 <!-- FAB 按钮组（由 JS _computeFabActions 计算） -->
 <block wx:for="{{fabActions}}" wx:key="id">
   <t-fab icon="{{item.icon}}" text="{{item.text || ''}}" style="right: {{item.right}}rpx; bottom: {{item.bottom}}rpx;" button-props="{{item.buttonProps}}" data-id="{{item.id}}" bind:click="onFabAction" />
