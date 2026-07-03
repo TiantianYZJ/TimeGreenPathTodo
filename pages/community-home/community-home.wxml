@@ -20,77 +20,20 @@
 >
   <view class="feed-list">
     <block wx:for="{{postList}}" wx:key="postId">
-      <view class="post-card" data-post-id="{{item.postId}}" bind:tap="goToDetail">
-        <view class="post-header">
-          <image class="post-avatar" src="{{item.user.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
-          <view class="post-user-info">
-            <view class="nickname-row">
-              <text class="post-nickname">{{item.user.nickname}}</text>
-              <block wx:for="{{item.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
-                <text class="user-badge" style="color: {{item.user.badgeColors[index]}}; border-color: {{item.user.badgeColors[index]}}">{{badge}}</text>
-              </block>
-            </view>
-            <view class="time-row">
-              <text class="post-time">{{item.createdAtDisplay}}</text>
-              <text wx:if="{{item.ipProvince}}" class="post-ip">IP属地 · {{item.ipProvince}}</text>
-            </view>
-          </view>
-        </view>
-        <view class="post-title">{{item.title}}</view>
-        <view wx:if="{{item.body}}" class="post-body">{{item.body}}</view>
-        <view wx:if="{{item.images && item.images.length > 0}}" class="post-images">
-          <view class="grid-{{item.images.length === 1 ? 'single' : (item.images.length === 2 ? 'double' : 'triple')}}">
-            <image
-              wx:for="{{item.images}}" wx:key="*this"
-              src="{{item}}" mode="{{item.images.length === 1 ? 'widthFix' : 'aspectFill'}}"
-              class="post-image" catch:tap="previewImage" data-url="{{item}}"
-            />
-          </view>
-        </view>
-        <view wx:if="{{item.location}}" class="location-card" catch:tap="openLocation" data-lat="{{item.location.latitude}}" data-lng="{{item.location.longitude}}" data-name="{{item.location.name || item.location}}">
-          <t-icon name="location" size="28rpx" color="#00b26a" />
-          <text class="location-text">{{item.location.name || item.location.address || item.location.text || item.location}}</text>
-        </view>
-        <view wx:if="{{item.todoIds && item.todoIds.length > 0 || item.shareCode}}" class="post-tags">
-          <view wx:if="{{item.todoIds && item.todoIds.length > 0}}" class="tag-card" catch:tap="toggleTodoExpand" data-post-id="{{item.postId}}">
-            <view class="tag-card-header">
-              <t-icon name="check-circle" size="28rpx" color="#00b26a" />
-              <text class="tag-card-title">{{item.todoIds.length}}个待办</text>
-              <t-icon name="{{expandedPostId === item.postId ? 'chevron-up' : 'chevron-down'}}" size="28rpx" color="#999" />
-            </view>
-            <view wx:if="{{expandedPostId === item.postId}}" class="tag-card-body">
-              <block wx:if="{{postTodoMap[item.postId] && postTodoMap[item.postId].length > 0}}">
-                <block wx:for="{{postTodoMap[item.postId]}}" wx:for-item="todoItem" wx:key="id">
-                  <view class="todo-mini-item" catch:tap="goToTodoDetail" data-todo-id="{{todoItem.id}}" data-creator-name="{{item.user.nickname}}" data-creator-avatar="{{item.user.avatar}}" data-post-id="{{item.postId}}" hover-class="tap-active">
-                    <view class="todo-mini-dot" data-priority="{{todoItem.priority}}"></view>
-                    <text class="todo-mini-text">{{todoItem.text}}</text>
-                  </view>
-                </block>
-              </block>
-              <view wx:else class="tag-card-empty">加载中...</view>
-            </view>
-          </view>
-          <view wx:if="{{item.shareCode}}" class="tag-item tag-combo" catch:tap="handleComboTap" data-code="{{item.shareCode}}">
-            <t-icon name="user-add" size="28rpx" color="#00b26a" />
-            <text wx:if="{{item.shareComboName}}">分享了组合：{{item.shareComboName}}</text>
-            <text wx:else>加入组合</text>
-          </view>
-        </view>
-        <view class="post-stats-row">
-          <view class="stat-item" catch:tap="goToDetail" data-post-id="{{item.postId}}">
-            <t-icon name="chat" size="28rpx" />
-            <text>{{item.commentsCount || 0}}</text>
-          </view>
-          <view class="stat-item {{item.isLiked ? 'liked' : ''}}" catch:tap="toggleLike" data-post-id="{{item.postId}}">
-            <t-icon name="{{item.isLiked ? 'heart-filled' : 'heart'}}" size="28rpx" />
-            <text>{{item.likesCount || 0}}</text>
-          </view>
-          <view class="stat-item">
-            <t-icon name="browse" size="28rpx" />
-            <text>{{item.viewsCount || 0}}</text>
-          </view>
-        </view>
-      </view>
+      <post-card
+        post="{{item}}"
+        expanded="{{expandedPostId === item.postId}}"
+        todoItems="{{postTodoMap[item.postId] || []}}"
+        bind:tapAuthor="onPostTapAuthor"
+        bind:tapCard="goToDetail"
+        bind:tapDetail="goToDetail"
+        bind:tapImage="previewImage"
+        bind:tapTodoExpand="toggleTodoExpand"
+        bind:tapTodo="goToTodoDetail"
+        bind:tapCombo="handleComboTap"
+        bind:tapLocation="openLocation"
+        bind:toggleLike="toggleLike"
+      />
     </block>
     <view wx:if="{{loadingMore}}" class="loading-more">
       <t-loading loading="{{true}}" size="40rpx" />

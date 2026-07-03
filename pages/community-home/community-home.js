@@ -62,7 +62,7 @@ Page({
   onLoadMore() { this.loadPosts(false); },
 
   goToDetail(e) {
-    const postId = e.currentTarget.dataset.postId;
+    const postId = e.detail.postId;
     wx.navigateTo({ url: `/packageCommunity/post-detail/post-detail?postId=${postId}` });
   },
 
@@ -73,7 +73,7 @@ Page({
   },
 
   async toggleTodoExpand(e) {
-    const postId = e.currentTarget.dataset.postId;
+    const postId = e.detail.postId;
     const post = this.data.postList.find(p => p.postId === postId);
     if (!post || !post.todoIds || post.todoIds.length === 0) return;
 
@@ -99,7 +99,7 @@ Page({
   },
 
   handleComboTap(e) {
-    const shareCode = e.currentTarget.dataset.code;
+    const shareCode = e.detail.shareCode;
     if (!shareCode) return;
     wx.setStorageSync('pendingShareData', {
       type: 'combo_invite',
@@ -111,7 +111,7 @@ Page({
   },
 
   async toggleLike(e) {
-    const postId = e.currentTarget.dataset.postId;
+    const postId = e.detail.postId;
     try {
       const res = await communityApi.toggleLike({ postId });
       if (res.success) {
@@ -127,22 +127,20 @@ Page({
   },
 
   previewImage(e) {
-    const url = e.currentTarget.dataset.url;
-    const postId = e.currentTarget.dataset.postId;
-    const post = this.data.postList.find(p => p.postId === postId);
-    wx.previewImage({ current: url, urls: post && post.images ? post.images : [url] });
+    const { url, images } = e.detail;
+    wx.previewImage({ current: url, urls: images && images.length ? images : [url] });
   },
 
   goToTodoDetail(e) {
-    const { todoId, creatorName, creatorAvatar, postId } = e.currentTarget.dataset;
+    const { todoId, creatorName, creatorAvatar, creatorId, postId } = e.detail;
     if (!todoId) return;
     wx.navigateTo({
-      url: `/packagePages/todo-detail/todo-detail?communityTodoId=${todoId}&creatorName=${encodeURIComponent(creatorName || '')}&creatorAvatar=${encodeURIComponent(creatorAvatar || '')}&postId=${postId || ''}`
+      url: `/packagePages/todo-detail/todo-detail?communityTodoId=${todoId}&creatorName=${encodeURIComponent(creatorName || '')}&creatorAvatar=${encodeURIComponent(creatorAvatar || '')}&creatorId=${creatorId || ''}&postId=${postId || ''}`
     });
   },
 
   openLocation(e) {
-    const { lat, lng, name } = e.currentTarget.dataset;
+    const { lat, lng, name } = e.detail;
     if (!lat || !lng) return;
     wx.openLocation({
       latitude: parseFloat(lat),
@@ -163,6 +161,12 @@ Page({
 
   onToTop() {
     this.setData({ scrollTop: this.data.scrollTop === 0 ? 1 : 0, showBackTop: false });
+  },
+
+  onPostTapAuthor(e) {
+    const { userId } = e.detail;
+    if (!userId) return;
+    wx.navigateTo({ url: `/packageProfile/pages/user-home/user-home?userId=${userId}` });
   },
 
   onAvatarError(e) {
