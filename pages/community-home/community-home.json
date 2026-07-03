@@ -3,7 +3,6 @@
     "t-navbar": "tdesign-miniprogram/navbar/navbar",
     "t-fab": "tdesign-miniprogram/fab/fab",
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-image": "tdesign-miniprogram/image/image",
     "t-loading": "tdesign-miniprogram/loading/loading"
   },
   "navigationStyle": "custom",

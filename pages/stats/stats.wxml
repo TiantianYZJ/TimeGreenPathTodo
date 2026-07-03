@@ -67,10 +67,7 @@
   <view class="card-style ad-card">
     <ad-custom
       unit-id="adunit-c09a0a62e8e3c14a"
-      bindload="onAdLoad"
       binderror="onAdError"
-      bindclose="onAdClose"
-      bindhide="onAdHide"
     ></ad-custom>
   </view>
 
@@ -100,10 +97,7 @@
   <view class="card-style ad-card">
     <ad-custom
       unit-id="adunit-5ab4dec0a604c6c4"
-      bindload="onAdLoad"
       binderror="onAdError"
-      bindclose="onAdClose"
-      bindhide="onAdHide"
     ></ad-custom>
   </view>
 

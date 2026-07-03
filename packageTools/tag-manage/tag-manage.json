@@ -3,7 +3,6 @@
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-input": "tdesign-miniprogram/input/input",
     "t-button": "tdesign-miniprogram/button/button",
-    "t-overlay": "tdesign-miniprogram/overlay/overlay",
     "t-popup": "tdesign-miniprogram/popup/popup"
   },
   "navigationBarTitleText": "标签管理"

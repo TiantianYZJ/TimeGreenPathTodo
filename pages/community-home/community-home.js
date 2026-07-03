@@ -18,14 +18,6 @@ Page({
     postTodoMap: {}
   },
 
-  onLoad() {
-    this.setData({
-      navBarHeight: app.globalData.navBarHeight || 44,
-      menuRight: app.globalData.menuRight || 0,
-      menuWidth: app.globalData.menuWidth || 0
-    });
-  },
-
   onShow() {
     this.loadPosts(true);
   },

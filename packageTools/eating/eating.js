@@ -46,7 +46,6 @@ Page({
     recentHistory: [],     // 新增最近5条历史记录
     historyList: [],        // 完整历史记录
     isLoading: false,       // 新增加载状态
-    animationData: {},       // 新增动画配置
     mealStats: []  // 新增餐型统计
   },
 
@@ -130,15 +129,6 @@ Page({
 
     this.setData({ isLoading: true });
     
-    // 创建动画
-    const animation = wx.createAnimation({
-      duration: 600,
-      timingFunction: 'ease'
-    });
-    animation.opacity(0).scale(0.9).step();
-    animation.opacity(1).scale(1).step();
-    this.setData({ animationData: animation.export() });
-
     // 获取对应餐型
     const mealKey = selectedMeal === '早餐' ? 'breakfast' :
       selectedMeal === '午餐' ? 'lunch' :
@@ -149,6 +139,7 @@ Page({
     
     // 更新历史记录
     const newHistory = [foods[randomIndex], ...this.data.historyList];
+    if (newHistory.length > 500) newHistory.length = 500;
     wx.setStorageSync('foodHistory', newHistory);
 
     // 更新界面
