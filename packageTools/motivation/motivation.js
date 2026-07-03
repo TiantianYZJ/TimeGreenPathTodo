@@ -83,7 +83,10 @@ Page({
     this.rewardedVideoAd.show().catch(() => {
       this.setData({ adLoaded: false });
       this.rewardedVideoAd.load().then(() => {
-        this.rewardedVideoAd.show();
+        this.rewardedVideoAd.show().catch(() => {
+          this.setData({ adLoaded: true });
+          wx.showToast({ title: '广告展示失败', icon: 'none' });
+        });
       }).catch(() => {
         wx.showToast({ title: '广告加载失败，请稍后重试', icon: 'none' });
       });

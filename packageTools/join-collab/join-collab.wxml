@@ -10,7 +10,7 @@
     </t-button>
   </view>
   
-  <view class="input-section" catchtap="showKeyboard">
+  <view class="input-section" catchtap="showKeyboardPanel">
     <text class="title">输入邀请码</text>
     <text class="subtitle">向组合超管/管理获取6位邀请码，或扫描二维码</text>
     
@@ -138,7 +138,7 @@
 
   <!-- 自定义键盘 -->
   <view class="keyboard-mask {{showKeyboard ? 'show' : ''}}" catchtap="hideKeyboard"></view>
-  <view class="custom-keyboard {{showKeyboard ? 'show' : ''}}" catchtap="stopPropagation">
+  <view class="custom-keyboard {{showKeyboard ? 'show' : ''}}" catchtap>
     <view class="keyboard-row">
       <view class="keyboard-key" bindtap="onKeyInput" data-key="1">1</view>
       <view class="keyboard-key" bindtap="onKeyInput" data-key="2">2</view>

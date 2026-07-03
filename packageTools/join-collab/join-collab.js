@@ -100,15 +100,13 @@ Page({
     });
   },
 
-  showKeyboard() {
+  showKeyboardPanel() {
     this.setData({ showKeyboard: true });
   },
 
   hideKeyboard() {
     this.setData({ showKeyboard: false });
   },
-
-  stopPropagation() {},
 
   onKeyInput(e) {
     const key = e.currentTarget.dataset.key;
@@ -248,7 +246,7 @@ Page({
       });
     } catch (err) {
       this.setData({ isLoading: false });
-      wx.showToast({ title: err.message || '未找到该组合', icon: 'none' });
+      wx.showToast({ title: typeof err === 'string' ? err : (err.message || '操作失败'), icon: 'none' });
     }
   },
 
