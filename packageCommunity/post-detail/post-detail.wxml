@@ -5,61 +5,25 @@
     <text>该内容因违规已被删除</text>
   </view>
 
-  <view wx:else class="post-card">
-    <view class="post-user-row">
-      <image class="post-avatar" src="{{post.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
-      <view class="post-user-info">
-        <view class="nickname-row">
-          <text class="post-nickname">{{post.user.nickname}}</text>
-          <block wx:for="{{post.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
-            <text class="user-badge" style="color: {{post.user.badgeColors[index]}}; border-color: {{post.user.badgeColors[index]}}">{{badge}}</text>
-          </block>
-        </view>
-        <view class="time-row">
-          <text class="post-time">{{post._createdAtDisplay}}</text>
-          <text wx:if="{{post.ipProvince}}" class="post-ip">IP属地 · {{post.ipProvince}}</text>
-        </view>
-      </view>
-    </view>
-    <view class="post-title">{{post.title}}</view>
-    <view wx:if="{{post.body}}" class="post-body">{{post.body}}</view>
-    <view wx:if="{{post.images && post.images.length > 0}}" class="post-images">
-      <view class="grid-{{post.images.length === 1 ? 'single' : (post.images.length === 2 ? 'double' : 'triple')}}">
-        <image wx:for="{{post.images}}" wx:key="*this" src="{{item}}" mode="{{post.images.length === 1 ? 'widthFix' : 'aspectFill'}}" class="post-image" catch:tap="previewImage" data-url="{{item}}" />
-      </view>
-    </view>
+  <view wx:else>
+    <post-card
+      post="{{post}}"
+      showStats="{{false}}"
+      expanded="{{todoExpanded}}"
+      todoItems="{{todoItems}}"
+      bind:tapImage="previewImage"
+      bind:tapTodoExpand="toggleTodoExpand"
+      bind:tapTodo="goToTodoDetail"
+      bind:tapCombo="handleComboTap"
+      bind:tapLocation="openLocation"
+      bind:toggleLike="toggleLike"
+      bind:tapAuthor="onPostTapAuthor"
+    />
+    <!-- "已编辑" badge -->
     <view wx:if="{{post.isEdited}}" class="post-meta">
-      <text wx:if="{{post.isEdited}}" class="edited-badge">已编辑</text>
+      <text class="edited-badge">已编辑</text>
     </view>
-    <view wx:if="{{post.location}}" class="location-card" catch:tap="openLocation" data-lat="{{post.location.latitude}}" data-lng="{{post.location.longitude}}" data-name="{{post.location.name || post.location}}">
-      <t-icon name="location" size="28rpx" color="#00b26a" />
-      <text class="location-text">{{post.location.name || post.location.address || post.location.text || post.location}}</text>
-    </view>
-    <view wx:if="{{post.todoIds && post.todoIds.length > 0 || post.shareCode}}" class="post-tags">
-      <view wx:if="{{post.todoIds && post.todoIds.length > 0}}" class="tag-card" catch:tap="toggleTodoExpand">
-        <view class="tag-card-header">
-          <t-icon name="check-circle" size="28rpx" color="#00b26a" />
-          <text class="tag-card-title">{{post.todoIds.length}}个待办</text>
-          <t-icon name="{{todoExpanded ? 'chevron-up' : 'chevron-down'}}" size="28rpx" color="#999" />
-        </view>
-        <view wx:if="{{todoExpanded}}" class="tag-card-body">
-          <block wx:if="{{todoItems.length > 0}}">
-            <block wx:for="{{todoItems}}" wx:for-item="todoItem" wx:key="id">
-              <view class="todo-mini-item" catch:tap="goToTodoDetail" data-todo-id="{{todoItem.id}}" data-creator-name="{{post.user.nickname}}" data-creator-avatar="{{post.user.avatar}}" data-post-id="{{postId}}" hover-class="tap-active">
-                <view class="todo-mini-dot" data-priority="{{todoItem.priority}}"></view>
-                <text class="todo-mini-text">{{todoItem.text}}</text>
-              </view>
-            </block>
-          </block>
-          <view wx:else class="tag-card-empty">加载中...</view>
-        </view>
-      </view>
-      <view wx:if="{{post.shareCode}}" class="tag-item tag-combo" catch:tap="handleComboTap" data-code="{{post.shareCode}}">
-        <t-icon name="user-add" size="28rpx" color="#00b26a" />
-        <text wx:if="{{post.shareComboName}}">分享了组合：{{post.shareComboName}}</text>
-        <text wx:else>加入组合</text>
-      </view>
-    </view>
+    <!-- post-detail 特有的统计行 -->
     <view class="post-stats">
       <view class="stat-item {{isOwner ? 'visitor-link' : ''}}" bind:tap="{{isOwner ? 'showVisitors' : ''}}"><t-icon name="browse" size="28rpx" /><text>{{post.viewsCount}}次浏览{{isOwner ? ' · 查看访客记录' : ''}}</text></view>
       <view class="stat-item {{post.isLiked ? 'liked' : ''}}" catch:tap="toggleLike"><t-icon name="{{post.isLiked ? 'heart-filled' : 'heart'}}" size="28rpx" /><text>{{post.likesCount || 0}}</text></view>
@@ -74,11 +38,11 @@
       <view class="comment-item">
         <view wx:if="{{item.isDeleted}}" class="comment-deleted"><text>该评论因违规已被删除</text></view>
         <view wx:else class="comment-normal">
-          <image class="comment-avatar" src="{{item.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+          <image class="comment-avatar" src="{{item.user.avatar || '/images/avatar.png'}}" mode="aspectFill" catch:tap="onCommentTapAuthor" data-user-id="{{item.user.id}}" />
           <view class="comment-body">
             <view class="comment-header-row">
               <view class="nickname-row">
-                <text class="comment-nickname">{{item.user.nickname}}</text>
+                <text class="comment-nickname" catch:tap="onCommentTapAuthor" data-user-id="{{item.user.id}}">{{item.user.nickname}}</text>
                 <block wx:for="{{item.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
                   <text class="user-badge" style="color: {{item.user.badgeColors[index]}}; border-color: {{item.user.badgeColors[index]}}">{{badge}}</text>
                 </block>
@@ -110,11 +74,11 @@
                   </block>
                   <block wx:else>
                     <view class="reply-normal">
-                      <image class="reply-avatar" src="{{reply.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+                      <image class="reply-avatar" src="{{reply.user.avatar || '/images/avatar.png'}}" mode="aspectFill" catch:tap="onCommentTapAuthor" data-user-id="{{reply.user.id}}" />
                       <view class="reply-body">
                         <view class="reply-meta">
                           <view class="nickname-row">
-                            <text class="reply-nickname">{{reply.user.nickname}}</text>
+                            <text class="reply-nickname" catch:tap="onCommentTapAuthor" data-user-id="{{reply.user.id}}">{{reply.user.nickname}}</text>
                             <block wx:for="{{reply.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
                               <text class="user-badge" style="color: {{reply.user.badgeColors[index]}}; border-color: {{reply.user.badgeColors[index]}}">{{badge}}</text>
                             </block>
@@ -142,11 +106,11 @@
                           <view wx:for="{{reply.replies}}" wx:for-item="r2" wx:key="id">
                             <view class="reply-item">
                               <view class="reply-normal">
-                                <image class="reply-avatar" src="{{r2.user.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+                                <image class="reply-avatar" src="{{r2.user.avatar || '/images/avatar.png'}}" mode="aspectFill" catch:tap="onCommentTapAuthor" data-user-id="{{r2.user.id}}" />
                                 <view class="reply-body">
                                   <view class="reply-meta">
                                     <view class="nickname-row">
-                                      <text class="reply-nickname">{{r2.user.nickname}}</text>
+                                      <text class="reply-nickname" catch:tap="onCommentTapAuthor" data-user-id="{{r2.user.id}}">{{r2.user.nickname}}</text>
                                       <block wx:for="{{r2.user.badgeTitles || []}}" wx:for-item="badge" wx:key="index">
                                         <text class="user-badge" style="color: {{r2.user.badgeColors[index]}}; border-color: {{r2.user.badgeColors[index]}}">{{badge}}</text>
                                       </block>

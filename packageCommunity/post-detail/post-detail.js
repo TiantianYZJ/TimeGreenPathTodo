@@ -111,7 +111,9 @@ Page({
       if (res.success && res.data) {
         const post = res.data;
         post._createdAtDisplay = this.formatTime(post.createdAt);
+        post.createdAtDisplay = post._createdAtDisplay; // post-card component compatibility
         post._updatedAtDisplay = this.formatTime(post.updatedAt);
+        post.updatedAtDisplay = post._updatedAtDisplay; // post-card component compatibility
         const userInfo = app.globalData.userInfo || wx.getStorageSync('user') || {};
         this.setData({ post, isDeleted: post.isDeleted, isOwner: post.userId === userInfo.id });
         this.loadComments(true);
@@ -274,7 +276,7 @@ Page({
   },
 
   goToTodoDetail(e) {
-    const { todoId, creatorName, creatorAvatar, postId } = e.currentTarget.dataset;
+    const { todoId, creatorName, creatorAvatar, postId } = e.detail || e.currentTarget.dataset;
     if (!todoId) return;
     wx.navigateTo({
       url: `/packagePages/todo-detail/todo-detail?communityTodoId=${todoId}&creatorName=${encodeURIComponent(creatorName || '')}&creatorAvatar=${encodeURIComponent(creatorAvatar || '')}&postId=${postId || ''}`
@@ -282,7 +284,7 @@ Page({
   },
 
   openLocation(e) {
-    const { lat, lng, name } = e.currentTarget.dataset;
+    const { lat, lng, name } = e.detail || e.currentTarget.dataset;
     if (!lat || !lng) return;
     wx.openLocation({
       latitude: parseFloat(lat),
@@ -317,6 +319,18 @@ Page({
     if (!code) return;
     wx.setStorageSync('pendingShareData', { type: 'combo_invite', code, auto: false, timestamp: Date.now() });
     wx.switchTab({ url: '/pages/todo/todo' });
+  },
+
+  onPostTapAuthor(e) {
+    const { userId } = e.detail;
+    if (!userId) return;
+    wx.navigateTo({ url: `/packageProfile/pages/user-home/user-home?userId=${userId}` });
+  },
+
+  onCommentTapAuthor(e) {
+    const userId = e.currentTarget.dataset.userId;
+    if (!userId) return;
+    wx.navigateTo({ url: `/packageProfile/pages/user-home/user-home?userId=${userId}` });
   },
 
   onMore() {
@@ -405,7 +419,7 @@ Page({
   },
 
   previewImage(e) {
-    const url = e.currentTarget.dataset.url;
+    const url = e.detail?.url || e.currentTarget?.dataset?.url;
     const allImages = [...(this.data.post.images || [])];
     const collectImages = (items) => {
       (items || []).forEach(c => {
