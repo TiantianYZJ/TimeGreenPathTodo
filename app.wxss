@@ -18,6 +18,7 @@ page {
 
 page {
   --primary-color: #00b26a;
+  --primary-color-rgb: 0, 178, 106;
   --secondary-color: #f0faf5;
   --card-shadow: 0 8rpx 40rpx rgba(0,0,0,0.1);
 }
