@@ -1012,8 +1012,19 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const now = Date.now();
-          const originalLength = this.data.todos.length;
-          const todos = this.data.todos.map(item => {
+          const allTodos = this.data.allTodos;
+          const completedCount = allTodos.filter(t => t.completed).length;
+
+          // 注册已删除待办到云端同步列表（防止云同步后恢复）
+          allTodos.filter(t => t.completed).forEach(t => {
+            addDeletedTodo({
+              id: t.id,
+              deletedAt: now,
+              updatedAt: now
+            });
+          });
+
+          const newAllTodos = allTodos.map(item => {
             if (item.completed) {
               return {
                 ...item,
@@ -1025,13 +1036,16 @@ Page({
             }
             return item;
           }).filter(item => !item.isDeleted);
-          
-          this.setData({ todos });
-          setLocalTodos(todos);
-          getApp().updateCalendarCache(todos);
-          this.autoSyncToCloud();
+
+          this.setData({ allTodos: newAllTodos });
+          this.applyTagFilter();
+          setLocalTodos(newAllTodos);
+          getApp().updateCalendarCache(newAllTodos);
+          if (isLoggedIn()) {
+            this.autoSyncToCloud();
+          }
           wx.showToast({
-            title: `已清理 ${originalLength - todos.length} 项待办`,
+            title: `已清理 ${completedCount} 项待办`,
             icon: 'success'
           });
         }
@@ -1051,18 +1065,32 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const now = Date.now();
-          const todos = this.data.todos.map(item => ({
+          const allTodos = this.data.allTodos;
+
+          // 注册已删除待办到云端同步列表
+          allTodos.forEach(t => {
+            addDeletedTodo({
+              id: t.id,
+              deletedAt: now,
+              updatedAt: now
+            });
+          });
+
+          const newAllTodos = allTodos.map(item => ({
             ...item,
             isDeleted: true,
             deletedAt: now,
             updatedAt: now,
             version: (item.version || 1) + 1
           })).filter(item => !item.isDeleted);
-          
-          this.setData({ todos });
-          setLocalTodos(todos);
-          app.updateCalendarCache(todos);
-          this.autoSyncToCloud();
+
+          this.setData({ allTodos: newAllTodos });
+          this.applyTagFilter();
+          setLocalTodos(newAllTodos);
+          app.updateCalendarCache(newAllTodos);
+          if (isLoggedIn()) {
+            this.autoSyncToCloud();
+          }
           wx.showToast({
             title: '已清空',
             icon: 'success',
