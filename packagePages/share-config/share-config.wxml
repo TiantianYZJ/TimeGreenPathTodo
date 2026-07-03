@@ -1,6 +1,6 @@
 <view class="page">
   <!-- Tab bar -->
-  <view class="tab-bar">
+  <view class="tab-bar" wx:if="{{!shareGenerated}}">
     <view
       class="tab-item {{activeTab === 'share' ? 'active' : ''}}"
       data-tab="share"
@@ -90,17 +90,9 @@
           bind:change="onTrackVisitorsChange"
         />
       </t-cell>
-      <view class="cell-description">开启后可查看访客的访问时间和次数</view>
 
       <!-- Generate button -->
-      <view class="btn-generate">
-        <t-button
-          block
-          size="large"
-          theme="primary"
-          bind:tap="onGenerateShareCard"
-        >生成分享卡片</t-button>
-      </view>
+      <view class="btn-generate" bind:tap="onGenerateShareCard">生成分享卡片</view>
     </view>
 
     <!-- Actions (after generation) -->
@@ -130,24 +122,7 @@
 
     <view class="community-desc">发布待办至社区，分享你的效率心得</view>
 
-    <view class="community-btn-area">
-      <view wx:if="{{!communityPublished}}">
-        <t-button
-          block
-          size="large"
-          theme="primary"
-          bind:tap="onPublishToCommunity"
-        >发布到社区</t-button>
-      </view>
-      <view wx:if="{{communityPublished}}">
-        <t-button
-          block
-          size="large"
-          variant="outline"
-          bind:tap="onOpenCommunity"
-        >打开社区</t-button>
-      </view>
-    </view>
+    <view class="community-btn-area" bind:tap="onPublishToCommunity">发布到社区</view>
   </view>
 
   <!-- ============ Expiry Picker (shared) ============ -->
@@ -156,6 +131,8 @@
     value="{{[settings.expiry]}}"
     bind:confirm="onExpiryConfirm"
     bind:cancel="onExpiryCancel"
+    confirm-btn="确认"
+    cancel-btn="取消"
     title="选择有效期"
   >
     <t-picker-item options="{{expiryOptions}}" />
