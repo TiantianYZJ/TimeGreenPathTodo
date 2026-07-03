@@ -62,7 +62,7 @@
               bindinput="onNicknameInput"
               bindblur="onNicknameBlur"
               placeholder="请输入昵称"
-              maxlength="16"
+              maxlength="20"
               focus="{{true}}"
             />
             <view class="edit-actions">

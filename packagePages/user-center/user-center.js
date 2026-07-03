@@ -29,10 +29,6 @@ Page({
     openid: '',
     todoCount: 0,
     todoLimit: 100,
-    comboCount: 0,
-    comboLimit: 50,
-    collabLimit: 5,
-    collabCount: 0,
 
     // 新增数据
     todayDoneCount: 0,
@@ -176,8 +172,6 @@ Page({
 
     this.setData({
       todoCount: activeTodos.length,
-      comboCount: combos.length,
-      collabCount: ownerSharedCombos.length,
       todayDoneCount: todayDone.length,
       streakDays: streak
     });
@@ -194,9 +188,7 @@ Page({
           avatarUrl: result.user.avatarUrl || '',
           userId: result.user.id || '',
           openid: result.user.openid || '',
-          todoLimit: result.user.todoLimit || 100,
-          comboLimit: result.user.comboLimit || 50,
-          collabLimit: result.user.collabLimit || 5
+          todoLimit: result.user.todoLimit || 100
         });
         app.setUserInfo(result.user);
       }
@@ -210,12 +202,7 @@ Page({
     wx.showLoading({ title: '登录中...' });
 
     try {
-      const loginRes = await new Promise((resolve, reject) => {
-        wx.login({
-          success: resolve,
-          fail: reject
-        });
-      });
+      const loginRes = await wx.login();
 
       const result = await authApi.login(loginRes.code);
 
@@ -226,8 +213,7 @@ Page({
           userInfo: result.user,
           nickname: result.user.nickname || '',
           avatarUrl: result.user.avatarUrl || '',
-          todoLimit: result.user.todoLimit || 500,
-          collabLimit: result.user.collabLimit || 5
+          todoLimit: result.user.todoLimit || 500
         });
 
         wx.showToast({ title: '登录成功', icon: 'success' });
@@ -284,7 +270,7 @@ Page({
 
       if (result.success && result.avatarUrl) {
         this.setData({ avatarUrl: result.avatarUrl });
-        const updatedUserInfo = { ...this.data.userInfo, avatarUrl: result.avatarUrl };
+        const updatedUserInfo = { ...(this.data.userInfo || {}), avatarUrl: result.avatarUrl };
         this.setData({ userInfo: updatedUserInfo });
         app.setUserInfo(updatedUserInfo);
         wx.showToast({ title: '头像已更新', icon: 'success' });
