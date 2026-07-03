@@ -81,7 +81,7 @@
   padding-left: 12rpx;
 }
 .switch-label {
-  font-size: 24rpx;
+  font-size: 28rpx;
   color: #999;
 }
 .word-count {
@@ -93,16 +93,17 @@
 .picker-row {
   display: flex;
   align-items: center;
+  background: #ccebda;
+  border-radius: 32rpx;
   gap: 12rpx;
-  padding: 24rpx 0;
-  border-top: 1rpx solid #f0f0f0;
+  padding: 24rpx;
+  margin-bottom: 12rpx;
 }
 .picker-row-selected {
   background: #f0fdf6;
   border-radius: 32rpx;
   padding: 24rpx 20rpx;
   border-top: none;
-  margin-top: 8rpx;
 }
 .picker-placeholder {
   font-size: 28rpx;
@@ -327,6 +328,11 @@
 }
 
 /* ===== 已选待办折叠卡片 ===== */
+.picker {
+  border-radius: 32rpx;
+  background: #ccebda;
+  margin-bottom: 12rpx;
+}
 .selected-todos-header {
   display: flex;
   align-items: center;
@@ -335,7 +341,6 @@
 }
 .selected-todos-body {
   padding: 0 20rpx 16rpx;
-  border-top: 1rpx solid #e8f5e9;
 }
 .selected-todo-mini-item {
   display: flex;

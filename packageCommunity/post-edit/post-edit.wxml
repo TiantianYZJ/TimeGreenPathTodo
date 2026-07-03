@@ -54,7 +54,7 @@
   </view>
 
   <view class="picker-row" wx:if="{{!location}}" bind:tap="pickLocation">
-    <t-icon name="location" size="32rpx" color="#999" />
+    <t-icon name="location" size="38rpx" color="#999" />
     <text class="picker-placeholder">添加位置</text>
   </view>
   <view wx:if="{{location}}" class="picker-row picker-row-selected" catch:tap="pickLocation">
@@ -66,7 +66,7 @@
   </view>
 
   <view class="picker-row" wx:if="{{selectedTodoIds.length === 0}}" bind:tap="showPicker" data-type="todo">
-    <t-icon name="checklist" size="32rpx" color="#999" />
+    <t-icon name="check-circle" size="38rpx" color="#999" />
     <text class="picker-placeholder">关联待办</text>
   </view>
   <view class="picker">
@@ -94,7 +94,7 @@
   </view>
 
   <view class="picker-row" wx:if="{{!selectedComboCode}}" bind:tap="showPicker" data-type="combo">
-    <t-icon name="user-group" size="32rpx" color="#999" />
+    <t-icon name="add" size="38rpx" color="#999" />
     <text class="picker-placeholder">选择组合</text>
   </view>
   <view wx:if="{{selectedComboCode}}" class="picker-row picker-row-selected" bind:tap="showPicker" data-type="combo">

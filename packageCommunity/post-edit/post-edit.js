@@ -98,21 +98,31 @@ Page({
 
     const draft = wx.getStorageSync('communityDraft');
     if (draft && !options.postId) {
-      const todos = getLocalTodos().filter(t => !t.isDeleted && !t.parentId && !t.parent_id);
-      const selectedTodoTexts = {};
-      const selectedTodoPriorities = {};
-      (draft.selectedTodoIds || []).forEach(id => {
-        const t = todos.find(todo => String(todo.id) === String(id));
-        if (t) { selectedTodoTexts[id] = t.text; selectedTodoPriorities[id] = t.priority; }
-      });
-      this.setData({
-        title: draft.title || '', body: draft.body || '',
-        canPublish: (draft.title || '').trim().length > 0,
-        fileList: draft.fileList || [], imageUrls: draft.imageUrls || [],
-        selectedTodoIds: draft.selectedTodoIds || [], selectedTodoTexts, selectedTodoPriorities,
-        selectedComboCode: draft.selectedComboCode || null,
-        selectedComboName: draft.selectedComboName || '',
-        location: draft.location || null
+      wx.showModal({
+        title: '提示',
+        content: '是否恢复上次的编辑\n上次标题：' + (draft.title || '无'),
+        success: (res) => {
+          if (res.confirm) {
+            const todos = getLocalTodos().filter(t => !t.isDeleted && !t.parentId && !t.parent_id);
+            const selectedTodoTexts = {};
+            const selectedTodoPriorities = {};
+            (draft.selectedTodoIds || []).forEach(id => {
+              const t = todos.find(todo => String(todo.id) === String(id));
+              if (t) { selectedTodoTexts[id] = t.text; selectedTodoPriorities[id] = t.priority; }
+            });
+            this.setData({
+              title: draft.title || '', body: draft.body || '',
+              canPublish: (draft.title || '').trim().length > 0,
+              fileList: draft.fileList || [], imageUrls: draft.imageUrls || [],
+              selectedTodoIds: draft.selectedTodoIds || [], selectedTodoTexts, selectedTodoPriorities,
+              selectedComboCode: draft.selectedComboCode || null,
+              selectedComboName: draft.selectedComboName || '',
+              location: draft.location || null
+            });
+          } else {
+            wx.removeStorageSync('communityDraft');
+          }
+        }
       });
     }
   },
