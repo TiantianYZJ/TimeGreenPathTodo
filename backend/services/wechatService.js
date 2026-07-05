@@ -318,11 +318,11 @@ async function processPendingSharedNotifications() {
       
       let deadlineStr = '';
       if (notification.set_date) {
-        const dateStr = typeof notification.set_date === 'string' 
-          ? notification.set_date 
-          : notification.set_date.toISOString().split('T')[0];
+        const dateStr = typeof notification.set_date === 'string'
+          ? notification.set_date
+          : formatLocalDate(notification.set_date);
         const timeStr = notification.set_time || '12:00';
-        
+
         const dateParts = dateStr.split('-');
         deadlineStr = `${dateParts[0]}年${dateParts[1]}月${dateParts[2]}日 ${timeStr}`;
       }
@@ -440,6 +440,15 @@ async function sendReportResultMessage(openid, data) {
   } catch (err) {
     logger.wechatError('发送举报结果通知', err.message, { openid });
   }
+}
+
+// 格式化 Date 对象为本地日期字符串（避免 toISOString 时区偏移）
+function formatLocalDate(date) {
+  if (!date) return '';
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const d = date.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 module.exports = {

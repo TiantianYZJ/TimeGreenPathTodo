@@ -52,7 +52,7 @@ Page({
     commentHasMore: true,
     replyTarget: null,
 
-    hasActiveShare: false,
+    activeShares: [],
     showVisitorPopup: false,
     visitorList: [],
     allowAdd: false,
@@ -85,7 +85,8 @@ Page({
       };
     }
 
-    const shareId = currentTodo?.id ? (wx.getStorageSync('_sharedSnapshotIds') || {})[currentTodo.id] : null;
+    const shareIds = currentTodo?.id ? (wx.getStorageSync('_sharedSnapshotIds') || {})[currentTodo.id] : null;
+    const shareId = Array.isArray(shareIds) && shareIds.length > 0 ? shareIds[shareIds.length - 1] : null;
     if (shareId) {
       return {
         title: '分享待办：' + currentTodo.text,
@@ -98,7 +99,7 @@ Page({
 
   // 根据当前视图计算 FAB 按钮列表
   _computeFabActions() {
-    const { adminView, isSharedTodo, isShare, isFromShare, hasActiveShare, userRole, todo, allowAdd } = this.data;
+    const { adminView, isSharedTodo, isShare, isFromShare, activeShares, userRole, todo, allowAdd } = this.data;
     const buttons = [];
 
     if (adminView) {
@@ -125,8 +126,8 @@ Page({
     } else {
       buttons.push({ id: 'share', icon: 'share', text: '分享给朋友', row: 0, openType: true });
     }
-    if (!isSharedTodo && hasActiveShare) {
-      buttons.push({ id: 'revoke', icon: 'unfold-less', text: '撤回分享', method: 'revokeShare', row: 0 });
+    if (!isSharedTodo && activeShares.length > 0) {
+      buttons.push({ id: 'revoke', icon: 'rollback', text: '撤回分享', method: 'revokeShare', row: 0 });
     }
 
     // 第1行：操作按钮
@@ -247,8 +248,10 @@ Page({
     const now = Date.now();
 
     // 记录"添加"操作到访客记录
-    // 优先使用当前分享快照的 shareId，兜底查本地存储（自己的待办）
-    const shareId = this.data.shareSnapshotId || (wx.getStorageSync('_sharedSnapshotIds') || {})[todo.id];
+    // 优先使用当前分享快照的 shareId，兜底查本地存储取最新一条
+    const localShareIds = (wx.getStorageSync('_sharedSnapshotIds') || {})[todo.id];
+    const latestShareId = Array.isArray(localShareIds) && localShareIds.length > 0 ? localShareIds[localShareIds.length - 1] : null;
+    const shareId = this.data.shareSnapshotId || latestShareId;
     if (shareId) {
       shareApi.recordShareAdd(shareId).catch(() => {});
     }
@@ -626,8 +629,7 @@ Page({
 
       this.loadNotification();
       this.loadSubtasks();
-      this.checkActiveShare();
-      this._computeFabActions();
+      this.checkActiveShares().then(() => this._computeFabActions());
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -642,7 +644,7 @@ Page({
   _loadDefault(options) {
     const defaultTodo = {
       text: '项目需求调研会议',
-      setDate: new Date().toISOString().split('T')[0],
+      setDate: this.todayStr(),
       setTime: '12:00',
       remarks: '1. 准备用户画像文档\n2. 确认技术可行性\n3. 制定项目排期',
       location: {
@@ -708,8 +710,7 @@ Page({
 
       this.loadNotification();
       this.loadSubtasks();
-      this.checkActiveShare();
-      this._computeFabActions();
+      this.checkActiveShares().then(() => this._computeFabActions());
     } else {
       wx.showToast({
         title: '待办不存在或已被删除',
@@ -898,8 +899,7 @@ Page({
 
     this.loadNotification();
     this.loadSubtasks();
-    this.checkActiveShare();
-    this._computeFabActions();
+    this.checkActiveShares().then(() => this._computeFabActions());
   },
 
   async loadSharedTodo(todoId, comboId) {
@@ -919,12 +919,8 @@ Page({
         return;
       }
       
-      let rawDate = sharedTodo.set_date || sharedTodo.setDate;
+      let rawDate = this.extractDateStr(sharedTodo.set_date || sharedTodo.setDate);
       let rawTime = sharedTodo.set_time || sharedTodo.setTime || '12:00';
-      
-      if (rawDate && rawDate.includes('T')) {
-        rawDate = rawDate.split('T')[0];
-      }
       
       if (rawTime && rawTime.includes(':')) {
         const parts = rawTime.split(':');
@@ -1087,13 +1083,7 @@ Page({
       const href = this._currentCopyLink;
       if (href) {
         wx.setClipboardData({
-          data: href,
-          success: () => {
-            wx.showToast({
-              title: '链接已复制到剪贴板',
-              icon: 'none'
-            });
-          }
+          data: href
         });
       }
     }
@@ -1114,6 +1104,29 @@ Page({
     const weekDay = weekDays[targetDate.getDay()];
 
     return `${this.formatDate(targetDate)} ${time} 周${weekDay}`;
+  },
+
+  // 日期字符串标准化：兼容 ISO UTC、"YYYY-MM-DD"、时间戳等格式，返回本地日期
+  extractDateStr(dateStr) {
+    if (!dateStr) return dateStr;
+    // 已是 YYYY-MM-DD 格式，直接使用
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr;
+    // 含 T 说明是 ISO 字符串（如 "2026-07-04T16:00:00.000Z"），通过 Date 解析提取本地日期
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  },
+
+  // 获取当地日期的 YYYY-MM-DD 字符串（避免 toISOString() 时区偏移 bug）
+  todayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   },
 
   // 保持原有的 formatDate 方法
@@ -1253,8 +1266,7 @@ Page({
     })
     
     this.loadSubtasks();
-    this.checkActiveShare();
-    this._computeFabActions();
+    this.checkActiveShares().then(() => this._computeFabActions());
   },
 
   countSubtasks(todos, parentId) {
@@ -1267,47 +1279,162 @@ Page({
     return count;
   },
 
-  // 检查当前待办是否有活跃的分享快照
-  checkActiveShare() {
+  // 从云端拉取当前待办的活跃分享快照列表
+  // 合并本地未入库记录（本地 ID 的待办 todo_id 为 null，需以本地缓存兜底）
+  async checkActiveShares() {
     const todo = this.data.todo;
-    if (!todo || !todo.id || this.data.isSharedTodo) return;
-    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    const hasShare = !!storedIds[todo.id];
-    this.setData({ hasActiveShare: hasShare });
+    if (!todo || !todo.id || this.data.isSharedTodo) {
+      this.setData({ activeShares: [] });
+      return;
+    }
+    try {
+      const res = await shareApi.listByTodo(todo.id);
+      let active = (res.success && Array.isArray(res.data)) ? res.data : [];
+      // 合并本地记录：本地有但后端未返回的（本地 ID / 后端的 todo_id 为 null）
+      try {
+        const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+        const localIds = storedIds[todo.id];
+        if (Array.isArray(localIds) && localIds.length > 0) {
+          const cloudIds = new Set(active.map(s => s.share_id));
+          const missing = localIds.filter(id => !cloudIds.has(id));
+          missing.forEach(id => active.push({ share_id: id, _localOnly: true }));
+        }
+        // 同步清理本地已被云端移除的过期/已撤回到记录
+        const allActiveIds = new Set(active.map(s => s.share_id));
+        if (Array.isArray(localIds)) {
+          const filtered = localIds.filter(id => allActiveIds.has(id));
+          if (filtered.length === 0) {
+            delete storedIds[todo.id];
+          } else {
+            storedIds[todo.id] = filtered;
+          }
+          wx.setStorageSync('_sharedSnapshotIds', storedIds);
+        }
+      } catch (e) {}
+      this.setData({ activeShares: active });
+    } catch (err) {
+      // 网络失败时回退到本地缓存
+      try {
+        const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+        const localIds = storedIds[todo.id];
+        const hasShare = Array.isArray(localIds) && localIds.length > 0;
+        if (hasShare) {
+          this.setData({ activeShares: localIds.map(id => ({ share_id: id, _localOnly: true })) });
+        } else {
+          this.setData({ activeShares: [] });
+        }
+      } catch (e) {
+        this.setData({ activeShares: [] });
+      }
+    }
   },
 
-  // 撤回分享
+  // 撤回分享（支持多个活跃快照）
   revokeShare() {
-    const todo = this.data.todo;
-    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    const shareId = storedIds[todo.id];
-    if (!shareId) return;
+    const activeShares = this.data.activeShares;
+    if (!activeShares || activeShares.length === 0) return;
 
     const that = this;
-    wx.showModal({
-      title: '撤回分享',
-      content: '撤回后，已分享的链接将无法查看，确定撤回吗？',
-      confirmText: '撤回',
-      confirmColor: '#ff4d4f',
-      success(res) {
-        if (res.confirm) {
-          wx.showLoading({ title: '撤回中...' });
-          shareApi.revokeSnapshot(shareId)
-            .then(() => {
-              wx.hideLoading();
-              delete storedIds[todo.id];
-              wx.setStorageSync('_sharedSnapshotIds', storedIds);
-              that.setData({ hasActiveShare: false });
-              that._computeFabActions();
-              wx.showToast({ title: '已撤回' });
-            })
-            .catch((err) => {
-              wx.hideLoading();
-              wx.showToast({ title: (err && err.message) || '撤回失败', icon: 'none' });
-            });
+
+    const doRevoke = (shareIds) => {
+      wx.showLoading({ title: '撤回中...' });
+      const promises = shareIds.map(id =>
+        shareApi.revokeSnapshot(id).catch(() => {})
+      );
+      Promise.all(promises).then(() => {
+        wx.hideLoading();
+        // 清理本地记录
+        try {
+          const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
+          const todoId = that.data.todo.id;
+          if (todoId) {
+            delete storedIds[todoId];
+            wx.setStorageSync('_sharedSnapshotIds', storedIds);
+          }
+        } catch (e) {}
+        that.checkActiveShares().then(() => {
+          that._computeFabActions();
+          wx.showToast({ title: '已撤回' });
+        });
+      });
+    };
+
+    if (activeShares.length === 1) {
+      // 只有一个快照，直接弹确认框
+      wx.showModal({
+        title: '撤回分享',
+        content: '撤回后，已分享的链接将无法查看，确定撤回吗？',
+        confirmText: '撤回',
+        confirmColor: '#ff4d4f',
+        success(res) {
+          if (res.confirm) {
+            doRevoke([activeShares[0].share_id]);
+          }
         }
-      }
-    });
+      });
+    } else {
+      // 多个快照，用 ActionSheet 展示列表
+      const padTime = (s) => {
+        try {
+          const date = new Date(s.created_at);
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          const h = String(date.getHours()).padStart(2, '0');
+          const min = String(date.getMinutes()).padStart(2, '0');
+          const timeStr = `${m}月${d}日 ${h}:${min}`;
+          let expiresInfo = '';
+          if (s.expires_at) {
+            const remaining = new Date(s.expires_at) - Date.now();
+            if (remaining > 0) {
+              const hours = Math.ceil(remaining / 3600000);
+              expiresInfo = hours > 24 ? `剩${Math.ceil(hours / 24)}天` : `剩${hours}h`;
+            }
+          }
+          const views = s.current_views || 0;
+          let label = `${timeStr} · ${expiresInfo} · ${views}次查看`;
+          if (s.remark) label = `[${s.remark}] ` + label;
+          return label;
+        } catch (e) {
+          return s.share_id;
+        }
+      };
+
+      const items = activeShares.map(s => padTime(s));
+      items.push('撤回所有分享');
+
+      wx.showActionSheet({
+        itemList: items,
+        success(res) {
+          if (res.tapIndex === items.length - 1) {
+            // 撤回所有
+            wx.showModal({
+              title: '撤回所有分享',
+              content: `确定要撤回全部 ${activeShares.length} 个分享链接吗？`,
+              confirmText: '全部撤回',
+              confirmColor: '#ff4d4f',
+              success(modalRes) {
+                if (modalRes.confirm) {
+                  doRevoke(activeShares.map(s => s.share_id));
+                }
+              }
+            });
+          } else {
+            const target = activeShares[res.tapIndex];
+            wx.showModal({
+              title: '撤回分享',
+              content: '撤回后，已分享的链接将无法查看，确定撤回吗？',
+              confirmText: '撤回',
+              confirmColor: '#ff4d4f',
+              success(modalRes) {
+                if (modalRes.confirm) {
+                  doRevoke([target.share_id]);
+                }
+              }
+            });
+          }
+        }
+      });
+    }
   },
 
   deleteSubtasks(parentId) {
@@ -1430,10 +1557,7 @@ Page({
     const url = e.currentTarget.dataset.url;
     if (url) {
       wx.setClipboardData({
-        data: url,
-        success: () => {
-          wx.showToast({ title: '已复制图片链接', icon: 'success' });
-        }
+        data: url
       });
     }
   },
@@ -1502,15 +1626,14 @@ Page({
 
   copyTitle() {
     wx.setClipboardData({
-      data: this.data.todo.text,
-      success: () => wx.showToast({ title: '标题已复制' })
+      data: this.data.todo.text
     })
   },
 
   copyDate(e) {
     const target = e.currentTarget.dataset.target || 'deadline';
     let text = '';
-    
+
     if (target === 'created') {
       text = this.data.formatDateTime;
     } else if (target === 'completed') {
@@ -1518,24 +1641,21 @@ Page({
     } else {
       text = `${this.data.todo.setDate} ${this.data.todo.setTime}`;
     }
-    
+
     wx.setClipboardData({
-      data: text,
-      success: () => wx.showToast({ title: '时间已复制' })
+      data: text
     });
   },
-  
+
   copyRemarks() {
     wx.setClipboardData({
-      data: this.data.todo.remarks || '',
-      success: () => wx.showToast({ title: '备注已复制' })
+      data: this.data.todo.remarks || ''
     })
   },
 
   copyLocation() {
     wx.setClipboardData({
-      data: this.data.todo.location.name,
-      success: () => wx.showToast({ title: '位置名称已复制' })
+      data: this.data.todo.location.name
     });
   },
 
@@ -1549,8 +1669,7 @@ Page({
     const creator = this.data.creator;
     if (creator) {
       wx.setClipboardData({
-        data: creator.nickname || '未知用户',
-        success: () => wx.showToast({ title: '创建者已复制' })
+        data: creator.nickname || '未知用户'
       });
     }
   },
@@ -1562,36 +1681,32 @@ Page({
       text += `（${excludeType === 'owner' ? '超管无需完成' : excludeType === 'self' ? '创建者无需完成' : '管理组无需完成'}）`;
     }
     wx.setClipboardData({
-      data: text,
-      success: () => wx.showToast({ title: '完成模式已复制' })
+      data: text
     });
   },
 
   copyProgress() {
     const { completedCount, totalCount, completedPercent } = this.data;
     wx.setClipboardData({
-      data: `完成进度：${completedCount}/${totalCount} (${completedPercent}%)`,
-      success: () => wx.showToast({ title: '进度已复制' })
+      data: `完成进度：${completedCount}/${totalCount} (${completedPercent}%)`
     });
   },
 
   copyMemberList(e) {
     const type = e.currentTarget.dataset.type;
     const assignments = this.data.assignments || [];
-    
+
     if (type === 'completed') {
       const completed = assignments.filter(a => a.completedAt);
       const names = completed.map(a => a.nickname || '用户').join('、');
       wx.setClipboardData({
-        data: `已完成：${names || '无'}`,
-        success: () => wx.showToast({ title: '成员列表已复制' })
+        data: `已完成：${names || '无'}`
       });
     } else {
       const uncompleted = assignments.filter(a => !a.completedAt);
       const names = uncompleted.map(a => a.nickname || '用户').join('、');
       wx.setClipboardData({
-        data: `未完成：${names || '无'}`,
-        success: () => wx.showToast({ title: '成员列表已复制' })
+        data: `未完成：${names || '无'}`
       });
     }
   },
@@ -2404,27 +2519,48 @@ Page({
   },
 
   async onViewVisitors() {
-    const todo = this.data.todo;
-    const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    const shareId = storedIds[todo.id];
-    if (!shareId) {
+    const activeShares = this.data.activeShares;
+    if (!activeShares || activeShares.length === 0) {
       wx.showToast({ title: '暂无分享记录', icon: 'none' });
       return;
     }
-    this.setData({ showVisitorPopup: true });
-    try {
-      const { shareApi } = require('../../utils/api');
-      const res = await shareApi.getShareVisitors(shareId);
-      if (res.success) {
-        this.setData({ visitorList: res.data || [] });
-      } else {
+
+    const loadVisitors = async (shareId, label) => {
+      this.setData({ showVisitorPopup: true, visitorList: [] });
+      try {
+        const { shareApi } = require('../../utils/api');
+        const res = await shareApi.getShareVisitors(shareId);
+        if (res.success) {
+          this.setData({ visitorList: (res.data || []).map(v => ({ ...v, _source: label })) });
+        } else {
+          wx.showToast({ title: '加载失败', icon: 'none' });
+          this.setData({ showVisitorPopup: false, visitorList: [] });
+        }
+      } catch (err) {
         wx.showToast({ title: '加载失败', icon: 'none' });
         this.setData({ showVisitorPopup: false, visitorList: [] });
       }
-    } catch (err) {
-      wx.showToast({ title: '加载失败', icon: 'none' });
-      this.setData({ showVisitorPopup: false, visitorList: [] });
+    };
+
+    if (activeShares.length === 1) {
+      return loadVisitors(activeShares[0].share_id, '');
     }
+
+    // 多个分享，让用户选择看哪个的访客
+    const items = activeShares.map((s, i) => {
+      const label = s.remark || `分享${i + 1}`;
+      return `${label}（${s.current_views || 0}次访问）`;
+    });
+
+    wx.showActionSheet({
+      itemList: items,
+      success: (res) => {
+        const target = activeShares[res.tapIndex];
+        const label = target.remark || `分享${res.tapIndex + 1}`;
+        loadVisitors(target.share_id, label);
+      },
+      fail: () => {}
+    });
   },
 
   onCloseVisitorPopup() {

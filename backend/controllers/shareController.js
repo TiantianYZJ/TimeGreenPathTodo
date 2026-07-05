@@ -28,11 +28,18 @@ const createSnapshot = async (req, res) => {
     const hours = expiryMap[options.expiry] || 24;
     const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
     const { password, maxViews, remark, allowCopy, trackVisitors } = options;
+    let todoId = null;
+    if (todo && todo.id) {
+      const parsed = parseInt(todo.id);
+      if (!isNaN(parsed)) {
+        todoId = parsed;
+      }
+    }
 
     await query(
-      `INSERT INTO share_snapshots (share_id, user_id, data, expires_at, password, max_views, remark, allow_copy, track_visitors)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [shareId, userId, JSON.stringify({ todo, subtasks }), expiresAt,
+      `INSERT INTO share_snapshots (share_id, user_id, todo_id, data, expires_at, password, max_views, remark, allow_copy, track_visitors)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [shareId, userId, todoId, JSON.stringify({ todo, subtasks }), expiresAt,
        password ? crypto.createHash('sha256').update(password).digest('hex') : null,
        parseInt(maxViews) || null, remark || null,
        allowCopy !== false ? 1 : 0,
@@ -235,6 +242,27 @@ const recordAddAction = async (req, res) => {
   }
 };
 
+const listByTodo = async (req, res) => {
+  const userId = req.user.id;
+  const { todoId } = req.params;
+
+  try {
+    const snapshots = await query(
+      `SELECT share_id, remark, expires_at, created_at, current_views, max_views,
+              password IS NOT NULL AS has_password, allow_copy
+       FROM share_snapshots
+       WHERE todo_id = ? AND user_id = ? AND revoked = FALSE AND expires_at > NOW()
+       ORDER BY created_at DESC`,
+      [todoId, userId]
+    );
+
+    res.json({ success: true, data: snapshots });
+  } catch (err) {
+    logger.dbError('分享', '获取待办分享列表失败', { todoId, userId, error: err.message });
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+};
+
 const getVisitors = async (req, res) => {
   const userId = req.user.id;
   const { shareId } = req.params;
@@ -268,5 +296,6 @@ module.exports = {
   revokeSnapshot,
   verifyPassword,
   recordAddAction,
-  getVisitors
+  getVisitors,
+  listByTodo
 };

@@ -685,17 +685,22 @@ const shareApi = {
     url: `/share/snapshot/visitors/${shareId}`,
     method: 'GET'
   }),
+
+  listByTodo: (todoId) => request({
+    url: `/share/snapshot/list-by-todo/${todoId}`,
+    method: 'GET'
+  }),
 };
 
 // 分享撤回检测：删除前调用，如待办有活跃分享则询问用户
 function confirmRevokeIfShared(todoId, onProceed) {
-  let shareId;
+  let shareIds;
   try {
     const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    shareId = storedIds[todoId];
+    shareIds = storedIds[todoId];
   } catch (e) {}
 
-  if (!shareId) {
+  if (!shareIds || !Array.isArray(shareIds) || shareIds.length === 0) {
     onProceed && onProceed();
     return;
   }
@@ -709,14 +714,27 @@ function confirmRevokeIfShared(todoId, onProceed) {
     success(res) {
       if (res.confirm) {
         // 清理本地分享记录，不阻塞删除流程
-        try {
-          const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
-          delete stored[todoId];
-          wx.setStorageSync('_sharedSnapshotIds', stored);
-        } catch (e) {}
-        // 后台尝试撤回（失败不影响删除）
-        shareApi.revokeSnapshot(shareId).catch(() => {});
-        onProceed && onProceed();
+        const cleanLocal = () => {
+          try {
+            const stored = wx.getStorageSync('_sharedSnapshotIds') || {};
+            delete stored[todoId];
+            wx.setStorageSync('_sharedSnapshotIds', stored);
+          } catch (e) {}
+        };
+        cleanLocal();
+        // 从后端获取所有活跃快照，逐个撤回
+        shareApi.listByTodo(todoId).then(res => {
+          if (res.success && res.data && res.data.length > 0) {
+            const promises = res.data.map(s => shareApi.revokeSnapshot(s.share_id).catch(() => {}));
+            Promise.all(promises).finally(() => {
+              onProceed && onProceed();
+            });
+          } else {
+            onProceed && onProceed();
+          }
+        }).catch(() => {
+          onProceed && onProceed();
+        });
       } else if (res.cancel) {
         wx.showModal({
           title: '确认',

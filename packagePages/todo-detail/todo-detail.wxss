@@ -21,6 +21,7 @@
 .creator-info {
   display: flex;
   align-items: center;
+  gap: 12rpx;
 }
 
 .creator-content {

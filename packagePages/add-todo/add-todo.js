@@ -86,7 +86,7 @@ Page({
   },
 
   onLoad(options) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.todayStr();
     this.setData({ 
       setDate: today,
       setTime: '12:00',
@@ -415,6 +415,15 @@ Page({
     });
   },
   
+  // 获取当地日期的 YYYY-MM-DD 字符串
+  todayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  },
+
   formatDate(date) {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');

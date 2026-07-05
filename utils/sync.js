@@ -617,12 +617,13 @@ async function syncOnAppStart() {
   }
 }
 
-// 获取待办对应的活跃分享ID（如有）
+// 获取待办对应的最新分享ID（数组最后一条），不传时取全部
 function getActiveShareId(todoId) {
   if (!todoId) return null;
   try {
     const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-    return storedIds[todoId] || null;
+    const ids = storedIds[todoId];
+    return Array.isArray(ids) && ids.length > 0 ? ids[ids.length - 1] : (ids || null);
   } catch (e) {
     return null;
   }

@@ -21,8 +21,16 @@ Page({
   },
 
   setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.todayStr();
     this.setData({ 'form.date': today });
+  },
+
+  todayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   },
 
   async loadChangelog(index) {

@@ -174,9 +174,12 @@ Page({
 
       if (result.success) {
         const shareId = result.shareId;
-        // Persist share ID
+        // Persist share ID (array format for multi-snapshot support)
         const storedIds = wx.getStorageSync('_sharedSnapshotIds') || {};
-        storedIds[todo.id] = shareId;
+        if (!storedIds[todo.id]) {
+          storedIds[todo.id] = [];
+        }
+        storedIds[todo.id].push(shareId);
         wx.setStorageSync('_sharedSnapshotIds', storedIds);
 
         wx.hideLoading();

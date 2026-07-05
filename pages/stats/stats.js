@@ -153,7 +153,10 @@ Page({
       const createDate = new Date(todo.time);
       if (isNaN(createDate.getTime())) return;
 
-      const date = createDate.toISOString().split('T')[0];
+      const y = createDate.getFullYear();
+      const m = (createDate.getMonth() + 1).toString().padStart(2, '0');
+      const d = createDate.getDate().toString().padStart(2, '0');
+      const date = `${y}-${m}-${d}`;
       if (!dailyMap[date]) {
         dailyMap[date] = { create: 0, complete: 0 };
       }

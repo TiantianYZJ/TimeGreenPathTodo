@@ -9,6 +9,14 @@ const noticesPath = path.join(dataDir, 'notices.json');
 const changelogPath = path.join(dataDir, 'changelog.json');
 const adminsPath = path.join(dataDir, 'admins.json');
 
+function getLocalDateStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = (now.getMonth() + 1).toString().padStart(2, '0');
+  const d = now.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function ensureDataDir() {
     if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
@@ -908,7 +916,7 @@ const createNotice = async (req, res) => {
             const notices = readJsonFile(noticesPath, []);
             const newNotice = {
                 version,
-                date: date || new Date().toISOString().split('T')[0]
+                date: date || getLocalDateStr()
             };
             notices.unshift(newNotice);
             writeJsonFile(noticesPath, notices);
@@ -928,7 +936,7 @@ const createNotice = async (req, res) => {
             const notices = readJsonFile(noticesPath, []);
             const newNotice = {
                 title,
-                date: date || new Date().toISOString().split('T')[0],
+                date: date || getLocalDateStr(),
                 content
             };
 
@@ -1054,7 +1062,7 @@ const createChangelog = async (req, res) => {
         const changelog = readJsonFile(changelogPath, []);
         const newEntry = {
             version,
-            date: date || new Date().toISOString().split('T')[0],
+            date: date || getLocalDateStr(),
             content
         };
 

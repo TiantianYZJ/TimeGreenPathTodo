@@ -202,6 +202,7 @@ const initDatabase = () => {
         id BIGINT PRIMARY KEY AUTO_INCREMENT,
         share_id VARCHAR(32) NOT NULL UNIQUE,
         user_id BIGINT NOT NULL,
+        todo_id INT DEFAULT NULL,
         data TEXT NOT NULL,
         revoked TINYINT(1) NOT NULL DEFAULT 0,
         password VARCHAR(64) DEFAULT NULL,

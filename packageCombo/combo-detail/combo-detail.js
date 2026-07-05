@@ -8,8 +8,8 @@ const manager = plugin.getRecordRecognitionManager();
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const today = new Date();
   const target = new Date(dateStr);
+  const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -17,14 +17,26 @@ function formatDate(dateStr) {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-  
+
   if (dateStr === todayStr) return '今天';
   if (dateStr === yesterdayStr) return '昨天';
   if (dateStr === tomorrowStr) return '明天';
-  
+
   const month = target.getMonth() + 1;
   const day = target.getDate();
   return `${month}月${day}日`;
+}
+
+// 标准化日期字符串：兼容 ISO UTC、"YYYY-MM-DD" 等格式，返回本地日期
+function extractDateStr(dateStr) {
+  if (!dateStr) return dateStr;
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 Page({
@@ -228,14 +240,9 @@ Page({
         }
         
         const sharedTodos = (combo.sharedTodos || []).map(todo => {
-          let rawDate = todo.setDate || todo.set_date;
+          let rawDate = extractDateStr(todo.setDate || todo.set_date);
           let rawTime = todo.setTime || todo.set_time || '12:00';
-          
-          if (rawDate && rawDate.includes('T')) {
-            const datePart = rawDate.split('T')[0];
-            rawDate = datePart;
-          }
-          
+
           if (rawTime && rawTime.includes(':')) {
             const parts = rawTime.split(':');
             rawTime = `${parts[0]}:${parts[1]}`;
@@ -1113,13 +1120,9 @@ Page({
       
       if (combo.isShared || combo.is_shared) {
         const sharedTodos = (combo.sharedTodos || []).map(todo => {
-          let rawDate = todo.setDate || todo.set_date;
+          let rawDate = extractDateStr(todo.setDate || todo.set_date);
           let rawTime = todo.setTime || todo.set_time || '12:00';
-          
-          if (rawDate && rawDate.includes('T')) {
-            rawDate = rawDate.split('T')[0];
-          }
-          
+
           if (rawTime && rawTime.includes(':')) {
             const parts = rawTime.split(':');
             rawTime = `${parts[0]}:${parts[1]}`;
@@ -1183,10 +1186,7 @@ Page({
           const match = String(todoComboId) === String(id);
           return match;
         }).map(todo => {
-          let rawDate = todo.set_date || todo.setDate;
-          if (rawDate && rawDate.includes('T')) {
-            rawDate = rawDate.split('T')[0];
-          }
+          let rawDate = extractDateStr(todo.set_date || todo.setDate);
           return {
             ...todo,
             id: todo.id,

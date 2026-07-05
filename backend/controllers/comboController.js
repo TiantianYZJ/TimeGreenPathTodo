@@ -200,12 +200,24 @@ const getById = async (req, res) => {
             }
           }
           
+          // 格式化 setDate 防止 Date 对象序列化为 UTC ISO 字符串导致日期偏移
+          let setDate = todo.set_date;
+          if (setDate) {
+            const dateObj = new Date(setDate);
+            if (!isNaN(dateObj.getTime())) {
+              const year = dateObj.getFullYear();
+              const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+              const day = dateObj.getDate().toString().padStart(2, '0');
+              setDate = `${year}-${month}-${day}`;
+            }
+          }
+
           return {
             id: todo.id,
             text: todo.text,
             parentId: todo.parent_id,
             priority: todo.priority || 'p2',
-            setDate: todo.set_date,
+            setDate,
             setTime: todo.set_time,
             remarks: todo.remarks,
             location: todo.location_text ? JSON.parse(todo.location_text) : null,

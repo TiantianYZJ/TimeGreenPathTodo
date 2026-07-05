@@ -23,7 +23,7 @@ Page({
   },
 
   setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.todayStr();
     this.setData({ 'form.date': today });
   },
 
@@ -50,11 +50,11 @@ Page({
 
   selectType(e) {
     const type = e.currentTarget.dataset.type;
-    this.setData({ 
+    this.setData({
       noticeType: type,
       form: {
         title: '',
-        date: new Date().toISOString().split('T')[0],
+        date: this.todayStr(),
         content: '',
         version: ''
       }
@@ -73,6 +73,14 @@ Page({
 
   onDateChange(e) {
     this.setData({ 'form.date': e.detail.value });
+  },
+
+  todayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   },
 
   insertMd(e) {
@@ -118,8 +126,8 @@ Page({
       }
     }
     
-    const saveData = noticeType === 'version' 
-      ? { version: form.version, date: form.date || new Date().toISOString().split('T')[0] }
+    const saveData = noticeType === 'version'
+      ? { version: form.version, date: form.date || this.todayStr() }
       : { title: form.title, date: form.date, content: form.content };
     
     try {

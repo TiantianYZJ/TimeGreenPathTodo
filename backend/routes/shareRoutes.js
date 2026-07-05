@@ -6,5 +6,6 @@ const { authMiddleware } = require('../middleware/auth');
 router.post('/snapshot', authMiddleware, shareController.createSnapshot);
 router.get('/snapshot/:shareId', shareController.getSnapshot);
 router.post('/snapshot/revoke/:shareId', authMiddleware, shareController.revokeSnapshot);
+router.get('/snapshot/list-by-todo/:todoId', authMiddleware, shareController.listByTodo);
 
 module.exports = router;

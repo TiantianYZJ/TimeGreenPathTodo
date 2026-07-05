@@ -435,7 +435,9 @@ Page({
     if (!dateStr) return '';
     try {
       let date;
-      if (typeof dateStr === 'string') {
+      if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(dateStr)) {
+        date = new Date(dateStr);
+      } else if (typeof dateStr === 'string') {
         const s = dateStr.replace('T', ' ').replace(/\.\d+Z$/, '');
         const p = s.split(/[- :]/);
         date = new Date(+p[0], +p[1] - 1, +p[2], +(p[3]||0), +(p[4]||0), +(p[5]||0));
