@@ -30,9 +30,6 @@ Page({
     shareGenerated: false,
     shareId: '',
 
-    // Tab 2: community
-    communityPublished: false,
-
     // Common
     expiryVisible: false,
     expiryIndex: 1,
@@ -312,7 +309,7 @@ Page({
     return { title: '时光绿径待办' };
   },
 
-  // === Tab 2: Community ===
+  // === Tab 2: Community
 
   onPublishToCommunity() {
     const todo = this.data.todo;
@@ -331,9 +328,5 @@ Page({
     wx.navigateTo({
       url: '/packageCommunity/post-edit/post-edit?todoId=' + todo.id,
     });
-  },
-
-  onOpenCommunity() {
-    wx.switchTab({ url: '/pages/community-home/community-home' });
   },
 });
