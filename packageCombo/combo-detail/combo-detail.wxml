@@ -138,7 +138,8 @@
         <block wx:for="{{todos}}" wx:key="time">
           <view class="todo-item-wrapper" data-priority="{{item.priority}}">
             <t-swipe-cell class="todo-item {{item.completed ? 'completed' : ''}}">
-              <t-cell
+                <view class="priority-bar" data-priority="{{item.priority}}"></view>
+                <t-cell
                 title="{{item.text}}"
                 description="{{item.location ? item.location.name : item.remarks}}"
                 note="{{item.formattedDate}}"
@@ -188,6 +189,7 @@
         <block wx:for="{{filteredSharedTodos}}" wx:key="id">
           <view class="todo-item-wrapper" data-priority="{{item.priority}}">
             <t-swipe-cell class="todo-item {{showOverallCompletion ? (item.completedAt ? 'completed' : '') : (item.myCompletedAt ? 'completed' : '')}}">
+                <view class="priority-bar" data-priority="{{item.priority}}"></view>
               <view wx:if="{{item.isStar}}" class="star-badge">
                 <t-icon name="star-filled" size="26rpx" color="#ffffff" />
               </view>
