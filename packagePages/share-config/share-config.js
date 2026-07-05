@@ -117,7 +117,28 @@ Page({
     const tagText = tagList.map(t => t.name).join(', ');
 
     // Build field picker summary
-    const fieldPickerSummary = this._computeFieldPickerSummary();
+    const hasSubtask = !!subtaskSummary;
+    const hasTags = tagList.length > 0;
+    const hasDate = !!todo.setDate;
+    const hasPriority = !!priorityMap[todo.priority];
+    const hasRemarks = !!todo.remarks;
+    const hasLocation = !!(todo.location && todo.location.name);
+    const fieldHasData = { subtask: hasSubtask, tags: hasTags, date: hasDate, priority: hasPriority, remarks: hasRemarks, location: hasLocation };
+    const fieldPickerOptions = [
+      { key: 'subtask', label: '子任务', icon: 'tree-list', show: hasSubtask },
+      { key: 'tags', label: '标签', icon: 'tag', show: hasTags },
+      { key: 'date', label: '截止时间', icon: 'time', show: hasDate },
+      { key: 'priority', label: '优先等级', icon: 'flag', show: hasPriority },
+      { key: 'remarks', label: '备注', icon: 'edit-2', show: hasRemarks },
+      { key: 'location', label: '位置信息', icon: 'pin', show: hasLocation },
+    ];
+    const filteredPickerOptions = fieldPickerOptions.filter(o => o.show);
+    // Reset fieldVisibility for any empty fields (they stay hidden, no option shown)
+    const fieldVisibility = {};
+    for (const opt of fieldPickerOptions) {
+      fieldVisibility[opt.key] = opt.show;
+    }
+    const fieldPickerSummary = this._computeFieldPickerSummary(fieldVisibility, filteredPickerOptions);
 
     this.setData({
       todo,
@@ -126,14 +147,18 @@ Page({
       tagText,
       priorityText: priorityMap[todo.priority] || '',
       dateText: todo.setDate || '',
+      fieldVisibility,
+      fieldPickerOptions: filteredPickerOptions,
+      fieldPickerValue: filteredPickerOptions.map(o => o.key),
       fieldPickerSummary,
     });
   },
 
-  _computeFieldPickerSummary() {
-    const visible = Object.values(this.data.fieldVisibility).filter(Boolean).length;
-    const total = Object.keys(this.data.fieldVisibility).length;
-    return `已选 ${visible}/${total} 项`;
+  _computeFieldPickerSummary(fieldVisibility, pickerOptions) {
+    const opts = pickerOptions || this.data.fieldPickerOptions;
+    const vis = fieldVisibility || this.data.fieldVisibility;
+    const visible = opts.filter(o => vis[o.key]).length;
+    return `已选 ${visible}/${opts.length} 项`;
   },
 
   // === Tab switching ===

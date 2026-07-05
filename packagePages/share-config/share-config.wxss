@@ -185,6 +185,15 @@
   line-height: 1.4;
 }
 
+/* ===== Preview hint ===== */
+.preview-hint {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+  line-height: 1.5;
+  padding: 8rpx 0;
+}
+
 /* ===== Field visibility picker card (todo-detail notify style) ===== */
 .field-picker-card {
   margin: 0 24rpx 20rpx;

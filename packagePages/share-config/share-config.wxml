@@ -80,6 +80,9 @@
           <text wx:if="{{todo.location.address}}" class="loc-address">{{todo.location.address}}</text>
         </view>
       </view>
+
+      <!-- Preview hint -->
+      <view class="preview-hint">上方为分享卡片预览框，溢出预览框的内容将不能在聊天中显示</view>
     </view>
 
     <!-- Field visibility picker (参照 todo-detail 通知卡片样式) -->
@@ -104,7 +107,7 @@
             <t-icon slot="prefix" name="{{item.icon}}" size="32rpx" color="#999" />
           </t-checkbox>
         </t-checkbox-group>
-        <view class="field-picker-hint">勾选的字段将在预览卡片中显示</view>
+        <view class="field-picker-hint">勾选的字段将在预览卡片中显示；未含数据的字段不显示在选择中</view>
       </view>
     </view>
 
@@ -252,6 +255,7 @@
           <text wx:if="{{todo.location.address}}" class="loc-address">{{todo.location.address}}</text>
         </view>
       </view>
+      <view class="preview-hint">上方为分享卡片预览框，溢出预览框的内容将不能在聊天中显示</view>
     </view>
 
     <view class="community-desc">发布待办至社区，分享你的效率心得</view>
