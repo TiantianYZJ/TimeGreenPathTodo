@@ -49,9 +49,11 @@ Page({
     // 构建父链映射用于回溯层级
     const parentMap = {};
     const textMap = {};
+    const todoMap = {};
     todos.forEach(t => {
       if (t.parent_id) parentMap[t.id] = t.parent_id;
       textMap[t.id] = t.text;
+      todoMap[t.id] = t;
     });
 
     const getHierarchy = (todoId) => {
@@ -64,6 +66,19 @@ Page({
         currentId = parentMap[currentId];
       }
       return { hierarchyPath: path, rootParentId };
+    };
+
+    // 沿父链向上查找最近的截止日期
+    const findInheritedDate = (todoId) => {
+      let currentId = parentMap[todoId];
+      while (currentId) {
+        const parent = todoMap[currentId];
+        if (parent && parent.setDate) {
+          return parent.setDate;
+        }
+        currentId = parentMap[currentId];
+      }
+      return null;
     };
 
     const results = todos.filter(todo =>
@@ -88,9 +103,15 @@ Page({
         description = '🗂️ ' + hierarchyPath.join(' → ') + ' 的子待办';
       }
 
+      // 确定截止日期：优先用自身的，没有则从父链继承
+      let displayDate = todo.setDate;
+      if (!displayDate && todo.parent_id) {
+        displayDate = findInheritedDate(todo.id);
+      }
+
       return {
         ...todo,
-        friendlyDate: formatFriendlyDate(todo.setDate),
+        friendlyDate: formatFriendlyDate(displayDate),
         description,
         rootParentId
       };
