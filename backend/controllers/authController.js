@@ -169,6 +169,7 @@ const getUserInfo = async (req, res) => {
         todoLimit: user.todo_limit,
         comboLimit: user.combo_limit,
         collabLimit: user.collab_limit,
+        createdAt: user.created_at,
         isAdmin: isAdmin,
         badgeTitles,
         badgeColors

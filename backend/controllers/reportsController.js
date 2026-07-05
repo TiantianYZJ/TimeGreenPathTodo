@@ -213,7 +213,7 @@ const processReport = async (req, res) => {
           title: report.target_content || '举报内容',
           reason: report.reason,
           targetType: report.target_type === 'post' ? '帖子' : '评论',
-          result: action === 'delete' ? '已处理（内容已删除）' : '已驳回',
+          result: (action === 'delete' ? '已处理（内容已删除）' : '已驳回') + (resultNote ? '，' + resultNote : ''),
           processedAt: new Date().toISOString()
         });
       }

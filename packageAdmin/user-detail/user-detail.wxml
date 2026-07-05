@@ -108,7 +108,7 @@
   <view class="section">
     <view class="section-header">
       <text class="section-title">徽标管理</text>
-      <t-tag theme="primary" variant="light" size="small">称号+颜色</t-tag>
+      <t-tag theme="primary" variant="light" size="small">称号 + 颜色</t-tag>
     </view>
     <view class="badge-list">
       <view wx:for="{{badgeTitles}}" wx:for-index="idx" wx:key="idx" class="badge-edit-item">
@@ -128,7 +128,6 @@
     <view class="badge-actions">
       <button class="badge-add-btn" bindtap="addBadge">
         <t-icon name="add" size="28rpx" color="#667eea" />
-        <text>添加徽标</text>
       </button>
       <button class="save-btn" bindtap="saveBadges">
         <t-icon name="check" size="32rpx" color="#fff" />
