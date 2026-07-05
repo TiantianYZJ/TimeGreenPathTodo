@@ -7,7 +7,9 @@
     "t-picker-item": "tdesign-miniprogram/picker-item/picker-item",
     "t-button": "tdesign-miniprogram/button/button",
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-popup": "tdesign-miniprogram/popup/popup"
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
+    "t-checkbox-group": "tdesign-miniprogram/checkbox-group/checkbox-group"
   },
   "navigationBarTitleText": "分享配置"
 }

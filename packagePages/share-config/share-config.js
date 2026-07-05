@@ -37,6 +37,27 @@ Page({
     expiryVisible: false,
     expiryIndex: 1,
     expiryOptions: EXPIRY_OPTIONS,
+
+    // Field visibility control
+    fieldVisibility: {
+      subtask: true,
+      tags: true,
+      date: true,
+      priority: true,
+      remarks: true,
+      location: true,
+    },
+    showFieldPicker: false,
+    fieldPickerValue: ['subtask', 'tags', 'date', 'priority', 'remarks', 'location'],
+    fieldPickerOptions: [
+      { key: 'subtask', label: '子任务', icon: 'tree-list' },
+      { key: 'tags', label: '标签', icon: 'tag' },
+      { key: 'date', label: '截止时间', icon: 'time' },
+      { key: 'priority', label: '优先等级', icon: 'flag' },
+      { key: 'remarks', label: '备注', icon: 'edit-2' },
+      { key: 'location', label: '位置信息', icon: 'pin' },
+    ],
+    fieldPickerSummary: '',
   },
 
   onLoad(options) {
@@ -95,6 +116,9 @@ Page({
     const tagList = allTags.filter(t => tagIds.some(id => String(id) == String(t.id)));
     const tagText = tagList.map(t => t.name).join(', ');
 
+    // Build field picker summary
+    const fieldPickerSummary = this._computeFieldPickerSummary();
+
     this.setData({
       todo,
       subtaskSummary,
@@ -102,7 +126,14 @@ Page({
       tagText,
       priorityText: priorityMap[todo.priority] || '',
       dateText: todo.setDate || '',
+      fieldPickerSummary,
     });
+  },
+
+  _computeFieldPickerSummary() {
+    const visible = Object.values(this.data.fieldVisibility).filter(Boolean).length;
+    const total = Object.keys(this.data.fieldVisibility).length;
+    return `已选 ${visible}/${total} 项`;
   },
 
   // === Tab switching ===
@@ -110,6 +141,26 @@ Page({
   onTabChange(e) {
     const tab = e.currentTarget.dataset.tab;
     this.setData({ activeTab: tab });
+  },
+
+  // === Field visibility control ===
+
+  onFieldPickerTap() {
+    this.setData({ showFieldPicker: !this.data.showFieldPicker });
+  },
+
+  onFieldVisibilityChange(e) {
+    const selected = e.detail.value;
+    const visibility = {};
+    const options = this.data.fieldPickerOptions;
+    for (const opt of options) {
+      visibility[opt.key] = selected.includes(opt.key);
+    }
+    this.setData({
+      fieldPickerValue: selected,
+      fieldVisibility: visibility,
+      fieldPickerSummary: this._computeFieldPickerSummary(),
+    });
   },
 
   // === Tab 1: Share settings ===
