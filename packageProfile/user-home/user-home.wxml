@@ -26,7 +26,7 @@
   <!-- 用户资料头部 -->
   <view class="profile-header">
     <view class="avatar-wrapper">
-      <image class="profile-avatar" src="{{user.avatarUrl || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
+      <image class="profile-avatar" src="{{user.avatarUrl || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" bindtap="previewAvatar" />
     </view>
     <view class="profile-name">{{user.nickname || '未知用户'}}</view>
     <view wx:if="{{user.badgeTitles && user.badgeTitles.length > 0}}" class="profile-badges">
@@ -34,13 +34,13 @@
         <text class="user-badge" style="color: {{user.badgeColors[index]}}; border-color: {{user.badgeColors[index]}}">{{badge}}</text>
       </block>
     </view>
-    <view class="profile-id">#{{userId}}</view>
+    <view class="profile-id">ID：{{userId}}</view>
 
     <!-- 按钮组 -->
+    <view class="profile-stat-text">
+      <text>发布了{{user.postCount || 0}}篇帖子 · 注册了{{regDays}}天</text>
+    </view>
     <view wx:if="{{isSelf}}" class="profile-actions self-actions">
-      <view class="profile-stat-text">
-        <text>发布了{{user.postCount || 0}}篇帖子 · 注册了{{regDays}}天</text>
-      </view>
       <view class="profile-edit-btn" bindtap="goToEditProfile">
         <text>编辑个人资料</text>
       </view>

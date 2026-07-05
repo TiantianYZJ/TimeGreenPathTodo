@@ -206,6 +206,11 @@ Page({
     wx.switchTab({ url: '/pages/todo/todo' });
   },
 
+  previewAvatar() {
+    const url = this.data.user?.avatarUrl;
+    if (url) wx.previewImage({ current: url, urls: [url] });
+  },
+
   onAvatarError() {
     // fallback handled in wxml
   },
