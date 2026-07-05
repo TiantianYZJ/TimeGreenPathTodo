@@ -314,8 +314,6 @@ Page({
       return;
     }
 
-    // Store todo data for post-edit to read
-    app.globalData.quickShareTodo = todo;
     wx.navigateTo({
       url: '/packageCommunity/post-edit/post-edit?todoId=' + todo.id,
     });
