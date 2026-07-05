@@ -2,6 +2,8 @@ const app = getApp();
 const { communityApi, combosApi, isLoggedIn } = require('../../utils/api');
 const { getLocalTodos } = require('../../utils/sync');
 
+const { formatFriendlyDate } = require('../../utils/util');
+
 const compressImage = (filePath) => {
   return new Promise((resolve) => {
     wx.getFileInfo({
@@ -129,7 +131,8 @@ Page({
 
   loadTodos() {
     const todos = getLocalTodos().filter(t => !t.isDeleted && !t.parentId && !t.parent_id);
-    this.setData({ allTodos: todos, filteredTodos: todos });
+    const enriched = todos.map(t => ({ ...t, friendlyDate: formatFriendlyDate(t.setDate) }));
+    this.setData({ allTodos: enriched, filteredTodos: enriched });
   },
 
   loadPickerCombos() {

@@ -260,16 +260,9 @@
   top: 0;
   left: 0;
   z-index: 2;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 40rpx 40rpx 0;
-  border-color: transparent #fbbf24 transparent transparent;
-}
-.picker-popup .star-badge t-icon {
-  position: absolute;
-  top: 2rpx;
-  left: 4rpx;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  padding: 6rpx 8rpx 8rpx 10rpx;
+  border-radius: 0 0 30rpx 0;
 }
 .picker-checkbox-wrapper {
   display: flex;
