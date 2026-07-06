@@ -22,6 +22,7 @@
     <block wx:for="{{postList}}" wx:key="postId">
       <post-card
         post="{{item}}"
+        renderMarkdown="{{true}}"
         expanded="{{expandedPostId === item.postId}}"
         todoItems="{{postTodoMap[item.postId] || []}}"
         bind:tapAuthor="onPostTapAuthor"

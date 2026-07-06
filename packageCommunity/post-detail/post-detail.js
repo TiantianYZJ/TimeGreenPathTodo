@@ -226,8 +226,8 @@ Page({
       if (seen.has(entry.userId)) continue;
       seen.add(entry.userId);
       const escaped = entry.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(?<=^|\\s)@${escaped}(?=\\s|$|[\\p{P}])`, 'u');
-      const newResult = result.replace(regex, `@[${entry.nickname}](${entry.userId})`);
+      const regex = new RegExp(`(^|\\s)@${escaped}(?=\\s|$|[.,;!?，。！？；：、])`, 'u');
+      const newResult = result.replace(regex, `$1[@${entry.nickname}](${entry.userId})`);
       if (newResult !== result) result = newResult;
     }
     return result;
@@ -511,7 +511,7 @@ Page({
     const href = node.href || '';
     if (/^\d+$/.test(href)) {
       wx.navigateTo({
-        url: `/packagePages/user-center/user-center?userId=${href}`,
+        url: `/packageProfile/user-home/user-home?userId=${href}`,
       });
     }
   },

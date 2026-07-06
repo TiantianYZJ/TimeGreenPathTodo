@@ -32,6 +32,8 @@ export default class Calendar extends SuperComponent {
         ready(): void;
     };
     observers: {
+        localeText(): void;
+        globalConfig(): void;
         type(v: any): void;
         allowSameDay(v: any): void;
         confirmBtn(v: any): void;

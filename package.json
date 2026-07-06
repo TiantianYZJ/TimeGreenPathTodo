@@ -12,7 +12,8 @@
   "dependencies": {
     "@lspriv/wc-plugin-lunar": "^1.0.3-alpha.0",
     "@lspriv/wx-calendar": "^1.8.4",
+    "@swc/helpers": "^0.5.23",
     "ec-canvas": "^1.0.0",
-    "tdesign-miniprogram": "^1.12.3"
+    "tdesign-miniprogram": "^1.15.2"
   }
 }

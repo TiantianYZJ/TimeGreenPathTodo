@@ -56,4 +56,55 @@ const getProfile = async (req, res) => {
   }
 };
 
-module.exports = { getProfile };
+const search = async (req, res) => {
+  const { q, limit = 20 } = req.query;
+  if (!q || q.trim().length === 0) {
+    return res.json({ success: true, data: [] });
+  }
+  try {
+    const pageSize = Math.min(parseInt(limit), 50);
+    const users = await query(
+      `SELECT id, nickname, avatar_url FROM users
+       WHERE nickname LIKE ?
+       ORDER BY nickname ASC LIMIT ?`,
+      [`%${q.trim()}%`, pageSize]
+    );
+    res.json({
+      success: true,
+      data: users.map(u => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: getFullAvatarUrl(u.avatar_url)
+      }))
+    });
+  } catch (err) {
+    logger.error(USER_LOG, '搜索', '搜索用户失败', { keyword: q, error: err.message });
+    res.status(500).json({ success: false, message: '搜索失败' });
+  }
+};
+
+const getBatch = async (req, res) => {
+  const { ids } = req.query;
+  if (!ids) return res.json({ success: true, data: [] });
+  const idArray = ids.split(',').map(Number).filter(id => !isNaN(id));
+  if (idArray.length === 0) return res.json({ success: true, data: [] });
+  try {
+    const users = await query(
+      `SELECT id, nickname, avatar_url FROM users WHERE id IN (?)`,
+      [idArray]
+    );
+    res.json({
+      success: true,
+      data: users.map(u => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: getFullAvatarUrl(u.avatar_url)
+      }))
+    });
+  } catch (err) {
+    logger.error(USER_LOG, '批量查询', '批量查询用户失败', { ids, error: err.message });
+    res.status(500).json({ success: false, message: '查询失败' });
+  }
+};
+
+module.exports = { getProfile, search, getBatch };

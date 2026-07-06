@@ -68,6 +68,7 @@ export default class ActionSheet extends SuperComponent {
     }[];
     observers: {
         items(): void;
+        globalConfig(): void;
     };
     lifetimes: {
         ready(): void;
@@ -75,6 +76,7 @@ export default class ActionSheet extends SuperComponent {
     methods: {
         init(): void;
         memoInitialData(): void;
+        updateInitialData(): void;
         splitGridThemeActions(): void;
         show(options: any): void;
         close(): void;

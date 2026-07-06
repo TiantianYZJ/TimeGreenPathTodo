@@ -323,8 +323,8 @@ Page({
       if (seen.has(entry.userId)) continue;
       seen.add(entry.userId);
       const escaped = entry.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(?<=^|\\s)@${escaped}(?=\\s|$|[\\p{P}])`, 'u');
-      const newResult = result.replace(regex, `@[${entry.nickname}](${entry.userId})`);
+      const regex = new RegExp(`(^|\\s)@${escaped}(?=\\s|$|[.,;!?，。！？；：、])`, 'u');
+      const newResult = result.replace(regex, `$1[@${entry.nickname}](${entry.userId})`);
       if (newResult !== result) {
         result = newResult;
       }
@@ -341,7 +341,7 @@ Page({
     for (const entry of mentionsList) {
       if (seenIds.has(entry.userId)) continue;
       const escaped = entry.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(?<=^|\\s)@${escaped}(?=\\s|$|[\\p{P}])`, 'u');
+      const regex = new RegExp(`(^|\\s)@${escaped}(?=\\s|$|[.,;!?，。！？；：、])`, 'u');
       if (regex.test(text)) {
         found.push({ nickname: entry.nickname, userId: entry.userId });
         seenIds.add(entry.userId);
@@ -365,17 +365,18 @@ Page({
     if (!text) return { displayBody: '', mentionsList: [] };
     const mentionsList = [];
     const seen = new Set();
-    const displayBody = text.replace(/\[([^\]]+)\]\((\d+)\)/g, (m, nickname, userId) => {
+    const displayBody = text.replace(/@?\[([^\]]+)\]\((\d+)\)/g, (m, nickname, userId) => {
+      const cleanNick = nickname.startsWith('@') ? nickname.slice(1) : nickname;
       const uid = parseInt(userId);
       if (!seen.has(uid)) {
         seen.add(uid);
         mentionsList.push({
           id: `mention_restore_${uid}`,
-          nickname,
+          nickname: cleanNick,
           userId: uid,
         });
       }
-      return `@${nickname}`;
+      return nickname.startsWith('@') ? nickname : `@${nickname}`;
     });
     return { displayBody, mentionsList };
   },
@@ -407,8 +408,8 @@ Page({
         if (newNick && newNick !== e.nickname) {
           const oldEscaped = e.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           updatedBody = updatedBody.replace(
-            new RegExp(`(?<=^|\\s)@${oldEscaped}(?=\\s|$|[\\p{P}])`, 'u'),
-            `@${newNick}`
+            new RegExp(`(^|\\s)@${oldEscaped}(?=\\s|$|[.,;!?，。！？；：、])`, 'u'),
+            `$1@${newNick}`
           );
         }
       }
@@ -437,7 +438,7 @@ Page({
   // 在提及列表 popup 中点用户 → 跳转主页
   goToMentionUser(e) {
     const userId = e.currentTarget.dataset.userid;
-    wx.navigateTo({ url: `/packagePages/user-center/user-center?userId=${userId}` });
+    wx.navigateTo({ url: `/packageProfile/user-home/user-home?userId=${userId}` });
   },
 
   async handleImageAdd(e) {

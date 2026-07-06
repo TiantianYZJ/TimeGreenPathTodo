@@ -794,6 +794,10 @@ const communityApi = {
   deleteComment: (commentId) => request({ url: `/post-comments/${commentId}`, method: 'DELETE' }),
   toggleCommentLike: (commentId) => request({ url: `/post-comments/${commentId}/like`, method: 'POST' }),
 
+  // Users (for @mentions)
+  searchUsers: (q) => request({ url: '/users/search', method: 'GET', data: { q } }),
+  getUsersBatch: (ids) => request({ url: '/users/batch', method: 'GET', data: { ids: ids.join(',') } }),
+
   // Reports
   createReport: (data) => request({ url: '/reports/create', method: 'POST', data }),
   getMyReports: () => request({ url: '/reports/my', method: 'GET' }),

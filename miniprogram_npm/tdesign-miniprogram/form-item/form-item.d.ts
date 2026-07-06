@@ -21,6 +21,11 @@ export default class FormItem extends SuperComponent {
         form: {};
         colon: boolean;
         innerShowErrorMessage: boolean;
+        innerContentAlign: string;
+        contentStyle: string;
+    };
+    observers: {
+        contentAlign(val: string): void;
     };
     relations: RelationsOptions;
     lifetimes: {

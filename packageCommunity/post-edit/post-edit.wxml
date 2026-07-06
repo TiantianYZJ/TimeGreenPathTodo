@@ -40,38 +40,31 @@
     <t-icon name="chevron-right" size="28rpx" color="#999" />
   </view>
 
-  <!-- @用户选择弹窗 -->
-  <t-popup
-    visible="{{showAtPopup}}"
-    placement="bottom"
-    show-overlay="{{false}}"
-    close-on-overlay-click="{{false}}"
-  >
-    <view class="at-popup">
-      <view class="at-popup-header">
-        <text class="at-popup-title">提及用户</text>
-        <view class="at-popup-close" catch:tap="closeAtPopup">
-          <t-icon name="close" size="32rpx" color="#999" />
-        </view>
-      </view>
-      <scroll-view class="at-popup-scroll" scroll-y wx:if="{{atSearchResults.length > 0}}">
-        <view
-          class="at-user-item"
-          wx:for="{{atSearchResults}}" wx:key="id"
-          catch:tap="selectMentionUser"
-          data-id="{{item.id}}"
-          data-nickname="{{item.nickname}}"
-        >
-          <image class="at-user-avatar" src="{{item.avatar || '/images/avatar.png'}}" mode="aspectFill" />
-          <text class="at-user-name">{{item.nickname}}</text>
-        </view>
-      </scroll-view>
-      <view wx:else class="at-popup-empty">
-        <text wx:if="{{!atKeyword}}">输入昵称搜索用户</text>
-        <text wx:else>未找到匹配的用户</text>
+  <!-- @用户选择面板（固定定位，不遮键盘） -->
+  <view wx:if="{{showAtPopup}}" class="at-suggestions" style="top:{{navBarHeight + 80}}rpx">
+    <view class="at-suggestions-header">
+      <text class="at-suggestions-title">提及用户</text>
+      <view class="at-suggestions-close" catch:tap="closeAtPopup">
+        <t-icon name="close" size="32rpx" color="#999" />
       </view>
     </view>
-  </t-popup>
+    <scroll-view class="at-suggestions-scroll" scroll-y wx:if="{{atSearchResults.length > 0}}">
+      <view
+        class="at-user-item"
+        wx:for="{{atSearchResults}}" wx:key="id"
+        catch:tap="selectMentionUser"
+        data-id="{{item.id}}"
+        data-nickname="{{item.nickname}}"
+      >
+        <image class="at-user-avatar" src="{{item.avatar || '/images/avatar.png'}}" mode="aspectFill" />
+        <text class="at-user-name">{{item.nickname}}</text>
+      </view>
+    </scroll-view>
+    <view wx:else class="at-suggestions-empty">
+      <text wx:if="{{!atKeyword}}">输入昵称搜索用户</text>
+      <text wx:else>未找到匹配的用户</text>
+    </view>
+  </view>
 
   <view class="upload-section">
     <t-upload

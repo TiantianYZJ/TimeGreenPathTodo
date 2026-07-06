@@ -1,5 +1,6 @@
 import { SuperComponent, ComponentsOptionsType } from '../../../components/common/src/index';
 export default class ChatActionbar extends SuperComponent {
+    behaviors: string[];
     options: ComponentsOptionsType;
     properties: import("./type").TdChatActionbarProps;
     data: {

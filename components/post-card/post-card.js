@@ -15,7 +15,9 @@ Component({
     'post.body'(body) {
       if (body) {
         this.setData({
-          displayBody: body.replace(/\[([^\]]+)\]\(\d+\)/g, '$1'),
+          displayBody: body.replace(/@?\[([^\]]+)\]\(\d+\)/g, (m, name) => {
+            return name.startsWith('@') ? name : `@${name}`;
+          }),
         });
       } else {
         this.setData({ displayBody: '' });
@@ -64,7 +66,7 @@ Component({
       const href = node.href || '';
       if (/^\d+$/.test(href)) {
         wx.navigateTo({
-          url: `/packagePages/user-center/user-center?userId=${href}`,
+          url: `/packageProfile/user-home/user-home?userId=${href}`,
         });
       }
     }
