@@ -345,7 +345,7 @@ Page({
       const escaped = entry.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`(^|\\s)@${escaped}(?=\\s|$|[.,;!?，。！？；：、])`, 'u');
       if (regex.test(text)) {
-        found.push({ nickname: entry.nickname, userId: entry.userId });
+        found.push({ nickname: entry.nickname, userId: entry.userId, avatar: entry.avatar || '' });
         seenIds.add(entry.userId);
       }
     }
@@ -399,14 +399,18 @@ Page({
         return;
       }
       const userMap = {};
-      res.data.forEach(u => { userMap[u.id] = u.nickname; });
-      const newList = parsed.mentionsList.map(e => ({
-        ...e,
-        nickname: userMap[e.userId] || e.nickname,
-      }));
+      res.data.forEach(u => { userMap[u.id] = u; });
+      const newList = parsed.mentionsList.map(e => {
+        const user = userMap[e.userId];
+        return {
+          ...e,
+          nickname: user?.nickname || e.nickname,
+          avatar: user?.avatar || e.avatar || '',
+        };
+      });
       let updatedBody = parsed.displayBody;
       for (const e of parsed.mentionsList) {
-        const newNick = userMap[e.userId];
+        const newNick = userMap[e.userId]?.nickname;
         if (newNick && newNick !== e.nickname) {
           const oldEscaped = e.nickname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           updatedBody = updatedBody.replace(

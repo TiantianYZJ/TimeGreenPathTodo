@@ -432,14 +432,22 @@
 
 /* ===== @提及用户卡片 ===== */
 .mention-card {
-  display: flex; align-items: center; gap: 8rpx;
   padding: 16rpx 24rpx;
   background: #f0fdf6;
   border-radius: 16rpx;
   margin-bottom: 16rpx;
 }
+.mention-card-row {
+  display: flex; align-items: center; gap: 8rpx;
+}
 .mention-card-text { flex: 1; font-size: 26rpx; color: #333; }
 .mention-count { color: #00b26a; font-weight: 600; }
+.mention-card-hint {
+  margin-top: 8rpx;
+  padding-left: 36rpx;
+  font-size: 22rpx;
+  color: #aaa;
+}
 
 /* ===== @提及用户列表弹窗 ===== */
 .mention-list-popup {
@@ -461,17 +469,7 @@
 }
 .mention-list-item:active { background: #f5f5f5; }
 .mention-list-avatar {
-  width: 56rpx; height: 56rpx; border-radius: 50%; background: #eee; flex-shrink: 0;
-}
-.mention-list-avatar-placeholder {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  width: 56rpx; height: 56rpx; border-radius: 50%; flex-shrink: 0;
 }
 .mention-list-info {
   flex: 1;
