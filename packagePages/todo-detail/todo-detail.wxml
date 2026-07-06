@@ -232,7 +232,7 @@
 
     <view wx:if="{{todo.location}}" class="location-info">
       <view class="section-header">
-        <t-icon name="pin" size="32rpx" color="#999" />
+        <t-icon name="location" size="32rpx" color="#999" />
         <text class="label">位置信息</text>
       </view>
       <view class="value" bindlongpress="copyLocation">

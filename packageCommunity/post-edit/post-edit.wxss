@@ -139,7 +139,7 @@
   flex-shrink: 0;
 }
 .popup-title {
-  font-size: 32rpx;
+  font-size: 38rpx;
   font-weight: 600;
   color: #1a1a1a;
 }
