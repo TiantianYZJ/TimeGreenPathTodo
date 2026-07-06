@@ -418,6 +418,17 @@ Page({
     }
   },
 
+  onMarkdownClick(e) {
+    const { node } = e.detail || {};
+    if (!node) return;
+    const href = node.href || '';
+    if (/^\d+$/.test(href)) {
+      wx.navigateTo({
+        url: `/packagePages/user-center/user-center?userId=${href}`,
+      });
+    }
+  },
+
   previewImage(e) {
     const url = e.detail?.url || e.currentTarget?.dataset?.url;
     const allImages = [...(this.data.post.images || [])];

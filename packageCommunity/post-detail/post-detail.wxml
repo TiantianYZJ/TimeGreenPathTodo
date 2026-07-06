@@ -8,6 +8,7 @@
   <view wx:else class="post-card-wrapper">
     <post-card
       post="{{post}}"
+      renderMarkdown="{{true}}"
       showStats="{{false}}"
       expanded="{{todoExpanded}}"
       todoItems="{{todoItems}}"
@@ -52,7 +53,7 @@
                 <text class="action-btn" bind:tap="replyComment" data-id="{{item.id}}" data-user="{{item.user.nickname}}" data-userid="{{item.user.id}}">回复</text>
               </view>
             </view>
-            <text class="comment-content">{{item.content}}</text>
+            <t-chat-markdown class="comment-content-md" content="{{item.content}}" bind:click="onMarkdownClick" />
             <view wx:if="{{item.images && item.images.length > 0}}" class="post-images">
               <view class="grid-{{item.images.length === 1 ? 'single' : (item.images.length === 2 ? 'double' : 'triple')}}">
                 <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this" src="{{img}}" mode="{{item.images.length === 1 ? 'widthFix' : 'aspectFill'}}" class="post-image" catch:tap="previewImage" data-url="{{img}}" />
@@ -83,7 +84,7 @@
                             </block>
                           </view>
                         </view>
-                        <text class="reply-content">{{reply.content}}</text>
+                        <t-chat-markdown class="reply-content-md" content="{{reply.content}}" bind:click="onMarkdownClick" />
                         <view wx:if="{{reply.images && reply.images.length > 0}}" class="post-images">
                           <view class="grid-{{reply.images.length === 1 ? 'single' : (reply.images.length === 2 ? 'double' : 'triple')}}">
                             <image wx:for="{{reply.images}}" wx:for-item="rimg" wx:key="*this" src="{{rimg}}" mode="{{reply.images.length === 1 ? 'widthFix' : 'aspectFill'}}" class="post-image" catch:tap="previewImage" data-url="{{rimg}}" />
@@ -115,7 +116,7 @@
                                       </block>
                                     </view>
                                   </view>
-                                  <text class="reply-content">{{r2.content}}</text>
+                                  <t-chat-markdown class="reply-content-md" content="{{r2.content}}" bind:click="onMarkdownClick" />
                                   <view wx:if="{{r2.images && r2.images.length > 0}}" class="post-images">
                                     <view class="grid-{{r2.images.length === 1 ? 'single' : (r2.images.length === 2 ? 'double' : 'triple')}}">
                                       <image wx:for="{{r2.images}}" wx:for-item="rimg" wx:key="*this" src="{{rimg}}" mode="{{r2.images.length === 1 ? 'widthFix' : 'aspectFill'}}" class="post-image" catch:tap="previewImage" data-url="{{rimg}}" />

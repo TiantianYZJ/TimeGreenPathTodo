@@ -5,7 +5,8 @@
     "t-loading": "tdesign-miniprogram/loading/loading",
     "t-popup": "tdesign-miniprogram/popup/popup",
     "t-upload": "tdesign-miniprogram/upload/upload",
-    "post-card": "/components/post-card/post-card"
+    "post-card": "/components/post-card/post-card",
+    "t-chat-markdown": "tdesign-miniprogram/chat-markdown/chat-markdown"
   },
   "enablePullDownRefresh": false,
   "navigationBarTitleText": "帖子详情"

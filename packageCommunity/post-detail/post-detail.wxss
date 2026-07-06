@@ -407,3 +407,18 @@
 .tap-active {
   opacity: 0.6;
 }
+
+/* @提及链接绿色 */
+.comment-content-md .t-chat-markdown-link,
+.reply-content-md .t-chat-markdown-link {
+  color: var(--primary-color, #00b26a);
+}
+/* 评论/回复中 t-chat-markdown 继承父级字体 */
+.comment-content-md,
+.reply-content-md {
+  display: block;
+  margin: 8rpx 0;
+  font-size: 26rpx;
+  color: #444;
+  line-height: 1.6;
+}
