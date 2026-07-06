@@ -254,7 +254,7 @@ Page({
       this.setData({
         commentText: '', replyTarget: null, replyParentId: null, replyToUserId: null,
         commentFiles: [], commentImageUrls: [], inputFocused: false,
-        commentMentionsList: []
+        commentMentionsList: [], commentMentionIdCounter: 0
       });
       wx.showToast({ title: '发送成功', icon: 'success' });
       this.loadComments(true);
