@@ -157,8 +157,8 @@
 <t-popup
   visible="{{commentAtPopup}}"
   placement="bottom"
+  show-overlay="{{false}}"
   close-on-overlay-click="{{true}}"
-  overlay-style="background:none"
 >
   <view class="at-popup">
     <view class="at-popup-header">

@@ -44,8 +44,8 @@
   <t-popup
     visible="{{showAtPopup}}"
     placement="bottom"
+    show-overlay="{{false}}"
     close-on-overlay-click="{{false}}"
-    overlay-style="background:none"
   >
     <view class="at-popup">
       <view class="at-popup-header">
