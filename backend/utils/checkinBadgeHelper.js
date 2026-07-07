@@ -31,6 +31,10 @@ function getTitleColor(days) {
 /**
  * 计算连签天数 — 索引覆盖扫描，断签即 break
  */
+function toBeijingDateStr(d) {
+  return typeof d === 'string' ? d : d.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+}
+
 async function calcStreakDays(userId) {
   const rows = await query(
     'SELECT check_in_date FROM check_ins WHERE user_id = ? ORDER BY check_in_date DESC',
@@ -39,11 +43,11 @@ async function calcStreakDays(userId) {
   let streak = 0;
   const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
   for (let i = 0; i < rows.length; i++) {
-    const dateStr = rows[i].check_in_date;
-    const expectedDate = new Date(todayStr);
+    const dateStr = toBeijingDateStr(rows[i].check_in_date);
+    const expectedDate = new Date(todayStr + 'T00:00:00+08:00');
     expectedDate.setDate(expectedDate.getDate() - streak);
-    const expectedStr = expectedDate.toISOString().slice(0, 10);
-    if (typeof dateStr === 'string' ? dateStr === expectedStr : dateStr.toISOString().slice(0, 10) === expectedStr) {
+    const expectedStr = expectedDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+    if (dateStr === expectedStr) {
       streak++;
     } else {
       break;

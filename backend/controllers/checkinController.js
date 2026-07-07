@@ -1,5 +1,6 @@
 const { query, transaction } = require('../config/database');
 const {
+  calcStreakDays,
   calcRegisteredDays,
   getTitleByStreak,
   clearStreakCache,
@@ -7,6 +8,29 @@ const {
 
 const MILESTONE_POINTS = { 7: 20, 15: 50, 30: 100, 60: 200 };
 const MILESTONE_DAYS = [7, 15, 30, 60];
+
+/**
+ * 从签到行数组计算连签天数（兼容 Date 对象和字符串）
+ */
+function calcStreakFromRows(rows) {
+  let streak = 0;
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+  for (let i = 0; i < rows.length; i++) {
+    const dateStr = rows[i].check_in_date;
+    const dateStrFormatted = typeof dateStr === 'string'
+      ? dateStr
+      : dateStr.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+    const expectedDate = new Date(todayStr + 'T00:00:00+08:00');
+    expectedDate.setDate(expectedDate.getDate() - streak);
+    const expectedStr = expectedDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+    if (dateStrFormatted === expectedStr) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
 
 /**
  * POST /checkin — 今日签到
@@ -61,18 +85,7 @@ exports.checkin = async (req, res) => {
             (err, rows) => (err ? reject(err) : resolve(rows))
           );
         });
-        let streak = 0;
-        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
-        for (let i = 0; i < rows.length; i++) {
-          const expectedDate = new Date(todayStr);
-          expectedDate.setDate(expectedDate.getDate() - streak);
-          const expectedStr = expectedDate.toISOString().slice(0, 10);
-          if (rows[i].check_in_date === expectedStr) {
-            streak++;
-          } else {
-            break;
-          }
-        }
+        let streak = calcStreakFromRows(rows);
 
         // 更新 current_streak
         await new Promise((resolve, reject) => {
@@ -147,20 +160,36 @@ exports.checkin = async (req, res) => {
           title: getTitleByStreak(userRows[0].current_streak),
         };
       } else {
-        // 已签到 — 查询当前状态
+        // 已签到 — 重新计算连签天数并更新 current_streak（修复历史数据）
+        const rows = await new Promise((resolve, reject) => {
+          conn.query(
+            'SELECT check_in_date FROM check_ins WHERE user_id = ? ORDER BY check_in_date DESC',
+            [userId],
+            (err, rows) => (err ? reject(err) : resolve(rows))
+          );
+        });
+        const recalcStreak = calcStreakFromRows(rows);
+        await new Promise((resolve, reject) => {
+          conn.query(
+            'UPDATE users SET current_streak = ? WHERE id = ?',
+            [recalcStreak, userId],
+            (err) => (err ? reject(err) : resolve())
+          );
+        });
+
         const userRows = await new Promise((resolve, reject) => {
           conn.query(
-            'SELECT total_points, current_streak FROM users WHERE id = ?',
+            'SELECT total_points FROM users WHERE id = ?',
             [userId],
             (err, rows) => (err ? reject(err) : resolve(rows))
           );
         });
         return {
           checkedIn: true,
-          streakDays: userRows[0].current_streak,
+          streakDays: recalcStreak,
           totalPoints: userRows[0].total_points,
           todayPoints: 0,
-          title: getTitleByStreak(userRows[0].current_streak),
+          title: getTitleByStreak(recalcStreak),
         };
       }
     });
@@ -199,12 +228,12 @@ exports.getStatus = async (req, res) => {
   try {
     const [checkinRows, userRows, totalRows] = await Promise.all([
       query('SELECT id FROM check_ins WHERE user_id = ? AND check_in_date = ?', [userId, dateStr]),
-      query('SELECT total_points, current_streak FROM users WHERE id = ?', [userId]),
+      query('SELECT total_points FROM users WHERE id = ?', [userId]),
       query('SELECT COUNT(*) as total FROM check_ins WHERE user_id = ?', [userId]),
     ]);
 
     const checkedIn = checkinRows.length > 0;
-    const streakDays = userRows[0]?.current_streak || 0;
+    const streakDays = await calcStreakDays(userId);
     const totalPoints = userRows[0]?.total_points || 0;
     const totalCheckins = totalRows?.[0]?.total || 0;
     const registeredDays = await calcRegisteredDays(userId);
@@ -248,7 +277,7 @@ exports.getMonth = async (req, res) => {
         month,
         dates: rows.map(r => {
           const d = r.check_in_date;
-          return typeof d === 'string' ? d : d.toISOString().slice(0, 10);
+          return typeof d === 'string' ? d : d.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
         }),
         count: rows.length,
       },
