@@ -22,7 +22,7 @@
   <view class="checkin-card" wx:if="{{isLoggedIn}}" bindtap="goToCheckin">
     <view class="card-header">
       <view class="card-left">
-        <t-icon name="check-circle-filled" size="36rpx" color="#00b26a" />
+        <t-icon name="task-checked-1" size="48rpx" color="#00b26a" />
         <text class="card-streak-num" wx:if="{{checkinData.streakDays > 0}}">{{checkinData.streakDays}}</text>
         <text class="card-streak-label" wx:if="{{checkinData.streakDays > 0}}">天连签</text>
       </view>
@@ -41,11 +41,14 @@
       <view class="card-week-row">
         <view class="weekday" wx:for="{{weekDays}}" wx:key="index">
           <text class="weekday-label">{{item.label}}</text>
-          <view class="weekday-dot {{item.status}}">{{item.display}}</view>
+          <view class="weekday-dot {{item.status}}">
+            <t-icon wx:if="{{item.status === 'checked'}}" name="check" size="42rpx" color="white" />
+            <text wx:else>{{item.display}}</text>
+          </view>
         </view>
       </view>
       <view class="card-checkin-btn {{checkinData.checkedIn ? 'checked' : ''}}" catch:tap="onCardCheckin">
-        <t-icon wx:if="{{checkinData.checkedIn}}" name="check" size="28rpx" color="white" />
+        <t-icon wx:if="{{checkinData.checkedIn}}" name="check" size="48rpx" color="white" />
         <text wx:else class="checkin-btn-text">签</text>
       </view>
     </view>

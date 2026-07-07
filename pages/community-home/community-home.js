@@ -266,9 +266,9 @@ Page({
       const dateStr = date.toISOString().slice(0, 10);
       const isToday = dateStr === todayBeijing;
 
-      if (isToday && isCheckedIn) return { label, status: 'checked', display: '✓' };
+      if (isToday && isCheckedIn) return { label, status: 'checked', display: '✔' };
       if (isToday) return { label, status: 'today', display: '今' };
-      if (checkedDates.includes(dateStr)) return { label, status: 'checked', display: '✓' };
+      if (checkedDates.includes(dateStr)) return { label, status: 'checked', display: '✔' };
       return { label, status: 'future', display: '-' };
     });
   },

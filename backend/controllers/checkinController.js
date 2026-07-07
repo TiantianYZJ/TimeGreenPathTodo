@@ -1,36 +1,16 @@
 const { query, transaction } = require('../config/database');
 const {
+  computeStreakFromRows,
   calcStreakDays,
   calcRegisteredDays,
   getTitleByStreak,
   clearStreakCache,
+  todayBeijingStr,
+  toBeijingDateStr,
 } = require('../utils/checkinBadgeHelper');
 
 const MILESTONE_POINTS = { 7: 20, 15: 50, 30: 100, 60: 200 };
 const MILESTONE_DAYS = [7, 15, 30, 60];
-
-/**
- * 从签到行数组计算连签天数（兼容 Date 对象和字符串）
- */
-function calcStreakFromRows(rows) {
-  let streak = 0;
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
-  for (let i = 0; i < rows.length; i++) {
-    const dateStr = rows[i].check_in_date;
-    const dateStrFormatted = typeof dateStr === 'string'
-      ? dateStr
-      : dateStr.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
-    const expectedDate = new Date(todayStr + 'T00:00:00+08:00');
-    expectedDate.setDate(expectedDate.getDate() - streak);
-    const expectedStr = expectedDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
-    if (dateStrFormatted === expectedStr) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  return streak;
-}
 
 /**
  * POST /checkin — 今日签到
@@ -85,7 +65,7 @@ exports.checkin = async (req, res) => {
             (err, rows) => (err ? reject(err) : resolve(rows))
           );
         });
-        let streak = calcStreakFromRows(rows);
+        let streak = computeStreakFromRows(rows);
 
         // 更新 current_streak
         await new Promise((resolve, reject) => {
@@ -141,7 +121,7 @@ exports.checkin = async (req, res) => {
         });
 
         // 清除缓存
-        clearStreakCache();
+        clearStreakCache(userId);
 
         // 查询最终积分
         const userRows = await new Promise((resolve, reject) => {
@@ -168,7 +148,7 @@ exports.checkin = async (req, res) => {
             (err, rows) => (err ? reject(err) : resolve(rows))
           );
         });
-        const recalcStreak = calcStreakFromRows(rows);
+        const recalcStreak = computeStreakFromRows(rows);
         await new Promise((resolve, reject) => {
           conn.query(
             'UPDATE users SET current_streak = ? WHERE id = ?',
@@ -218,9 +198,9 @@ exports.checkin = async (req, res) => {
  */
 exports.getStatus = async (req, res) => {
   const userId = req.user.id;
-  const dateStr = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+  const dateStr = req.query.date || todayBeijingStr();
 
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+  const todayStr = todayBeijingStr();
   if (dateStr > todayStr) {
     return res.status(400).json({ success: false, message: '不能查询未来日期' });
   }
@@ -265,9 +245,13 @@ exports.getMonth = async (req, res) => {
   const month = parseInt(req.query.month) || (new Date().getMonth() + 1);
 
   try {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
     const rows = await query(
-      'SELECT check_in_date FROM check_ins WHERE user_id = ? AND YEAR(check_in_date) = ? AND MONTH(check_in_date) = ?',
-      [userId, year, month]
+      'SELECT check_in_date FROM check_ins WHERE user_id = ? AND check_in_date >= ? AND check_in_date < ?',
+      [userId, startDate, endDate]
     );
 
     res.json({
@@ -277,7 +261,7 @@ exports.getMonth = async (req, res) => {
         month,
         dates: rows.map(r => {
           const d = r.check_in_date;
-          return typeof d === 'string' ? d : d.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+          return typeof d === 'string' ? d : toBeijingDateStr(d);
         }),
         count: rows.length,
       },
@@ -310,16 +294,21 @@ exports.getLeaderboard = async (req, res) => {
         [userId]
       );
     } else {
-      list = await query(
-        `SELECT id, nickname, avatar_url, current_streak as value
-         FROM users WHERE current_streak > 0
-         ORDER BY current_streak DESC LIMIT 100`
+      // 实时从 check_ins 表计算连签天数（不依赖 current_streak 列）
+      const rawList = await query(
+        `SELECT id, nickname, avatar_url FROM users`
       );
-      myRank = await query(
-        `SELECT COUNT(*) + 1 as rank, current_streak as value
-         FROM users WHERE current_streak > (SELECT current_streak FROM users WHERE id = ?)`,
-        [userId]
-      );
+      const userStreaks = await Promise.all(rawList.map(async (u) => {
+        const rows = await query(
+          'SELECT check_in_date FROM check_ins WHERE user_id = ? ORDER BY check_in_date DESC',
+          [u.id]
+        );
+        return { ...u, value: computeStreakFromRows(rows) };
+      }));
+      const sorted = userStreaks.filter(u => u.value > 0).sort((a, b) => b.value - a.value);
+      list = sorted.slice(0, 100);
+      const myRow = userStreaks.find(u => u.id === userId);
+      myRank = [{ rank: (userStreaks.filter(u => u.value > (myRow?.value || 0)).length) + 1, value: myRow?.value || 0 }];
     }
 
     const enrichedList = list.map((u, i) => ({
@@ -332,10 +321,15 @@ exports.getLeaderboard = async (req, res) => {
     }));
 
     const countField = type === 'total' ? 'total_points' : 'current_streak';
-    const countRows = await query(
-      `SELECT COUNT(*) as total FROM users WHERE ${countField} > 0`
-    );
-    const totalUsers = countRows[0]?.total || 0;
+    let totalUsers;
+    if (type === 'total') {
+      const countRows = await query(
+        `SELECT COUNT(*) as total FROM users WHERE ${countField} > 0`
+      );
+      totalUsers = countRows[0]?.total || 0;
+    } else {
+      totalUsers = userStreaks.filter(u => u.value > 0).length;
+    }
 
     res.json({
       success: true,

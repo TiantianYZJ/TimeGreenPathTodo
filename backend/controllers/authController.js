@@ -101,7 +101,7 @@ const login = async (req, res) => {
       }
     });
 
-    clearStreakCache();
+    clearStreakCache(user.id);
   } catch (err) {
     logger.authError('登录', '登录失败', { error: err.message, stack: err.stack });
     res.status(500).json({
@@ -183,7 +183,7 @@ const getUserInfo = async (req, res) => {
       }
     });
 
-    clearStreakCache();
+    clearStreakCache(user.id);
   } catch (err) {
     logger.authError('获取信息', '获取用户信息失败', { userId, error: err.message });
     res.status(500).json({

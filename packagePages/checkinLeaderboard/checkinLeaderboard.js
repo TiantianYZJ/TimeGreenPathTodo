@@ -23,7 +23,7 @@ Page({
       if (res.success) {
         const list = (res.data.list || []).map(item => ({
           ...item,
-          isMe: item.userId === (app.globalData.userId || 0),
+          isMe: item.userId === (app.globalData.userInfo?.id || 0),
         }));
         this.setData({
           leaderList: list,

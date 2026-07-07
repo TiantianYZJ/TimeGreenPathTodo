@@ -29,25 +29,54 @@ function getTitleColor(days) {
 }
 
 /**
- * 计算连签天数 — 索引覆盖扫描，断签即 break
+ * 将 Date 对象转换为 +08:00 时区的 YYYY-MM-DD 字符串
+ * 纯 UTC 数学运算，不依赖 Intl API，任何 Node 版本/ICU 配置均可用
  */
 function toBeijingDateStr(d) {
-  return typeof d === 'string' ? d : d.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+  if (typeof d === 'string') return d;
+  const ms = d.getTime() + 8 * 3600000;
+  const date = new Date(ms);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 }
 
+/**
+ * 获取当前 Beijing 时间的 YYYY-MM-DD 字符串
+ */
+function todayBeijingStr() {
+  const ms = Date.now() + 8 * 3600000;
+  const date = new Date(ms);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+/**
+ * 计算 streak 天后对应的 Beijing 日期字符串（streak = 0 表示今天）
+ */
+function expectedBeijingDateStr(streak) {
+  const ms = Date.now() + 8 * 3600000;
+  const date = new Date(ms);
+  date.setUTCDate(date.getUTCDate() - streak);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+/**
+ * 计算连签天数 — 索引覆盖扫描，断签即 break
+ */
 async function calcStreakDays(userId) {
   const rows = await query(
     'SELECT check_in_date FROM check_ins WHERE user_id = ? ORDER BY check_in_date DESC',
     [userId]
   );
+  return computeStreakFromRows(rows);
+}
+
+/**
+ * 从签到行数组计算连签天数（兼容 Date 对象和字符串，不依赖 Intl API）
+ */
+function computeStreakFromRows(rows) {
   let streak = 0;
-  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
   for (let i = 0; i < rows.length; i++) {
     const dateStr = toBeijingDateStr(rows[i].check_in_date);
-    const expectedDate = new Date(todayStr + 'T00:00:00+08:00');
-    expectedDate.setDate(expectedDate.getDate() - streak);
-    const expectedStr = expectedDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
-    if (dateStr === expectedStr) {
+    if (dateStr === expectedBeijingDateStr(streak)) {
       streak++;
     } else {
       break;
@@ -110,13 +139,21 @@ async function appendCheckinBadges(userId, customTitles, customColors) {
   };
 }
 
-function clearStreakCache() {
-  streakCache.clear();
+function clearStreakCache(userId) {
+  if (userId) {
+    streakCache.delete(userId);
+  } else {
+    streakCache.clear();
+  }
 }
 
 module.exports = {
   appendCheckinBadges,
   calcStreakDays,
+  computeStreakFromRows,
+  toBeijingDateStr,
+  todayBeijingStr,
+  expectedBeijingDateStr,
   calcRegisteredDays,
   getTitleByStreak,
   getTitleColor,
