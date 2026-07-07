@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { appendCheckinBadges } = require('../utils/checkinBadgeHelper');
 
 const getFullAvatarUrl = (avatarUrl) => {
   if (!avatarUrl) return null;
@@ -13,15 +14,11 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
-function getBadges(row) {
-  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
-  try {
-    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
-    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
-    return { badgeTitles: titles, badgeColors: colors };
-  } catch {
-    return { badgeTitles: [], badgeColors: [] };
-  }
+async function getBadges(row) {
+  const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+  const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+  const result = await appendCheckinBadges(row.user_id, titles, colors);
+  return { badgeTitles: result.badgeTitles, badgeColors: result.badgeColors };
 }
 
 const checkMembership = async (userId, sharedTodoId) => {
@@ -113,11 +110,13 @@ const getComments = async (req, res) => {
       return null;
     };
 
+    // Build replyMap with async badge processing
     const replyMap = {};
-    replies.forEach(r => {
+    await Promise.all(replies.map(async r => {
       if (!replyMap[r.parent_id]) {
         replyMap[r.parent_id] = [];
       }
+      const badgeData = await getBadges(r);
       replyMap[r.parent_id].push({
         id: r.id,
         parentId: r.parent_id,
@@ -127,7 +126,7 @@ const getComments = async (req, res) => {
           id: r.user_id,
           nickname: r.nickname || '用户',
           avatar: getFullAvatarUrl(r.avatar_url),
-          ...getBadges(r)
+          ...badgeData
         },
         comboRole: r.combo_role || 'member',
         todoRole: getTodoRole(r.user_id, r.assignment_completed_at),
@@ -137,24 +136,27 @@ const getComments = async (req, res) => {
         } : null,
         canDelete: r.user_id === userId || membership.role === 'owner' || membership.role === 'admin'
       });
-    });
+    }));
 
-    const comments = mainComments.map(c => ({
-      id: c.id,
-      sharedTodoId: c.shared_todo_id,
-      content: c.content,
-      parentId: c.parent_id,
-      createdAt: c.created_at,
-      user: {
-        id: c.user_id,
-        nickname: c.nickname || '用户',
-        avatar: getFullAvatarUrl(c.avatar_url),
-        ...getBadges(c)
-      },
-      comboRole: c.combo_role || 'member',
-      todoRole: getTodoRole(c.user_id, c.assignment_completed_at),
-      canDelete: c.user_id === userId || membership.role === 'owner' || membership.role === 'admin',
-      replies: replyMap[c.id] || []
+    const comments = await Promise.all(mainComments.map(async c => {
+      const badgeData = await getBadges(c);
+      return {
+        id: c.id,
+        sharedTodoId: c.shared_todo_id,
+        content: c.content,
+        parentId: c.parent_id,
+        createdAt: c.created_at,
+        user: {
+          id: c.user_id,
+          nickname: c.nickname || '用户',
+          avatar: getFullAvatarUrl(c.avatar_url),
+          ...badgeData
+        },
+        comboRole: c.combo_role || 'member',
+        todoRole: getTodoRole(c.user_id, c.assignment_completed_at),
+        canDelete: c.user_id === userId || membership.role === 'owner' || membership.role === 'admin',
+        replies: replyMap[c.parent_id] || replyMap[c.id] || []
+      };
     }));
 
     res.json({

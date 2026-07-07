@@ -62,7 +62,9 @@
         "todo-detail/todo-detail",
         "share-config/share-config",
         "todo-search/todo-search",
-        "user-center/user-center"
+        "user-center/user-center",
+        "checkin/checkin",
+        "checkinLeaderboard/checkinLeaderboard"
       ]
     },
     {
@@ -88,7 +90,7 @@
     },
     "pages/community-home/community-home": {
       "network": "all",
-      "packages": ["community", "profile"]
+      "packages": ["community", "pages", "profile"]
     },
     "pages/more/more": {
       "network": "all",

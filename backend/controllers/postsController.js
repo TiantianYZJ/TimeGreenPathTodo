@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { getProvince } = require('../utils/ipLocator');
+const { appendCheckinBadges } = require('../utils/checkinBadgeHelper');
 
 const POST_LOG = 'POST';
 
@@ -14,18 +15,14 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
-function parseBadges(row) {
-  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
-  try {
-    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
-    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
-    return { badgeTitles: titles, badgeColors: colors };
-  } catch {
-    return { badgeTitles: [], badgeColors: [] };
-  }
+async function parseBadges(row) {
+  const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+  const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+  const result = await appendCheckinBadges(row.user_id, titles, colors);
+  return { badgeTitles: result.badgeTitles, badgeColors: result.badgeColors };
 }
 
-function formatPost(row, userId) {
+async function formatPost(row, userId) {
   const images = row.images ? JSON.parse(row.images) : [];
   const todoIds = row.todo_ids ? JSON.parse(row.todo_ids) : [];
   const locationObj = row.location ? JSON.parse(row.location) : null;
@@ -36,6 +33,8 @@ function formatPost(row, userId) {
   if (!ipProvince && row.ip_address) {
     ipProvince = getProvince(row.ip_address);
   }
+
+  const badgeData = await parseBadges(row);
 
   return {
     postId: row.post_id,
@@ -60,7 +59,7 @@ function formatPost(row, userId) {
       id: row.user_id,
       nickname: row.nickname || '用户',
       avatar: getFullAvatarUrl(row.avatar_url),
-      ...parseBadges(row)
+      ...badgeData
     }
   };
 }
@@ -134,7 +133,7 @@ const getList = async (req, res) => {
     const hasMore = rows.length > pageSize;
     if (hasMore) rows.pop();
 
-    const list = rows.map(row => formatPost(row, userId));
+    const list = await Promise.all(rows.map(row => formatPost(row, userId)));
 
     const nextCursor = hasMore && rows.length > 0
       ? `${rows[rows.length - 1].created_at}_${rows[rows.length - 1].id}`
@@ -188,7 +187,7 @@ const getById = async (req, res) => {
       await query('UPDATE posts SET viewer_ids = ? WHERE post_id = ?', [JSON.stringify(viewerIds), postId]);
     }
 
-    res.json({ success: true, data: formatPost(post, userId) });
+    res.json({ success: true, data: await formatPost(post, userId) });
   } catch (err) {
     logger.error(POST_LOG, '详情', '获取帖子详情失败', { postId, userId, error: err.message });
     res.status(500).json({ success: false, message: '获取详情失败' });
@@ -293,16 +292,18 @@ const getVisitors = async (req, res) => {
       [posts[0].id]
     );
 
+    const visitorsWithBadges = await Promise.all(visitors.map(async v => ({
+      userId: v.user_id,
+      nickname: v.nickname || '用户',
+      avatar: getFullAvatarUrl(v.avatar_url),
+      viewedAt: v.viewed_at,
+      ...(await parseBadges(v))
+    })));
+
     res.json({
       success: true,
       data: {
-        list: visitors.map(v => ({
-          userId: v.user_id,
-          nickname: v.nickname || '用户',
-          avatar: getFullAvatarUrl(v.avatar_url),
-          viewedAt: v.viewed_at,
-          ...parseBadges(v)
-        })),
+        list: visitorsWithBadges,
         total: totalResult[0].total,
         hasMore: offset + visitors.length < totalResult[0].total
       }
@@ -348,7 +349,7 @@ const getUserPosts = async (req, res) => {
     const hasMore = rows.length > pageSize;
     if (hasMore) rows.pop();
 
-    const list = rows.map(row => formatPost(row, currentUserId));
+    const list = await Promise.all(rows.map(row => formatPost(row, currentUserId)));
 
     const nextCursor = hasMore && rows.length > 0
       ? `${rows[rows.length - 1].created_at}_${rows[rows.length - 1].id}`

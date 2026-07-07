@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { appendCheckinBadges } = require('../utils/checkinBadgeHelper');
 
 const getFullAvatarUrl = (avatarUrl) => {
   if (!avatarUrl) return null;
@@ -11,15 +12,11 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
-function getBadges(row) {
-  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
-  try {
-    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
-    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
-    return { badgeTitles: titles, badgeColors: colors };
-  } catch {
-    return { badgeTitles: [], badgeColors: [] };
-  }
+async function getBadges(row) {
+  const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+  const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+  const result = await appendCheckinBadges(row.user_id, titles, colors);
+  return { badgeTitles: result.badgeTitles, badgeColors: result.badgeColors };
 }
 
 const toggle = async (req, res) => {
@@ -75,15 +72,17 @@ const getUsers = async (req, res) => {
       [posts[0].id]
     );
 
+    const usersWithBadges = await Promise.all(users.map(async u => ({
+      userId: u.id,
+      nickname: u.nickname || '用户',
+      avatar: getFullAvatarUrl(u.avatar_url),
+      likedAt: u.liked_at,
+      ...(await getBadges(u))
+    })));
+
     res.json({
       success: true,
-      data: users.map(u => ({
-        userId: u.id,
-        nickname: u.nickname || '用户',
-        avatar: getFullAvatarUrl(u.avatar_url),
-        likedAt: u.liked_at,
-        ...getBadges(u)
-      }))
+      data: usersWithBadges
     });
   } catch (err) {
     logger.error('POST', '点赞列表', '获取点赞用户失败', { postId, error: err.message });

@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { appendCheckinBadges } = require('../utils/checkinBadgeHelper');
 
 const USER_LOG = 'USER';
 
@@ -34,9 +35,11 @@ const getProfile = async (req, res) => {
 
     const user = users[0];
 
-    let badgeTitles = [], badgeColors = [];
-    if (user.badge_titles) try { badgeTitles = JSON.parse(user.badge_titles); } catch {}
-    if (user.badge_colors) try { badgeColors = JSON.parse(user.badge_colors); } catch {}
+    const badgeData = await appendCheckinBadges(
+      user.id,
+      user.badge_titles ? JSON.parse(user.badge_titles) : [],
+      user.badge_colors ? JSON.parse(user.badge_colors) : []
+    );
 
     res.json({
       success: true,
@@ -44,8 +47,8 @@ const getProfile = async (req, res) => {
         id: user.id,
         nickname: user.nickname || '用户',
         avatarUrl: getFullAvatarUrl(user.avatar_url),
-        badgeTitles,
-        badgeColors,
+        badgeTitles: badgeData.badgeTitles,
+        badgeColors: badgeData.badgeColors,
         postCount: user.post_count,
         createdAt: user.created_at
       }

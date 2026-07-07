@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const { getAdminIds } = require('./adminController');
 const { getUnlimitedQRCode } = require('../services/wechatService');
 const qrcodeSession = require('../services/qrcodeSession');
+const { appendCheckinBadges, clearStreakCache } = require('../utils/checkinBadgeHelper');
 
 const APPID = process.env.WECHAT_APPID;
 const SECRET = process.env.WECHAT_SECRET;
@@ -77,9 +78,11 @@ const login = async (req, res) => {
     const adminIds = getAdminIds();
     const isAdmin = adminIds.includes(user.id);
     
-    let badgeTitles = [], badgeColors = [];
-    if (user.badge_titles) try { badgeTitles = JSON.parse(user.badge_titles); } catch {}
-    if (user.badge_colors) try { badgeColors = JSON.parse(user.badge_colors); } catch {}
+    const badgeData = await appendCheckinBadges(
+      user.id,
+      user.badge_titles ? JSON.parse(user.badge_titles) : [],
+      user.badge_colors ? JSON.parse(user.badge_colors) : []
+    );
 
     res.json({
       success: true,
@@ -93,10 +96,12 @@ const login = async (req, res) => {
         comboLimit: user.combo_limit,
         collabLimit: user.collab_limit,
         isAdmin: isAdmin,
-        badgeTitles,
-        badgeColors
+        badgeTitles: badgeData.badgeTitles,
+        badgeColors: badgeData.badgeColors
       }
     });
+
+    clearStreakCache();
   } catch (err) {
     logger.authError('登录', '登录失败', { error: err.message, stack: err.stack });
     res.status(500).json({
@@ -155,9 +160,11 @@ const getUserInfo = async (req, res) => {
     const adminIds = getAdminIds();
     const isAdmin = adminIds.includes(user.id);
     
-    let badgeTitles = [], badgeColors = [];
-    if (user.badge_titles) try { badgeTitles = JSON.parse(user.badge_titles); } catch {}
-    if (user.badge_colors) try { badgeColors = JSON.parse(user.badge_colors); } catch {}
+    const badgeData = await appendCheckinBadges(
+      user.id,
+      user.badge_titles ? JSON.parse(user.badge_titles) : [],
+      user.badge_colors ? JSON.parse(user.badge_colors) : []
+    );
 
     res.json({
       success: true,
@@ -171,10 +178,12 @@ const getUserInfo = async (req, res) => {
         collabLimit: user.collab_limit,
         createdAt: user.created_at,
         isAdmin: isAdmin,
-        badgeTitles,
-        badgeColors
+        badgeTitles: badgeData.badgeTitles,
+        badgeColors: badgeData.badgeColors
       }
     });
+
+    clearStreakCache();
   } catch (err) {
     logger.authError('获取信息', '获取用户信息失败', { userId, error: err.message });
     res.status(500).json({

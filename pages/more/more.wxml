@@ -51,10 +51,15 @@
         url="/packageTools/datamanage/datamanage" 
         leftIcon="data" hover arrow 
       />
-      <t-cell 
-        title="容量扩展" 
-        url="/packageTools/motivation/motivation" 
-        leftIcon="folder-add" hover arrow 
+      <t-cell
+        title="容量扩展"
+        url="/packageTools/motivation/motivation"
+        leftIcon="folder-add" hover arrow
+      />
+      <t-cell
+        title="签到打卡"
+        url="/packagePages/checkin/checkin"
+        leftIcon="check-circle-filled" hover arrow
       />
       <t-cell
         title="回收站"

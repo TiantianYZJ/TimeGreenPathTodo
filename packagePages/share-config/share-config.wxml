@@ -172,7 +172,10 @@
       </t-cell>
 
       <!-- Generate button -->
-      <view class="btn-generate" bind:tap="onGenerateShareCard">生成分享卡片</view>
+      <view
+        class="btn-generate {{pointsInsufficient ? 'disabled' : ''}}"
+        bind:tap="onGenerateShareCard"
+      >{{pointsCostDisplay ? '生成分享卡片' + pointsCostDisplay : '生成分享卡片'}}</view>
     </view>
 
     <!-- Actions (after generation) -->
@@ -183,7 +186,7 @@
         theme="primary"
         open-type="share"
         data-channel="share"
-      >分享给朋友</t-button>
+      >{{settingsDirty ? '分享给朋友（消耗2积分）' : '分享给朋友'}}</t-button>
     </view>
   </view>
 

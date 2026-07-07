@@ -261,6 +261,11 @@
   border-radius: 32rpx;
 }
 
+.btn-generate.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Inline input inside cell */
 .settings-section {
   border-radius: 32rpx;

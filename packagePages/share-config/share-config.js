@@ -8,6 +8,10 @@ const EXPIRY_OPTIONS = [
   { label: '7 天', value: '7d' },
 ];
 
+let _deductedForShare = false;
+let _defaultSettings = null;
+let _defaultFieldPicker = [];
+
 Page({
   data: {
     todo: null,
@@ -54,6 +58,10 @@ Page({
       { key: 'location', label: '位置信息', icon: 'pin' },
     ],
     fieldPickerSummary: '',
+    settingsDirty: false,
+    pointsCostDisplay: '',
+    pointsInsufficient: false,
+    userPoints: 0,
   },
 
   onLoad(options) {
@@ -63,6 +71,8 @@ Page({
       return;
     }
     this.loadTodo(todoId);
+    this._snapshotDefaults();
+    this._loadUserPoints();
   },
 
   async loadTodo(todoId) {
@@ -175,6 +185,7 @@ Page({
       fieldVisibility: visibility,
       fieldPickerSummary: this._computeFieldPickerSummary(),
     });
+    this._checkDirty();
   },
 
   // === Tab 1: Share settings ===
@@ -191,6 +202,7 @@ Page({
       expiryVisible: false,
       expiryIndex: labels.indexOf(value),
     });
+    this._checkDirty();
   },
 
   onExpiryCancel() {
@@ -199,34 +211,60 @@ Page({
 
   onPasswordChange(e) {
     this.setData({ 'settings.password': e.detail.value });
+    this._checkDirty();
   },
 
   onMaxViewsChange(e) {
     this.setData({ 'settings.maxViews': e.detail.value });
+    this._checkDirty();
   },
 
   onRemarkChange(e) {
     this.setData({ 'settings.remark': e.detail.value });
+    this._checkDirty();
   },
 
   onAllowCopyChange(e) {
     this.setData({ 'settings.allowCopy': e.detail.checked });
+    this._checkDirty();
   },
 
   onTrackVisitorsChange(e) {
     this.setData({ 'settings.trackVisitors': e.detail.checked });
+    this._checkDirty();
   },
 
   async onGenerateShareCard() {
+    if (this.data.settingsDirty && this.data.pointsInsufficient) return;
+
     const todo = this.data.todo;
     if (!todo || !todo.id) return;
 
     const { getLocalTodos } = require('../../utils/sync');
-    const { shareApi, isLoggedIn, requireLogin } = require('../../utils/api');
+    const { shareApi, isLoggedIn, requireLogin, checkinApi } = require('../../utils/api');
 
     if (!isLoggedIn()) {
       requireLogin(() => {});
       return;
+    }
+
+    // Deduct points first if dirty
+    if (this.data.settingsDirty && !_deductedForShare) {
+      wx.showLoading({ title: '处理中...' });
+      try {
+        const deductRes = await checkinApi.deductPoints(2);
+        if (!deductRes.success) {
+          wx.hideLoading();
+          wx.showToast({ title: deductRes.message || '积分扣除失败', icon: 'none' });
+          return;
+        }
+        _deductedForShare = true;
+        this.setData({ userPoints: deductRes.data.remaining });
+      } catch (err) {
+        wx.hideLoading();
+        wx.showToast({ title: '积分扣除失败', icon: 'none' });
+        return;
+      }
     }
 
     const allTodos = getLocalTodos();
@@ -253,6 +291,9 @@ Page({
         wx.setStorageSync('_sharedSnapshotIds', storedIds);
 
         wx.hideLoading();
+        if (_deductedForShare) {
+          wx.showToast({ title: `消耗2积分，剩余${this.data.userPoints}积分`, icon: 'none' });
+        }
         this.setData({ shareGenerated: true, shareId });
       } else {
         wx.hideLoading();
@@ -262,6 +303,40 @@ Page({
       wx.hideLoading();
       wx.showToast({ title: err.message || '生成失败', icon: 'error' });
     }
+  },
+
+  _snapshotDefaults() {
+    _defaultSettings = JSON.parse(JSON.stringify(this.data.settings));
+    _defaultFieldPicker = [...this.data.fieldPickerValue].sort();
+  },
+
+  async _loadUserPoints() {
+    try {
+      const { checkinApi } = require('../../utils/api');
+      const res = await checkinApi.getStatus();
+      if (res.success) {
+        this.setData({ userPoints: res.data.totalPoints });
+        this._checkDirty();
+      }
+    } catch (err) {
+      // silently fail
+    }
+  },
+
+  _checkDirty() {
+    const defaults = _defaultSettings;
+    const cur = this.data.settings;
+    const settingsDiff = Object.keys(defaults).some(k => defaults[k] !== cur[k]);
+    const curSorted = [...this.data.fieldPickerValue].sort();
+    const pickerDiff = JSON.stringify(_defaultFieldPicker) !== JSON.stringify(curSorted);
+    const dirty = settingsDiff || pickerDiff;
+    // 设置为非脏状态时重置扣分标记，以便下次修改后重新扣分
+    if (!dirty) _deductedForShare = false;
+    this.setData({
+      settingsDirty: dirty,
+      pointsCostDisplay: dirty ? '（消耗2积分）' : '',
+      pointsInsufficient: dirty && (this.data.userPoints < 2),
+    });
   },
 
   collectSubtaskTree(allTodos, rootParentId, result) {

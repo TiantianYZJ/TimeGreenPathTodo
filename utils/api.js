@@ -806,6 +806,14 @@ const communityApi = {
   processReport: (id, data) => request({ url: `/reports/${id}/process`, method: 'POST', data }),
 };
 
+const checkinApi = {
+  checkin: () => request({ url: '/checkin', method: 'POST' }),
+  getStatus: (date) => request({ url: `/checkin/status${date ? '?date=' + date : ''}`, method: 'GET' }),
+  getMonth: (year, month) => request({ url: `/checkin/month?year=${year}&month=${month}`, method: 'GET' }),
+  getLeaderboard: (type) => request({ url: `/checkin/leaderboard?type=${type || 'streak'}`, method: 'GET' }),
+  deductPoints: (points) => request({ url: '/checkin/deduct-points', method: 'POST', data: { points } }),
+};
+
 module.exports = {
   setToken,
   getToken,
@@ -825,5 +833,6 @@ module.exports = {
   communityApi,
   shareApi,
   userApi,
+  checkinApi,
   confirmRevokeIfShared
 };

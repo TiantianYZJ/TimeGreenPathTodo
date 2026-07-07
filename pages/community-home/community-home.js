@@ -15,15 +15,30 @@ Page({
     loadingMore: false,
     refreshing: false,
     expandedPostId: null,
-    postTodoMap: {}
+    postTodoMap: {},
+    isLoggedIn: false,
+    checkinData: {
+      checkedIn: false,
+      streakDays: 0,
+      totalPoints: 0,
+    },
+    badgeList: [],
+    yearWeek: '',
+    weekDays: [],
+    checkinError: false,
   },
 
   onShow() {
+    this._checkLogin();
     this.loadPosts(true);
+    this.loadCheckinData();
   },
 
   onPullDownRefresh() {
-    this.loadPosts(true).then(() => wx.stopPullDownRefresh());
+    Promise.all([
+      this.loadPosts(true),
+      this.loadCheckinData(),
+    ]).then(() => wx.stopPullDownRefresh());
   },
 
   onRefresh() {
@@ -171,6 +186,112 @@ Page({
 
   onAvatarError(e) {
     e.target.src = '/images/avatar.png';
+  },
+
+  _checkLogin() {
+    const token = wx.getStorageSync('authToken');
+    this.setData({ isLoggedIn: !!token });
+  },
+
+  async loadCheckinData() {
+    if (!this.data.isLoggedIn) return;
+    try {
+      const { checkinApi } = require('../../utils/api');
+      const res = await checkinApi.getStatus();
+      if (res.success) {
+        const d = res.data;
+        this.setData({
+          checkinData: d,
+          badgeList: this._buildBadgeList(d.streakDays, d.registeredDays),
+          yearWeek: this._computeYearWeek(),
+          weekDays: this._buildWeekDays(d.checkedIn),
+          checkinError: false,
+        });
+      }
+    } catch (err) {
+      this.setData({ checkinError: true });
+    }
+  },
+
+  _computeYearWeek() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = (now - start) / 86400000;
+    const week = Math.ceil((diff + start.getDay() + 1) / 7);
+    return `${now.getFullYear()} · 第${week}周`;
+  },
+
+  _buildBadgeList(streakDays, registeredDays) {
+    const list = [];
+    if (streakDays >= 1) {
+      const title = this._getTitle(streakDays);
+      const color = this._getTitleColor(streakDays);
+      list.push({ text: title, color });
+      list.push({ text: `连签${streakDays}天`, color: '#00b26a' });
+    }
+    list.push({ text: `已注册${Math.max(1, registeredDays)}天`, color: '#999999' });
+    return list;
+  },
+
+  _getTitle(days) {
+    const t = { 1:'初来乍到', 3:'渐入佳境', 7:'坚持不懈', 15:'热情如火', 30:'持之以恒', 60:'绿径守护者', 100:'时光旅人', 365:'传奇永恒' };
+    const keys = Object.keys(t).map(Number).sort((a,b) => b-a);
+    for (const k of keys) { if (days >= k) return t[k]; }
+    return '';
+  },
+
+  _getTitleColor(days) {
+    const c = { 1:'#00b26a', 3:'#00b26a', 7:'#f59e0b', 15:'#f59e0b', 30:'#f97316', 60:'#f97316', 100:'#ec4899', 365:'#8b5cf6' };
+    const keys = Object.keys(c).map(Number).sort((a,b) => b-a);
+    for (const k of keys) { if (days >= k) return c[k]; }
+    return '#00b26a';
+  },
+
+  _buildWeekDays(isCheckedIn) {
+    const days = ['一', '二', '三', '四', '五', '六', '日'];
+    const today = new Date();
+    const todayBeijing = today.toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+    const todayDate = new Date(todayBeijing);
+
+    return days.map((label, i) => {
+      const dayOfWeek = todayDate.getDay() || 7;
+      const diff = i + 1 - dayOfWeek;
+      const date = new Date(todayDate);
+      date.setDate(date.getDate() + diff);
+      const dateStr = date.toISOString().slice(0, 10);
+      const isToday = dateStr === todayBeijing;
+
+      if (isToday && isCheckedIn) return { label, status: 'checked', display: '✓' };
+      if (isToday) return { label, status: 'today', display: '今' };
+      return { label, status: 'future', display: '-' };
+    });
+  },
+
+  async onCardCheckin(e) {
+    if (this.data.checkinData.checkedIn) return;
+    try {
+      const { checkinApi } = require('../../utils/api');
+      const res = await checkinApi.checkin();
+      if (res.success) {
+        const d = res.data;
+        this.setData({
+          checkinData: d,
+          badgeList: this._buildBadgeList(d.streakDays, d.registeredDays),
+          weekDays: this._buildWeekDays(true),
+        });
+        wx.showToast({ title: `签到成功 +${d.todayPoints}分`, icon: 'success' });
+      }
+    } catch (err) {
+      wx.showToast({ title: '签到失败', icon: 'none' });
+    }
+  },
+
+  goToCheckin() {
+    wx.navigateTo({ url: '/packagePages/checkin/checkin' });
+  },
+
+  goToLeaderboard() {
+    wx.navigateTo({ url: '/packagePages/checkinLeaderboard/checkinLeaderboard' });
   },
 
   formatTime(dateStr) {

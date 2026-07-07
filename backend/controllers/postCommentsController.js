@@ -1,5 +1,6 @@
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { appendCheckinBadges } = require('../utils/checkinBadgeHelper');
 
 const getFullAvatarUrl = (avatarUrl) => {
   if (!avatarUrl) return null;
@@ -11,15 +12,11 @@ const getFullAvatarUrl = (avatarUrl) => {
   return null;
 };
 
-function getBadges(row) {
-  if (!row.badge_titles && !row.badge_colors) return { badgeTitles: [], badgeColors: [] };
-  try {
-    const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
-    const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
-    return { badgeTitles: titles, badgeColors: colors };
-  } catch {
-    return { badgeTitles: [], badgeColors: [] };
-  }
+async function getBadges(row) {
+  const titles = row.badge_titles ? JSON.parse(row.badge_titles) : [];
+  const colors = row.badge_colors ? JSON.parse(row.badge_colors) : [];
+  const result = await appendCheckinBadges(row.user_id, titles, colors);
+  return { badgeTitles: result.badgeTitles, badgeColors: result.badgeColors };
 }
 
 const getList = async (req, res) => {
@@ -75,11 +72,12 @@ const getList = async (req, res) => {
     allReplies = replies;
 
     // Build nested tree (max 3 levels deep)
-    function buildTree(comments, parentId, depth = 0) {
+    async function buildTree(comments, parentId, depth = 0) {
       if (depth >= 3) return [];
-      return comments
-        .filter(c => c.parent_id === parentId)
-        .map(c => ({
+      const filtered = comments.filter(c => c.parent_id === parentId);
+      return Promise.all(filtered.map(async c => {
+        const badgeData = await getBadges(c);
+        return {
           id: c.id,
           postId: c.post_id,
           content: c.content,
@@ -98,33 +96,37 @@ const getList = async (req, res) => {
             id: c.user_id,
             nickname: c.nickname || '用户',
             avatar: getFullAvatarUrl(c.avatar_url),
-            ...getBadges(c)
+            ...badgeData
           },
           canDelete: c.user_id === userId || postCreatorId === userId,
-          replies: buildTree(comments, c.id, depth + 1)
-        }));
+          replies: await buildTree(comments, c.id, depth + 1)
+        };
+      }));
     }
 
-    const rootComments = mainComments.map(c => ({
-      id: c.id,
-      postId: c.post_id,
-      content: c.content,
-      images: c.images ? JSON.parse(c.images) : [],
-      parentId: c.parent_id,
-      replyToUser: null,
-      replyToContent: null,
-      likesCount: c.likes_count,
-      isLiked: !!c.user_like_id,
-      createdAt: c.created_at,
-      isDeleted: !!c.is_deleted,
-      user: {
-        id: c.user_id,
-        nickname: c.nickname || '用户',
-        avatar: getFullAvatarUrl(c.avatar_url),
-        ...getBadges(c)
-      },
-      canDelete: c.user_id === userId || postCreatorId === userId,
-      replies: buildTree(allReplies, c.id, 1)
+    const rootComments = await Promise.all(mainComments.map(async c => {
+      const badgeData = await getBadges(c);
+      return {
+        id: c.id,
+        postId: c.post_id,
+        content: c.content,
+        images: c.images ? JSON.parse(c.images) : [],
+        parentId: c.parent_id,
+        replyToUser: null,
+        replyToContent: null,
+        likesCount: c.likes_count,
+        isLiked: !!c.user_like_id,
+        createdAt: c.created_at,
+        isDeleted: !!c.is_deleted,
+        user: {
+          id: c.user_id,
+          nickname: c.nickname || '用户',
+          avatar: getFullAvatarUrl(c.avatar_url),
+          ...badgeData
+        },
+        canDelete: c.user_id === userId || postCreatorId === userId,
+        replies: await buildTree(allReplies, c.id, 1)
+      };
     }));
 
     const nextCursor = hasMore && mainComments.length > 0
