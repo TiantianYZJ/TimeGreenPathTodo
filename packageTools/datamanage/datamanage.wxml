@@ -27,7 +27,6 @@
           </button>
         </view>
       </view>
-      <!-- 在export-preview区块内添加canvas -->
       <view class="export-preview">
         <text class="preview-text">{{exportData}}</text>
       </view>

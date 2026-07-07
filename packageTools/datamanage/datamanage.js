@@ -1,6 +1,7 @@
 const app = getApp();
 const { isLoggedIn } = require('../../utils/api.js');
-const { syncWithCloud, getLocalTodos, saveTodo, getTodoById } = require('../../utils/sync.js');
+const { syncWithCloud, getLocalTodos, saveTodo } = require('../../utils/sync.js');
+const logger = require('../../utils/logger.js');
 
 Page({
   data: {
@@ -29,7 +30,6 @@ Page({
   onShareTimeline() {
     return {
       title: '时光绿径待办-您的每日任务足迹管家',
-      path: '/pages/todo/todo',
       imageUrl: 'https://api.yzjtiantian.cn/uploads/logo/logo.png'
     }
   },
@@ -47,6 +47,7 @@ Page({
   },
 
   generateExport() {
+    wx.showLoading({ title: '生成中...', mask: true })
     const todos = getLocalTodos().filter(t => !t.isDeleted)
     const compressed = todos.map(t => [
       t.id,
@@ -69,12 +70,32 @@ Page({
       t.parent_id || null
     ])
     this.setData({ exportData: JSON.stringify(compressed) })
+    wx.hideLoading()
   },
 
   // 新增复制方法
   copyData() {
+    const data = this.data.exportData;
+    if (data && data.length > 500000) {
+      wx.showModal({
+        title: '数据较大',
+        content: '导出数据超过500KB，复制可能失败。建议备份到其他设备。',
+        confirmText: '仍要复制',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            this._doCopy(data);
+          }
+        }
+      });
+      return;
+    }
+    this._doCopy(data);
+  },
+
+  _doCopy(data) {
     wx.setClipboardData({
-      data: this.data.exportData,
+      data: data,
       success: () => wx.showToast({ title: '已复制' })
     })
   },
