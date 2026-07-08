@@ -28,6 +28,12 @@ export interface Todo {
   isStar: boolean;
   /** 待办事项的创建时间戳 */
   time: number;
+  /** 图片 URL 数组（来自后端 formatTodo 的 images 字段 JSON 数组） */
+  images?: string[];
+  /** 父待办 ID（子任务用，指向另一条待办的 id） */
+  parentId?: string | null;
+  /** 优先级：p1（红）/ p2（蓝）/ p3（橙）/ p4（无） */
+  priority?: 'p1' | 'p2' | 'p3' | 'p4';
   /** 标签ID数组 */
   tags: number[];
   /** 所属组合ID（数字或字符串，后端返回数字） */
@@ -50,6 +56,8 @@ export interface CreateTodoData {
   location?: Todo['location'];
   tags?: number[];
   comboId?: number | string;
+  priority?: 'p1' | 'p2' | 'p3' | 'p4';
+  parentId?: string | null;
 }
 
 export interface UpdateTodoData extends Partial<CreateTodoData> {

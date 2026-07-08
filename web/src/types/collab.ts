@@ -30,8 +30,16 @@ export interface SharedTodo {
   set_time?: string;
   /** 备注 */
   remarks?: string;
-  /** 分配类型：all（全员）/ specific（指定成员） */
-  assign_type: 'all' | 'specific';
+  /** 分配类型：all（全员）/ any（任一成员完成即全部完成）/ specific（指定成员） */
+  assign_type: 'all' | 'any' | 'specific';
+  /** 排除类型（可选：排除已完成的成员） */
+  exclude_type?: string;
+  /** 优先级 */
+  priority?: 'p1' | 'p2' | 'p3' | 'p4';
+  /** 父待办 ID（子任务） */
+  parentId?: number | null;
+  /** 图片 URL 数组 */
+  images?: string[];
   /** 标签ID数组（JSON字符串） */
   tags: string;
   /** 全员完成时间戳 */

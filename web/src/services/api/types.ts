@@ -287,3 +287,25 @@ export interface ScheduleNotifyResponse {
   success: boolean;
   notificationId: string;
 }
+
+/** 通知列表项 */
+export interface NotifyItem {
+  id: number;
+  todoId: string;
+  notifyTime: string;
+  date?: string;
+  message?: string;
+  todoText?: string;
+  createdAt: string;
+}
+
+/** 通知列表响应 */
+export interface NotifyListResponse {
+  list: NotifyItem[];
+  total: number;
+}
+
+/** 撤销通知响应 */
+export interface CancelNotifyResponse {
+  success: boolean;
+}
