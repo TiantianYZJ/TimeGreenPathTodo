@@ -9,6 +9,8 @@ import type {
   SubscribeResponse,
   ScheduleNotifyParams,
   ScheduleNotifyResponse,
+  NotifyListResponse,
+  CancelNotifyResponse,
 } from '@/services/api/types';
 
 /** 通知 API 模块 */
@@ -31,5 +33,22 @@ export const notifyApi = {
    */
   schedule: (data: ScheduleNotifyParams): Promise<ScheduleNotifyResponse> => {
     return request.post<ScheduleNotifyResponse>('/notify/schedule', data);
+  },
+
+  /**
+   * 获取当前用户的通知列表
+   * @returns 通知列表
+   */
+  getList: (): Promise<NotifyListResponse> => {
+    return request.get<NotifyListResponse>('/notify/list');
+  },
+
+  /**
+   * 撤销（取消）指定通知
+   * @param id 通知 ID
+   * @returns 操作结果
+   */
+  cancel: (id: number): Promise<CancelNotifyResponse> => {
+    return request.remove<CancelNotifyResponse>(`/notify/${id}`);
   },
 };
