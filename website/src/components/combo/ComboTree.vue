@@ -89,7 +89,7 @@ async function deleteCombo(combo: Combo) {
           >
             <t-icon name="edit" size="14px" />
           </t-button>
-          <t-popconfirm content="确定删除此组合？" @confirm.stop="deleteCombo(combo)">
+          <t-popconfirm attach="body" content="确定删除此组合？" @confirm.stop="deleteCombo(combo)">
             <t-button
               variant="text"
               shape="square"

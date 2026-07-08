@@ -96,6 +96,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUserInfo() {
+    if (!token.value) return
     try {
       loading.value = true
       const res = await authApi.getUserInfo()
@@ -105,6 +106,11 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  // Token 存在时自动拉取用户信息（解决刷新后显示"未登录"）
+  if (token.value) {
+    fetchUserInfo()
   }
 
   async function updateProfile(data: { nickname?: string; avatarUrl?: string }) {

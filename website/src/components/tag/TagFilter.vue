@@ -78,7 +78,7 @@ async function deleteTag(tag: Tag) {
           >
             <t-icon name="edit" size="12px" />
           </t-button>
-          <t-popconfirm content="确定删除此标签？" @confirm.stop="deleteTag(tag)">
+          <t-popconfirm attach="body" content="确定删除此标签？" @confirm.stop="deleteTag(tag)">
             <t-button
               variant="text"
               shape="square"

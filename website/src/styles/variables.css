@@ -62,4 +62,22 @@
   --sidebar-collapsed-width: 64px;
   --header-height: 56px;
   --tag-panel-width: 180px;
+
+  /* ====== TDesign 品牌色覆盖（默认蓝色，改为绿色 #00b26a）====== */
+  --td-brand-color-1: #e8f8f1;
+  --td-brand-color-2: #c2f0da;
+  --td-brand-color-3: #8be4b9;
+  --td-brand-color-4: #4dd696;
+  --td-brand-color-5: #1fc47a;
+  --td-brand-color-6: #00b26a;
+  --td-brand-color-7: #009959;
+  --td-brand-color-8: #007d48;
+  --td-brand-color-9: #006037;
+  --td-brand-color-10: #004225;
+  --td-brand-color: var(--td-brand-color-6);
+
+  /* TDesign 状态色对齐 */
+  --td-success-color: var(--color-success);
+  --td-warning-color: #ff9800;
+  --td-error-color: #f44336;
 }
