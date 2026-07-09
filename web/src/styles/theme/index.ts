@@ -76,9 +76,9 @@ const theme: ThemeConfig = {
 
     Card: {
       paddingLG: 24,
-      borderRadiusLG: 12,
+      borderRadiusLG: 32,
       boxShadowTertiary:
-        '0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.06)',
+        '0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.02)',
     },
 
     Input: {
@@ -108,7 +108,7 @@ const theme: ThemeConfig = {
     },
 
     Modal: {
-      borderRadiusLG: 12,
+      borderRadiusLG: 16,
       contentBg: '#ffffff',
       headerBg: '#ffffff',
       footerBg: '#ffffff',
@@ -116,6 +116,7 @@ const theme: ThemeConfig = {
 
     Drawer: {
       colorBgElevated: '#ffffff',
+      borderRadiusLG: 16,
     },
 
     Menu: {
