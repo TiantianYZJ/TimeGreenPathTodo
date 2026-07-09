@@ -153,7 +153,6 @@ const HomeTabs: React.FC = () => {
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => navigate(path)}
-        style={{ backgroundColor: '#00b26a' }}
       >
         添加
       </Button>
@@ -200,7 +199,6 @@ const HomeTabs: React.FC = () => {
                   type="primary"
                   icon={<PlusOutlined />}
                   onClick={() => navigate('/todo/add')}
-                  style={{ backgroundColor: '#00b26a' }}
                 >
                   创建第一个待办
                 </Button>
@@ -266,7 +264,6 @@ const HomeTabs: React.FC = () => {
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => navigate('/combos/new')}
-              style={{ backgroundColor: '#00b26a' }}
             >
               创建组合
             </Button>
@@ -278,11 +275,11 @@ const HomeTabs: React.FC = () => {
     return (
       <div>
         {comboGroups.map(({ combo, items }) => (
-          <div key={combo.id} className={styles.comboSection} style={{ marginBottom: 24 }}>
+          <div key={combo.id} className={styles.comboSection}>
             {/* 组合头部 */}
-            <div className={styles.comboSectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div className={styles.comboSectionHeader}>
               <Space>
-                <FolderOpenOutlined style={{ color: combo.color || '#00b26a' }} />
+                <FolderOpenOutlined style={{ color: combo.color || 'var(--color-primary)' }} />
                 <span style={{ fontWeight: 600, fontSize: 15 }}>{combo.name}</span>
                 <Tag style={{ fontSize: 11 }}>{items.length} 项</Tag>
               </Space>
@@ -293,7 +290,7 @@ const HomeTabs: React.FC = () => {
 
             {/* 组合内的待办 */}
             {items.length === 0 ? (
-              <div style={{ padding: '12px 0', color: '#999', fontSize: 13, textAlign: 'center' }}>
+              <div className={styles.comboSectionEmpty}>
                 该组合暂无待办事项
               </div>
             ) : (
@@ -357,7 +354,6 @@ const HomeTabs: React.FC = () => {
               type="primary"
               icon={<TeamOutlined />}
               onClick={() => navigate('/collab/join')}
-              style={{ backgroundColor: '#00b26a' }}
             >
               加入共享组合
             </Button>
@@ -371,32 +367,15 @@ const HomeTabs: React.FC = () => {
         {sharedCombos.map((combo) => (
           <div
             key={combo.id}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '12px 16px',
-              marginBottom: 8,
-              borderRadius: 8,
-              border: '1px solid var(--border-color, #f0f0f0)',
-              background: 'var(--card-bg, #fff)',
-              cursor: 'pointer',
-              transition: 'box-shadow 0.2s',
-            }}
+            className={styles.sharedComboCard}
             onClick={() => navigate(`/combos/${combo.id}`)}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}
           >
             <Space>
-              <TeamOutlined style={{ color: combo.color || '#00b26a', fontSize: 18 }} />
+              <TeamOutlined className={styles.comboIcon} style={{ color: combo.color || 'var(--color-primary)' }} />
               <div>
-                <div style={{ fontWeight: 500, fontSize: 14 }}>{combo.name}</div>
+                <div className={styles.sharedComboName}>{combo.name}</div>
                 {combo.share_code && (
-                  <div style={{ fontSize: 12, color: '#999' }}>邀请码: {combo.share_code}</div>
+                  <div className={styles.sharedComboCode}>邀请码: {combo.share_code}</div>
                 )}
               </div>
             </Space>

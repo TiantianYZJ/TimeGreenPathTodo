@@ -3,6 +3,7 @@ import { Button, Tag, Radio, Space, Badge } from 'antd';
 import { FilterOutlined, ClearOutlined } from '@ant-design/icons';
 import { useTagStore } from '@/stores/tagStore';
 import { getTagColorById } from '@/styles/themes/tagColors';
+import filterStyles from './FilterBar.module.css';
 
 interface FilterBarProps {
   /** Current filter state from the store */
@@ -54,16 +55,17 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
   };
 
   return (
-    <div className="filter-bar">
+    <div className={filterStyles.filterBar}>
       {/* Header: toggle + clear */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <div className={filterStyles.filterHeader}>
         <Button
           size="small"
           icon={<FilterOutlined />}
           onClick={() => setShowPanel(v => !v)}
           type={showPanel ? 'primary' : 'default'}
+          className={filterStyles.filterToggleBtn}
         >
-          筛选 {hasActiveFilters && <Badge status="processing" />}
+          筛选 {hasActiveFilters && <Badge status="processing" className={filterStyles.activeBadge} />}
         </Button>
         {hasActiveFilters && (
           <Button size="small" icon={<ClearOutlined />} onClick={handleClear}>
@@ -74,16 +76,10 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
 
       {/* Filter panel */}
       {showPanel && (
-        <div style={{
-          padding: 16,
-          marginBottom: 16,
-          background: '#fafafa',
-          borderRadius: 8,
-          border: '1px solid #f0f0f0',
-        }}>
+        <div className={filterStyles.filterPanel}>
           {/* Status */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 6, fontWeight: 500 }}>状态</div>
+          <div className={filterStyles.filterSection}>
+            <div className={filterStyles.filterSectionLabel}>状态</div>
             <Radio.Group
               value={filter.status}
               onChange={e => onChange({ status: e.target.value })}
@@ -98,8 +94,8 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
           </div>
 
           {/* Priority */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 6, fontWeight: 500 }}>优先级</div>
+          <div className={filterStyles.filterSection}>
+            <div className={filterStyles.filterSectionLabel}>优先级</div>
             <Radio.Group
               value={filter.priority || ''}
               onChange={e => onChange({ priority: e.target.value || null })}
@@ -115,7 +111,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
 
           {/* Tags */}
           <div>
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 6, fontWeight: 500 }}>标签</div>
+            <div className={filterStyles.filterSectionLabel}>标签</div>
             <Space wrap size={[4, 4]}>
               {allTags.map(tag => {
                 const isSelected = (filter.tagIds || []).includes(tag.id);
@@ -124,12 +120,11 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
                   <Tag
                     key={tag.id}
                     color={isSelected ? tagColor.color : undefined}
+                    className={filterStyles.tagItem}
                     style={{
-                      cursor: 'pointer',
                       borderColor: isSelected ? tagColor.color : tagColor.borderColor,
                       background: isSelected ? tagColor.color : tagColor.bgColor,
                       color: isSelected ? '#fff' : tagColor.color,
-                      fontSize: 12,
                     }}
                     onClick={() => handleTagToggle(tag.id)}
                   >
@@ -138,14 +133,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filter, onChange }) => {
                 );
               })}
               <Tag
-                style={{
-                  cursor: 'pointer',
-                  borderStyle: 'dashed',
-                  borderColor: filter.untagged ? '#00b26a' : '#d9d9d9',
-                  background: filter.untagged ? 'rgba(0, 178, 106, 0.08)' : undefined,
-                  color: filter.untagged ? '#00b26a' : '#666',
-                  fontSize: 12,
-                }}
+                className={`${filterStyles.untaggedTag} ${filter.untagged ? filterStyles.untaggedTagActive : filterStyles.untaggedTagInactive}`}
                 onClick={() => onChange({ untagged: !filter.untagged })}
               >
                 无标签
