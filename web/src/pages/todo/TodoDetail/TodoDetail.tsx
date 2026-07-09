@@ -114,7 +114,7 @@ const TodoDetail: React.FC = () => {
 
     Promise.all([
       todoApi.getById(id).catch(() => null),
-      (todoApi.getList as (filter?: Record<string, unknown>) => Promise<{ todos: Todo[]; total: number }>)({ parentId: id }).catch(() => ({ todos: [], total: 0 })),
+      todoApi.getList({ parentId: id }).catch(() => ({ todos: [], total: 0 })),
       notifyApi.getList().catch(() => ({ list: [], total: 0 })),
     ])
       .then(([detail, subtaskRes, notifyRes]) => {

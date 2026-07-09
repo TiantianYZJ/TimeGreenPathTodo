@@ -71,4 +71,6 @@ export interface TodoFilter {
   tagIds: number[];
   dateRange: [string, string] | null;
   keyword: string;
+  /** 父待办 ID，用于获取子任务列表 */
+  parentId?: string;
 }
