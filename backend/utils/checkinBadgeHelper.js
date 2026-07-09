@@ -130,7 +130,7 @@ async function appendCheckinBadges(userId, customTitles, customColors) {
     checkinColors.push('#00b26a');
   }
 
-  checkinBadges.push(`已注册${registered}天`);
+  checkinBadges.push(`注册${registered}天`);
   checkinColors.push('#999999');
 
   return {
