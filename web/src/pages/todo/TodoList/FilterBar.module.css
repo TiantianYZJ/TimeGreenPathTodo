@@ -81,3 +81,18 @@
   border-color: var(--color-border);
   color: var(--color-text-secondary);
 }
+
+/* ========== 暗色主题适配 ========== */
+[data-theme='dark'] .filterPanel {
+  background: var(--color-fill-secondary);
+  border-color: var(--color-border);
+}
+
+[data-theme='dark'] .filterSectionLabel {
+  color: var(--color-text-tertiary);
+}
+
+[data-theme='dark'] .untaggedTagInactive {
+  border-color: var(--color-border);
+  color: var(--color-text-tertiary);
+}

@@ -289,3 +289,29 @@
 [data-theme='dark'] .searchBox .ant-input::placeholder {
   color: var(--color-text-quaternary);
 }
+
+/* ========== 暗色主题 - 移动端抽屉菜单 ========== */
+[data-theme='dark'] .drawerBody {
+  background-color: var(--color-bg-container);
+}
+
+[data-theme='dark'] .menuItem {
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .menuItem:hover {
+  background-color: var(--color-fill-secondary);
+}
+
+[data-theme='dark'] .menuItemActive {
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg);
+}
+
+[data-theme='dark'] .menuItemActive:hover {
+  background-color: var(--color-primary-bg-hover);
+}
+
+[data-theme='dark'] .menuDivider {
+  border-top-color: var(--color-border);
+}
