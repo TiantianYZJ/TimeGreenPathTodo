@@ -1,6 +1,6 @@
 const { WxCalendar } = require('@lspriv/wx-calendar/lib');
 const { LunarPlugin } = require('@lspriv/wc-plugin-lunar');
-const { isLoggedIn, confirmRevokeIfShared } = require('../../utils/api.js');
+const { isLoggedIn, confirmRevokeIfShared, workReportApi } = require('../../utils/api.js');
 const { getLocalTodos, saveTodo, getTodoById, deleteTodoById, syncWithCloud, addDeletedTodo } = require('../../utils/sync.js');
 const { formatFriendlyDate } = require('../../utils/util.js');
 
@@ -26,6 +26,13 @@ Page({
     selectedTodos: [],
     selectedDate: '',
     friendlySelectedDate: '',
+
+    currentTab: 'todo',
+    calendarView: 'month',
+    activeTabFlag: false,
+    dailyReports: [],
+    weeklyReports: [],
+    lockIcon: '\u{1F512}',
   },
 
   // 日历日期格式化方法
@@ -72,6 +79,9 @@ Page({
     this.convertMarks();
     if (this.data.selectedDate) {
       this.searchTodos(this.data.selectedDate);
+      if (this.data.currentTab !== 'todo') {
+        this.loadReports();
+      }
     }
   },
 
@@ -177,6 +187,9 @@ Page({
       checked.day
     );
     this.searchTodos(standardDate);
+    if (this.data.currentTab !== 'todo') {
+      this.loadReports();
+    }
   },
 
 
@@ -302,5 +315,159 @@ Page({
 
   onAdError(err) {
     logger.error('UI', 'AD', '原生模板广告加载失败', err);
+  },
+
+  // ---- 日报/周报 3-Tab 联动 ----
+
+  onTabChange(e) {
+    const tab = e.detail ? e.detail.value : e.value;
+    this.setData({ currentTab: tab, activeTabFlag: true });
+
+    // 切换日历视图: 日报对应月视图, 周报对应周视图
+    if (tab === 'daily') {
+      this.setData({ calendarView: 'month' });
+    } else if (tab === 'weekly') {
+      this.setData({ calendarView: 'week' });
+    }
+
+    // 加载对应报告
+    if (tab !== 'todo' && this.data.selectedDate) {
+      this.loadReports();
+    }
+  },
+
+  handleViewChange(e) {
+    // 避免主动切换tab时触发循环
+    if (this.data.activeTabFlag) {
+      this.setData({ activeTabFlag: false });
+      return;
+    }
+
+    // 用户手动滑动日历: month ↔ week 切换时自动切tab
+    const view = e.detail ? e.detail.view : (e.view || 'month');
+    if (view === 'month') {
+      this.setData({ currentTab: 'daily' });
+    } else if (view === 'week') {
+      this.setData({ currentTab: 'weekly' });
+    }
+    this.setData({ calendarView: view });
+  },
+
+  async loadReports() {
+    if (!this.data.selectedDate) return;
+
+    try {
+      // 加载日报
+      const dailyRes = await workReportApi.getList({
+        type: 'daily',
+        period_date: this.data.selectedDate
+      });
+      const dailyList = (dailyRes.data && dailyRes.data.list) || dailyRes.list || dailyRes || [];
+      const dailyReports = dailyList.map(item => this.formatReportItem(item));
+
+      // 加载周报 (当前日期所在的周一)
+      const monday = this.getMondayOfWeek(this.data.selectedDate);
+      const weeklyRes = await workReportApi.getList({
+        type: 'weekly',
+        period_date: monday
+      });
+      const weeklyList = (weeklyRes.data && weeklyRes.data.list) || weeklyRes.list || weeklyRes || [];
+      const weeklyReports = weeklyList.map(item => this.formatReportItem(item));
+
+      this.setData({ dailyReports, weeklyReports });
+    } catch (err) {
+      logger.error('REPORT', 'LOAD', '加载报告失败', err);
+    }
+  },
+
+  formatReportItem(item) {
+    let summary = '';
+    let lineCount = 0;
+
+    if (item.content && typeof item.content === 'string') {
+      const sections = item.content.split('\n').filter(s => s.trim());
+      summary = sections.length > 0 ? sections[0].replace(/^[#*\- ]+/, '').trim() : '日报';
+      lineCount = sections.length;
+    } else if (Array.isArray(item.sections)) {
+      const first = item.sections[0];
+      summary = first ? (first.title || first.content || '日报') : '日报';
+      lineCount = item.sections.length;
+    } else {
+      summary = item.summary || '日报';
+    }
+
+    return {
+      ...item,
+      summary,
+      lineCount
+    };
+  },
+
+  navigateToReportDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    wx.navigateTo({
+      url: `/packagePages/report-detail/report-detail?id=${encodeURIComponent(id)}`
+    });
+  },
+
+  handleReportSwipe(e) {
+    const { type, id } = e.currentTarget.dataset;
+    if (type === 'edit') {
+      wx.navigateTo({
+        url: `/packagePages/report-edit/report-edit?id=${encodeURIComponent(id)}`
+      });
+    } else if (type === 'delete') {
+      wx.showModal({
+        title: '删除确认',
+        content: '确定删除该报告吗？',
+        confirmText: '删除',
+        confirmColor: '#ff4d4f',
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await workReportApi.delete(id);
+              wx.showToast({ title: '已删除', icon: 'success' });
+              this.loadReports();
+            } catch (err) {
+              logger.error('REPORT', 'DELETE', '删除报告失败', err);
+              wx.showToast({ title: '删除失败', icon: 'none' });
+            }
+          }
+        }
+      });
+    }
+  },
+
+  getMondayOfWeek(dateStr) {
+    const date = new Date(dateStr);
+    const day = date.getDay(); // 0=周日, 1=周一 ...
+    const diff = day === 0 ? -6 : 1 - day; // 周一偏移
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diff);
+    const y = monday.getFullYear();
+    const m = (monday.getMonth() + 1).toString().padStart(2, '0');
+    const d = monday.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  },
+
+  onFabTap() {
+    const tab = this.data.currentTab;
+    const selectedDateStr = this.data.selectedDate;
+
+    if (tab === 'todo' || !tab) {
+      wx.navigateTo({
+        url: `/packagePages/add-todo/add-todo?setDate=${selectedDateStr}`
+      });
+    } else if (tab === 'daily') {
+      wx.navigateTo({
+        url: `/packagePages/report-edit/report-edit?type=daily&period_date=${selectedDateStr}`
+      });
+    } else if (tab === 'weekly') {
+      const monday = this.getMondayOfWeek(selectedDateStr);
+      wx.navigateTo({
+        url: `/packagePages/report-edit/report-edit?type=weekly&period_date=${monday}`
+      });
+    }
   },
 });

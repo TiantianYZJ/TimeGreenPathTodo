@@ -1,11 +1,13 @@
 {
+  "navigationStyle": "custom",
   "usingComponents": {
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-cell": "tdesign-miniprogram/cell/cell",
     "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
     "t-radio": "tdesign-miniprogram/radio/radio",
-    "t-cell": "tdesign-miniprogram/cell/cell",
-    "t-fab": "tdesign-miniprogram/fab/fab",
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "calendar": "@lspriv/wx-calendar"
-  },
-  "navigationStyle": "custom"
+    "t-fab": "tdesign-miniprogram/fab/fab",
+    "calendar": "@lspriv/wx-calendar/calendar"
+  }
 }

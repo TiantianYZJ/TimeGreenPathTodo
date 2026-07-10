@@ -75,5 +75,11 @@
   display: block;
 }
 
+/* 报告列表样式 */
+.report-list {
+  padding-bottom: 0;
+}
 
-
+.tab-content {
+  padding: 0 0 250rpx 0;
+}
