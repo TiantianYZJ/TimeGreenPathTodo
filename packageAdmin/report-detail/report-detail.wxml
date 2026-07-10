@@ -41,8 +41,7 @@
     <textarea
       class="note-input"
       placeholder="处理备注（可选）"
-      value="{{resultNote}}"
-      bind:input="onNoteInput"
+      model:value="{{resultNote}}"
     />
     <view class="process-buttons">
       <view class="delete-btn" bind:tap="processReport" data-action="delete">删除内容</view>

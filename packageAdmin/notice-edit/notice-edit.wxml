@@ -76,12 +76,10 @@
             <t-icon name="minus" size="36rpx" color="#666" />
           </view>
         </view>
-        <textarea 
+        <textarea
           id="contentTextarea"
-          class="content-input" 
-          value="{{form.content}}" 
-          bindinput="onInput" 
-          data-field="content"
+          class="content-input"
+          model:value="{{form.content}}"
           placeholder="请输入公告内容，支持 Markdown 格式"
           auto-height
           maxlength="-1"

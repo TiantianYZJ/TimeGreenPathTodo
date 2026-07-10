@@ -61,7 +61,7 @@
 .description-section {
   background: #f8f8f8;
   border-radius: 32rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
 }
 
@@ -164,7 +164,7 @@
 .info-row {
   display: flex;
   gap: 14rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: 12rpx;
 }
 
 .info-row.single {
@@ -263,20 +263,8 @@
 
 /* 汇报看板入口 */
 .report-block {
-  padding: 20rpx;
-  margin-bottom: 24rpx;
-}
-
-.report-preview {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-top: 16rpx;
-}
-
-.report-hint {
-  font-size: 26rpx;
-  color: #00b26a;
+  padding: 12rpx 24rpx;
+  margin-bottom: 12rpx;
 }
 
 .stats-preview {

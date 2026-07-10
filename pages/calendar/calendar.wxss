@@ -35,7 +35,6 @@
 }
 
 .todo-list {
-  padding-bottom: 250rpx;
 }
 
 .todo-text {
@@ -80,6 +79,11 @@
   padding-bottom: 0;
 }
 
+.t-tabs {
+  --td-tab-nav-bg-color: #e3f5eb;
+  --td-tab-item-disabled-color: #fff;
+  --td-tab-item-height: 64rpx;
+}
+
 .tab-content {
-  padding: 0 0 250rpx 0;
 }

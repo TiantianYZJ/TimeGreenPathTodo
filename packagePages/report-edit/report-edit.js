@@ -36,6 +36,15 @@ const SECTION_COLORS = {
   summary: '#e91e63'
 };
 
+// 行对象生成器（稳定 ID 用于 wx:key）
+let _lineSeq = Date.now();
+function _makeLine(text) {
+  return { id: _lineSeq++, text: String(text || '') };
+}
+function _makeLines(texts) {
+  return (texts || ['']).map(t => _makeLine(t));
+}
+
 const app = getApp();
 
 Page({
@@ -60,11 +69,12 @@ Page({
     importTargetSection: 0,
     importTodos: { completed: [], uncompleted: [] },
     selectedImportTodos: [],
-    importSearchKeyword: '',
-    sectionRenderKey: 0
+    importSearchKeyword: ''
   },
 
   onLoad(options) {
+    _lineSeq = Date.now();
+
     const reportType = options.type || 'daily';
     const reportDate = options.date || this.getTodayStr();
     const comboId = options.combo_id ? Number(options.combo_id) : null;
@@ -117,7 +127,7 @@ Page({
 
   saveDraft() {
     const { sections, reportType, reportDate, selectedComboId } = this.data;
-    const hasContent = sections.some(s => s.lines.some(l => l.trim()));
+    const hasContent = sections.some(s => s.lines.some(l => l && l.text && l.text.trim()));
     if (!hasContent) return;
 
     try {
@@ -146,6 +156,7 @@ Page({
             if (res.confirm) {
               const sections = (draft.sections || []).map((s, i) => ({
                 ...s,
+                lines: (s.lines || []).map(l => typeof l === 'string' ? _makeLine(l) : l),
                 _rk: i
               }));
               this.setData({ sections });
@@ -235,12 +246,12 @@ Page({
     const type = this.data.reportType;
     const content = report.content || {};
     const keys = Object.keys(SECTION_LABELS[type] || SECTION_LABELS.daily);
-    return keys.map(key => ({
+    return keys.map((key, i) => ({
       key,
       title: (SECTION_LABELS[type] || SECTION_LABELS.daily)[key],
       color: SECTION_COLORS[key],
-      lines: content[key] && Array.isArray(content[key]) ? content[key] : [''],
-      _rk: 0
+      lines: content[key] && Array.isArray(content[key]) ? _makeLines(content[key]) : _makeLines(['']),
+      _rk: i
     }));
   },
 
@@ -260,24 +271,24 @@ Page({
       }
     }
 
-    return allowedKeys.map(key => ({
+    return allowedKeys.map((key, i) => ({
       key,
       title: labels[key] || key,
       color: SECTION_COLORS[key] || '#00b26a',
-      lines: [''],
-      _rk: 0
+      lines: _makeLines(['']),
+      _rk: i
     }));
   },
 
   copyDefaultSections() {
     const type = this.data.reportType;
     const keys = Object.keys(SECTION_LABELS[type] || SECTION_LABELS.daily);
-    return keys.map(key => ({
+    return keys.map((key, i) => ({
       key,
       title: (SECTION_LABELS[type] || SECTION_LABELS.daily)[key],
       color: SECTION_COLORS[key],
-      lines: [''],
-      _rk: 0
+      lines: _makeLines(['']),
+      _rk: i
     }));
   },
 
@@ -315,31 +326,15 @@ Page({
     const sectionIdx = Number(e.currentTarget.dataset.section);
     const lineIdx = Number(e.currentTarget.dataset.line);
     const value = e.detail.value;
-    const sections = JSON.parse(JSON.stringify(this.data.sections));
-
-    if (sections[sectionIdx] && sections[sectionIdx].lines[lineIdx] !== undefined) {
-      sections[sectionIdx].lines[lineIdx] = value;
-      this.setData({ sections });
-    }
-  },
-
-  onLineFocus(e) {
-    const sectionIdx = Number(e.currentTarget.dataset.section);
-    const lineIdx = Number(e.currentTarget.dataset.line);
-    const sections = this.data.sections;
-    const lines = sections[sectionIdx].lines;
-
-    // Ensure there's an empty line after the focused line
-    if (lineIdx === lines.length - 1 && lines[lineIdx].trim() !== '') {
-      sections[sectionIdx].lines.push('');
-      this.setData({ sections });
-    }
+    this.setData({
+      [`sections[${sectionIdx}].lines[${lineIdx}].text`]: value
+    });
   },
 
   addLine(e) {
     const sectionIdx = Number(e.currentTarget.dataset.section);
     const sections = JSON.parse(JSON.stringify(this.data.sections));
-    sections[sectionIdx].lines.push('');
+    sections[sectionIdx].lines.push(_makeLine(''));
     this.setData({ sections });
   },
 
@@ -349,12 +344,10 @@ Page({
     const sections = JSON.parse(JSON.stringify(this.data.sections));
     const lines = sections[sectionIdx].lines;
 
-    if (lines.length <= 1) {
-      lines[0] = '';
-    } else {
-      lines.splice(lineIdx, 1);
+    lines.splice(lineIdx, 1);
+    if (lines.length === 0) {
+      lines.push(_makeLine(''));
     }
-
     this.setData({ sections });
   },
 
@@ -491,30 +484,26 @@ Page({
   },
 
   confirmImport() {
-    const { selectedImportTodos, sections, importTargetSection } = this.data;
+    const { selectedImportTodos, importTargetSection } = this.data;
     if (selectedImportTodos.length === 0) {
       wx.showToast({ title: '请选择待办', icon: 'none' });
       return;
     }
 
+    const sections = JSON.parse(JSON.stringify(this.data.sections));
     const todoMap = this._importKeyMap || {};
-    const newSections = JSON.parse(JSON.stringify(sections)).map((s, i) => ({
-      ...s,
-      _rk: (this.data.sectionRenderKey || 0) + i
-    }));
     let importedCount = 0;
 
     selectedImportTodos.forEach(key => {
       const todo = todoMap[key];
       if (todo && todo.text && todo.text.trim()) {
-        newSections[importTargetSection].lines.push(todo.text.trim());
+        sections[importTargetSection].lines.push(_makeLine(todo.text.trim()));
         importedCount++;
       }
     });
 
     this.setData({
-      sections: newSections,
-      sectionRenderKey: (this.data.sectionRenderKey || 0) + 1,
+      sections,
       showImportPopup: false,
       selectedImportTodos: []
     });
@@ -527,7 +516,8 @@ Page({
   addLineToTodo(e) {
     const sectionIdx = Number(e.currentTarget.dataset.section);
     const lineIdx = Number(e.currentTarget.dataset.line);
-    const text = this.data.sections[sectionIdx].lines[lineIdx];
+    const line = this.data.sections[sectionIdx].lines[lineIdx];
+    const text = line && line.text;
     if (!text || !text.trim()) {
       wx.showToast({ title: '请先输入内容', icon: 'none' });
       return;
@@ -544,7 +534,7 @@ Page({
 
   batchAddToTodo(e) {
     const sectionIdx = Number(e.currentTarget.dataset.section);
-    const lines = this.data.sections[sectionIdx].lines.filter(l => l && l.trim());
+    const lines = this.data.sections[sectionIdx].lines.filter(l => l && l.text && l.text.trim()).map(l => l.text);
 
     if (lines.length === 0) {
       wx.showToast({ title: '暂无内容可添加', icon: 'none' });
@@ -575,10 +565,10 @@ Page({
   // ========== Save ==========
 
   saveReport() {
-    // Build clean sections: filter trailing empty lines
+    // Build clean sections: filter trailing empty lines, extract text
     const cleanSections = this.data.sections.map(s => ({
       key: s.key,
-      lines: this.trimTrailingEmpty(s.lines)
+      lines: this.trimTrailingEmpty(s.lines.filter(l => l !== null).map(l => l.text))
     }));
 
     // Check if report has any content

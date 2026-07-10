@@ -43,17 +43,16 @@ module.exports = {
 
       <!-- 行列表 -->
       <view class="lines-container">
-        <view class="line-item" wx:for="{{item.lines}}" wx:key="index" wx:for-index="lineIndex" data-section-index="{{sectionIndex}}" data-line-index="{{lineIndex}}">
+        <view class="line-item" wx:for="{{item.lines}}" wx:key="id" wx:for-index="lineIndex" data-section-index="{{sectionIndex}}" data-line-index="{{lineIndex}}">
           <textarea
             class="line-textarea"
-            value="{{item.lines[lineIndex]}}"
+            value="{{item.text}}"
             auto-height
             placeholder="输入内容..."
             maxlength="500"
             data-section="{{sectionIndex}}"
             data-line="{{lineIndex}}"
             bindinput="onLineInput"
-            bindfocus="onLineFocus"
           />
           <view class="line-actions">
             <view class="line-action-btn todo-btn" bindtap="addLineToTodo" data-section="{{sectionIndex}}" data-line="{{lineIndex}}">

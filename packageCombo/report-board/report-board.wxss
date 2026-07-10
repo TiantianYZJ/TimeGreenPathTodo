@@ -31,7 +31,7 @@
   padding: 8rpx 16rpx;
   background: #e3f5eb;
   border: 1rpx solid #00b26a;
-  border-radius: 28rpx;
+  border-radius: 32rpx;
 }
 
 .filter-trigger:active {

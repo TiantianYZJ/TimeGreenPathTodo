@@ -348,8 +348,10 @@ Page({
     // 切换日历视图: 日报对应月视图, 周报对应周视图
     if (tab === 'daily') {
       this.setData({ calendarView: 'month' });
+      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('month');
     } else if (tab === 'weekly') {
       this.setData({ calendarView: 'week' });
+      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('week');
     }
 
     // 加载对应报告

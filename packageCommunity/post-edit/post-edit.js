@@ -243,7 +243,6 @@ Page({
 
   onBodyInput(e) {
     const body = e.detail.value ?? '';
-    this.setData({ body });
     this.detectAtMention(body);
     this.updateMentionCard(body);
   },

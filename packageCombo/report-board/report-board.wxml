@@ -4,6 +4,7 @@
   <view class="calendar-wrapper">
     <calendar
       id="boardCalendar"
+      customNavBar="{{false}}"
       style="--wc-primary: #00b26a;--wc-bg-light: #E3F5EB;--wc-checked-bg-light: #CCEDDC;--wc-dot-color-light: #ff8800;--wc-annual-bg-light: #CCEDDC;"
       bind:load="handleLoad"
       bind:change="handleDateChange"

@@ -59,7 +59,7 @@
 /* ===== Meta Section ===== */
 .meta-section {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 32rpx;
   padding: 0 24rpx;
   margin-top: 24rpx;
 }
@@ -100,7 +100,7 @@
 
 .section-card {
   background: #fff;
-  border-radius: 24rpx;
+  border-radius: 32rpx;
   display: flex;
   overflow: hidden;
   margin-bottom: 16rpx;
@@ -186,7 +186,7 @@
   text-align: center;
   background: #fff;
   border: 2rpx solid #ff4d4f;
-  border-radius: 44rpx;
+  border-radius: 32rpx;
   font-size: 30rpx;
   font-weight: 500;
   color: #ff4d4f;
