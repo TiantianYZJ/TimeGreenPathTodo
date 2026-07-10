@@ -143,6 +143,7 @@ Page({
   },
 
   checkDraft() {
+    if (this.data.reportId) return; // 编辑态不恢复草稿
     try {
       const draftKey = this.getDraftKey();
       const draft = wx.getStorageSync(draftKey);
