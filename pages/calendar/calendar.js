@@ -361,6 +361,15 @@ Page({
       if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('week');
     }
 
+    // 更新标题
+    if (this.data.selectedDate) {
+      if (tab === 'daily') {
+        this.setData({ dailyReportTitle: this.getReportDateTitle(this.data.selectedDate) });
+      } else if (tab === 'weekly') {
+        this.setData({ weeklyReportTitle: this.getWeekTitle(this.data.selectedDate) });
+      }
+    }
+
     // 加载对应报告
     if (tab !== 'todo' && this.data.selectedDate) {
       this.loadReports();
@@ -384,6 +393,14 @@ Page({
     this.setData({ currentTab: newTab, calendarView: view });
     if (newTab !== 'todo' && this.data.selectedDate) {
       this.loadReports();
+    }
+    // Update title when view toggles
+    if (this.data.selectedDate) {
+      if (newTab === 'daily') {
+        this.setData({ dailyReportTitle: this.getReportDateTitle(this.data.selectedDate) });
+      } else if (newTab === 'weekly') {
+        this.setData({ weeklyReportTitle: this.getWeekTitle(this.data.selectedDate) });
+      }
     }
   },
 
@@ -497,6 +514,7 @@ Page({
   },
 
   getWeekNumber(dateStr) {
+    if (!dateStr) return '';
     const date = new Date(dateStr);
     const startOfYear = new Date(date.getFullYear(), 0, 1);
     const diff = date - startOfYear;
