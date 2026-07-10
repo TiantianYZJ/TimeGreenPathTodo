@@ -13,7 +13,7 @@
   </view>
 
   <!-- 日历 -->
-  <view class="calendar-wrapper">
+  <view class="calendar-wrapper" style="padding-top: {{navBarHeight}}px;">
     <calendar
       id="boardCalendar"
       bind:load="handleLoad"

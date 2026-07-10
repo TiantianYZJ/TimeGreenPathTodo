@@ -42,7 +42,6 @@
 
 /* 日历区域 */
 .calendar-wrapper {
-  padding-top: {{navBarHeight}}px;
   background: #f5faf7;
 }
 
