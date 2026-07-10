@@ -7,14 +7,23 @@
   padding: 0 32rpx 160rpx;
 }
 
-/* ========== 日期提示 ========== */
-.page-title {
-  font-size: 48rpx;
-  font-weight: 600;
-  line-height: 1.5;
-  color: #333;
-  padding: 10rpx 0 20rpx 0;
-  display: block;
+/* ========== 日期/周数选择器（像 add-todo picker-field 一样） ========== */
+.picker-field {
+  padding: 26rpx 32rpx;
+  margin-left: 24rpx;
+  font-size: 32rpx;
+  background: #f8f8f8;
+  border-radius: 32rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.picker-inner {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* ========== 表单项（对标 add-todo） ========== */

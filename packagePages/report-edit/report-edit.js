@@ -56,6 +56,13 @@ Page({
     navTitle: '写日报',
     targetDateHint: '',
 
+    showCalendar: false,
+    calendarValue: new Date().getTime(),
+    minDate: new Date(2020, 0, 1).getTime(),
+    maxDate: new Date(new Date().getFullYear() + 5, 11, 31).getTime(),
+    weekOptions: [],
+    weekIndex: 0,
+
     sections: [],
     sharedCombos: [],
     selectedComboId: null,
@@ -111,6 +118,18 @@ Page({
       selectedComboId: comboId,
       selectedComboName: comboId ? '加载中...' : '私人'
     });
+
+    // 初始化周数选择器选项 & 日历预设值；reportWeek 优先级：buildWeekOptions 返回值 > 默认
+    let computedWeek = reportWeek;
+    if (reportType === 'weekly') {
+      computedWeek = this.buildWeekOptions(reportDate);
+    } else {
+      const d = new Date(reportDate.replace(/-/g, '/'));
+      this.setData({ calendarValue: d.getTime() });
+    }
+    if (computedWeek !== reportWeek) {
+      this.setData({ reportWeek: computedWeek });
+    }
 
     // 关键：先加载模板/报告，再检查草稿，避免草稿覆盖模板的时序问题
     if (isEdit) {
@@ -187,6 +206,121 @@ Page({
     } catch (e) {
       logger.warn('REPORT', 'DRAFT', '清除草稿失败', e);
     }
+  },
+
+  // ========== 日期/周数选择器 ==========
+
+  buildWeekOptions(dateStr) {
+    const d = dateStr ? new Date(dateStr.replace(/-/g, '/')) : new Date();
+    const year = d.getFullYear();
+    const options = [];
+    // 从年首找第一个周日（可能在上一年）
+    const cursor = new Date(year, 0, 1);
+    cursor.setDate(cursor.getDate() - cursor.getDay());
+    const yearEnd = new Date(year, 11, 31);
+    let weekNum = 1;
+    while (cursor <= yearEnd) {
+      const endDate = new Date(cursor);
+      endDate.setDate(cursor.getDate() + 6);
+      const sm = cursor.getMonth() + 1;
+      const sd = cursor.getDate();
+      const em = endDate.getMonth() + 1;
+      const ed = endDate.getDate();
+      options.push({
+        label: `第${weekNum}周（${sm}月${sd}日 - ${em}月${ed}日）`,
+        date: `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`,
+        weekNum
+      });
+      cursor.setDate(cursor.getDate() + 7);
+      weekNum++;
+      if (weekNum > 54) break;
+    }
+    // 再补一周：上一周年末周日后的第一周，属于下一年的第一周
+    if (options.length > 0) {
+      const last = options[options.length - 1];
+      const lastDate = new Date(last.date);
+      lastDate.setDate(lastDate.getDate() + 7);
+      if (lastDate.getFullYear() === year) {
+        const endDate = new Date(lastDate);
+        endDate.setDate(lastDate.getDate() + 6);
+        const sm = lastDate.getMonth() + 1;
+        const sd = lastDate.getDate();
+        const em = endDate.getMonth() + 1;
+        const ed = endDate.getDate();
+        options.push({
+          label: `第${weekNum}周（${sm}月${sd}日 - ${em}月${ed}日）`,
+          date: `${lastDate.getFullYear()}-${String(lastDate.getMonth() + 1).padStart(2, '0')}-${String(lastDate.getDate()).padStart(2, '0')}`,
+          weekNum
+        });
+      }
+    }
+
+    // 找到当前日期对应的周索引
+    let weekIndex = 0;
+    const targetStr = dateStr || this.getTodayStr();
+    const targetDate = new Date(targetStr.replace(/-/g, '/'));
+    const targetDay = targetDate.getDay();
+    const targetSunday = new Date(targetDate);
+    targetSunday.setDate(targetDate.getDate() - targetDay);
+    const targetSundayStr = `${targetSunday.getFullYear()}-${String(targetSunday.getMonth() + 1).padStart(2, '0')}-${String(targetSunday.getDate()).padStart(2, '0')}`;
+
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].date === targetSundayStr) {
+        weekIndex = i;
+        break;
+      }
+    }
+
+    this.setData({
+      weekOptions: options.map(o => o.label),
+      _weekData: options,
+      weekIndex
+    });
+    // 返回当前选中周的周数，供 onLoad 使用（避免 getWeekNumber 跨年错误）
+    return options[weekIndex] ? options[weekIndex].weekNum : 1;
+  },
+
+  onWeekChange(e) {
+    const idx = e.detail.value;
+    const weekData = this.data._weekData || [];
+    if (!weekData[idx]) return;
+    const { date, weekNum } = weekData[idx];
+    const endDate = this.addDays(date, 6);
+    const sm = date.substring(5, 7);
+    const sd = date.substring(8, 10);
+    const em = endDate.substring(5, 7);
+    const ed = endDate.substring(8, 10);
+    this.setData({
+      reportDate: date,
+      reportWeek: weekNum,
+      weekIndex: idx,
+      targetDateHint: `周报 · 第${weekNum}周 · ${parseInt(sm)}月${parseInt(sd)}日-${parseInt(em)}月${parseInt(ed)}日`
+    });
+    this.clearDraft();
+  },
+
+  showCalendar() {
+    this.setData({ showCalendar: true });
+  },
+
+  handleCalendarConfirm(e) {
+    const detail = e.detail;
+    const date = new Date(detail.value || detail);
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    const fullDateLabel = this.formatDateWithWeekday(dateStr);
+    this.setData({
+      reportDate: dateStr,
+      showCalendar: false,
+      targetDateHint: '日报 · ' + fullDateLabel
+    });
+    this.clearDraft();
+  },
+
+  handleCalendarClose() {
+    this.setData({ showCalendar: false });
   },
 
   // ========== Data Loading ==========
@@ -841,7 +975,7 @@ Page({
     firstSunday.setDate(1 - startOfYear.getDay());
     const diff = d - firstSunday + (startOfYear.getTimezoneOffset() - firstSunday.getTimezoneOffset()) * 60000;
     const oneWeek = 604800000;
-    const weekNum = Math.ceil(diff / oneWeek);
+    const weekNum = Math.floor(diff / oneWeek) + 1;
     return weekNum > 0 ? weekNum : 1;
   },
 

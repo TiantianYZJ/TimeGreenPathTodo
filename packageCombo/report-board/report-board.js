@@ -87,9 +87,9 @@ Page({
     // 计算年初第一个周日
     const firstSunday = new Date(startOfYear);
     firstSunday.setDate(1 - startOfYear.getDay());
-    const diff = d - firstSunday;
+    const diff = d - firstSunday + (startOfYear.getTimezoneOffset() - firstSunday.getTimezoneOffset()) * 60000;
     const oneWeek = 604800000;
-    const weekNum = Math.ceil(diff / oneWeek);
+    const weekNum = Math.floor(diff / oneWeek) + 1;
     return weekNum > 0 ? weekNum : 1;
   },
 
