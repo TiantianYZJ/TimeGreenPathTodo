@@ -32,6 +32,7 @@ Page({
     activeTabFlag: false,
     dailyReports: [],
     weeklyReports: [],
+    reportDateStrings: [],
     lockIcon: '\u{1F512}',
   },
 
@@ -76,6 +77,9 @@ Page({
 
   onShow() {
     // 每次页面显示时刷新数据
+    if (this.data.currentTab === 'todo') {
+      this.setData({ reportDateStrings: [] });
+    }
     this.convertMarks();
     if (this.data.selectedDate) {
       this.searchTodos(this.data.selectedDate);
@@ -128,7 +132,25 @@ Page({
       });
     }
 
+    // Add report dot marks if on report tabs and we have loaded report dates
+    if ((this.data.currentTab === 'daily' || this.data.currentTab === 'weekly') && this.data.reportDateStrings.length > 0) {
+      this.data.reportDateStrings.forEach(dateStr => {
+        const d = new Date(dateStr);
+        marks.push({
+          date: d.getTime(),
+          type: this.data.currentTab === 'daily' ? 'schedule' : 'annual',
+          text: ''
+        });
+      });
+    }
+
     this.setData({ marks });
+  },
+
+  updateReportMarks(reportDates) {
+    this.setData({ reportDateStrings: reportDates }, () => {
+      this.convertMarks();
+    });
   },
 
   parseTime(timeStr) {
@@ -333,6 +355,10 @@ Page({
     // 加载对应报告
     if (tab !== 'todo' && this.data.selectedDate) {
       this.loadReports();
+    } else if (tab === 'todo') {
+      // Reset to todo marks
+      this.setData({ reportDateStrings: [] });
+      this.convertMarks();
     }
   },
 
@@ -345,12 +371,11 @@ Page({
 
     // 用户手动滑动日历: month ↔ week 切换时自动切tab
     const view = e.detail ? e.detail.view : (e.view || 'month');
-    if (view === 'month') {
-      this.setData({ currentTab: 'daily' });
-    } else if (view === 'week') {
-      this.setData({ currentTab: 'weekly' });
+    const newTab = view === 'month' ? 'daily' : view === 'week' ? 'weekly' : this.data.currentTab;
+    this.setData({ currentTab: newTab, calendarView: view });
+    if (newTab !== 'todo' && this.data.selectedDate) {
+      this.loadReports();
     }
-    this.setData({ calendarView: view });
   },
 
   async loadReports() {
@@ -374,7 +399,15 @@ Page({
       const weeklyList = (weeklyRes.data && weeklyRes.data.list) || weeklyRes.list || weeklyRes || [];
       const weeklyReports = weeklyList.map(item => this.formatReportItem(item));
 
+      // Collect report dates for dot marks
+      const reportDates = this.data.currentTab === 'daily'
+        ? dailyList.map(r => r.periodDate || r.period_date).filter(Boolean)
+        : weeklyList.map(r => r.periodDate || r.period_date).filter(Boolean);
+
       this.setData({ dailyReports, weeklyReports });
+      if (this.data.currentTab !== 'todo') {
+        this.updateReportMarks(reportDates);
+      }
     } catch (err) {
       logger.error('REPORT', 'LOAD', '加载报告失败', err);
     }
