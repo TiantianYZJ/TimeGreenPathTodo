@@ -37,6 +37,17 @@
   align-items: center;
 }
 
+/* 原生 picker 撑满卡片宽度 */
+.picker-native {
+  width: 100%;
+  display: block;
+}
+
+/* 点击反馈 */
+.picker-field-active {
+  background: #e8e8e8;
+}
+
 /* ========== 表单项（对标 add-todo） ========== */
 .form-item {
   padding-bottom: 32rpx;

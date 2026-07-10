@@ -19,15 +19,15 @@ module.exports = {
   <!-- 大标题（展示当前日期/周数） -->
   <text class="page-title">{{targetDateHint}}</text>
 
-  <!-- 日期/周数选择器（像 add-todo 一样可点击修改） -->
-  <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar">
-    <text>{{targetDateHint || '请选择日期'}}</text>
+  <!-- 日期/周数选择器（像 add-todo picker-field 一样） -->
+  <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar" hover-class="picker-field-active" hover-stay-time="100">
+    <text class="picker-field-text">{{targetDateHint || '请选择日期'}}</text>
     <t-icon name="calendar" size="32rpx" color="#999" />
   </view>
   <view wx:else class="picker-field">
-    <picker mode="selector" range="{{weekOptions}}" value="{{weekIndex}}" bindchange="onWeekChange">
+    <picker mode="selector" range="{{weekOptions}}" value="{{weekIndex}}" bindchange="onWeekChange" class="picker-native">
       <view class="picker-inner">
-        <text>{{weekOptions[weekIndex] || '请选择周数'}}</text>
+        <text class="picker-field-text">{{weekOptions[weekIndex] || '请选择周数'}}</text>
         <t-icon name="chevron-down" size="32rpx" color="#999" />
       </view>
     </picker>
@@ -45,7 +45,7 @@ module.exports = {
   />
 
   <view wx:if="{{reportType === 'weekly' && !reportId}}" class="weekly-hint">
-    <image src="../../images/todo-active.png" class="weekly-hint-icon"/>
+    <t-icon name="tips"/>
     <text class="weekly-hint-text">周报：一周从周日开始，本周为第{{reportWeek}}周</text>
   </view>
 
