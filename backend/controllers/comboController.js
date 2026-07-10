@@ -326,12 +326,26 @@ const create = async (req, res) => {
     
     if (isShared) {
       await query(
-        `INSERT INTO combo_members (combo_id, user_id, role, nickname, joined_at) 
+        `INSERT INTO combo_members (combo_id, user_id, role, nickname, joined_at)
          VALUES (?, ?, 'owner', ?, NOW())`,
         [comboId, userId, '']
       );
+
+      // Auto-create default report templates for shared combos
+      const dailySections = JSON.stringify([
+        { key: 'work_done', title: '今日工作', sort_order: 1, max_lines: 20 },
+        { key: 'tomorrow_plan', title: '明日计划', sort_order: 2, max_lines: 10 }
+      ]);
+      const weeklySections = JSON.stringify([
+        { key: 'weekly_summary', title: '本周总结', sort_order: 1, max_lines: 20 },
+        { key: 'next_plan', title: '下周计划', sort_order: 2, max_lines: 10 }
+      ]);
+      await query(
+        'INSERT INTO report_templates (combo_id, type, sections, created_at, updated_at) VALUES (?, "daily", ?, NOW(), NOW()), (?, "weekly", ?, NOW(), NOW())',
+        [comboId, dailySections, comboId, weeklySections]
+      );
     }
-    
+
     if (todoIds && Array.isArray(todoIds) && todoIds.length > 0) {
       if (isShared) {
         const members = await query(
