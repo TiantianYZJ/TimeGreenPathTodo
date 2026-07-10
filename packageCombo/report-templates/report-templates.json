@@ -1,4 +1,5 @@
 {
+  "navigationBarTitleText": "汇报模板",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-tabs": "tdesign-miniprogram/tabs/tabs",

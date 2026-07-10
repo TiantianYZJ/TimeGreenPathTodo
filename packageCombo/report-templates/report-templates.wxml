@@ -2,10 +2,6 @@
 
   <view class="container">
 
-    <!-- 页面标题 -->
-    <text class="page-title" wx:if="{{comboName}}">{{comboName}}模板</text>
-    <text class="page-title" wx:else>模板设置</text>
-
     <t-tabs value="{{currentType}}" bind:change="onTypeChange">
       <t-tab-panel label="日报模板" value="daily">
         <view class="section-list">

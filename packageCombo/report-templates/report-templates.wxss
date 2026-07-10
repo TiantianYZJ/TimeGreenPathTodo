@@ -6,17 +6,14 @@
   padding: 0 32rpx 160rpx;
 }
 
-.page-title {
-  font-size: 48rpx;
-  font-weight: 600;
-  line-height: 1.5;
-  color: #333;
-  padding: 10rpx 0 20rpx 0;
-  display: block;
-}
-
 .section-list {
   padding: 20rpx 0;
+}
+
+.t-tabs {
+  --td-tab-nav-bg-color: #e3f5eb;
+  --td-tab-item-disabled-color: #fff;
+  --td-tab-item-height: 64rpx;
 }
 
 /* 模板项 — 对标 report-edit 绿色色点 + 输入框 */
