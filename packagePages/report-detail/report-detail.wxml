@@ -1,0 +1,80 @@
+<view class="page">
+  <!-- Custom Nav Bar -->
+  <view class="nav-bar" style="padding-top: {{navBarHeight}}px;">
+    <view class="nav-inner">
+      <view class="nav-back" bindtap="goBack">
+        <t-icon name="chevron-left" size="48rpx" color="#333" />
+      </view>
+      <text class="nav-title">{{reportType === 'weekly' ? '周报' : '日报'}}</text>
+      <view wx:if="{{canEdit}}" class="nav-edit" bindtap="navigateToEdit">
+        <t-icon name="edit-1" size="40rpx" color="#00b26a" />
+      </view>
+      <view wx:else class="nav-edit-placeholder" />
+    </view>
+  </view>
+
+  <!-- Content -->
+  <scroll-view class="scroll-area" scroll-y show-scrollbar="{{false}}" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="loadReport" data-id="{{report.id}}">
+    <view wx:if="{{!loaded}}" class="loading-area">
+      <view class="loading-spinner" />
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <view wx:if="{{loaded && !report}}" class="empty-area">
+      <t-icon name="file" size="80rpx" color="#ddd" />
+      <text class="empty-text">报告不存在</text>
+    </view>
+
+    <block wx:if="{{loaded && report}}">
+      <!-- Meta Section -->
+      <view class="meta-section">
+        <view class="meta-row">
+          <text class="meta-label">日期</text>
+          <text class="meta-value">{{friendlyDate}}</text>
+        </view>
+        <view class="meta-row" wx:if="{{reportType === 'weekly' && report.periodLabel}}">
+          <text class="meta-label">周期</text>
+          <text class="meta-value">{{report.periodLabel}}</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-label">归属</text>
+          <view class="meta-badge-wrap">
+            <t-icon wx:if="{{report.scope === 'private'}}" name="lock-on" size="28rpx" color="#00b26a" />
+            <t-icon wx:else name="user-group" size="28rpx" color="#00b26a" />
+            <text class="meta-value">{{report.scope === 'private' ? '个人报告' : '团队报告'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Section Cards -->
+      <view class="sections-area">
+        <view class="section-card" wx:for="{{sections}}" wx:key="index" wx:for-index="idx">
+          <view class="section-color-tag" style="background: {{sectionColors[idx % sectionColors.length]}}" />
+          <view class="section-body">
+            <text class="section-title">{{item.title || '未命名区块'}}</text>
+            <view wx:if="{{item.lines && item.lines.length > 0}}" class="section-lines">
+              <view class="section-line" wx:for="{{item.lines}}" wx:key="*this">
+                <view class="bullet-dot" style="background: {{sectionColors[idx % sectionColors.length]}}" />
+                <text class="line-text">{{item}}</text>
+              </view>
+            </view>
+            <view wx:else class="section-empty">
+              <text>暂无记录</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Time Info -->
+      <view class="time-info">
+        <text class="time-row">创建于 {{report.createdAt || '-'}}</text>
+        <text class="time-row">更新于 {{report.updatedAt || '-'}}</text>
+      </view>
+
+      <!-- Delete Button -->
+      <view wx:if="{{canDelete}}" class="delete-area">
+        <button class="delete-btn" bindtap="deleteReport">删除报告</button>
+      </view>
+    </block>
+  </scroll-view>
+</view>

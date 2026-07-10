@@ -64,7 +64,8 @@
         "todo-search/todo-search",
         "user-center/user-center",
         "checkin/checkin",
-        "checkinLeaderboard/checkinLeaderboard"
+        "checkinLeaderboard/checkinLeaderboard",
+        "report-detail/report-detail"
       ]
     },
     {
