@@ -6,6 +6,15 @@
   padding: 0 32rpx 160rpx;
 }
 
+.page-title {
+  font-size: 48rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #333;
+  padding: 10rpx 0 20rpx 0;
+  display: block;
+}
+
 .section-list {
   padding: 20rpx 0;
 }
