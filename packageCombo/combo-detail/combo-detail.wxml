@@ -113,6 +113,17 @@
         </view>
       </view>
     </view>
+    <view wx:if="{{isShared}}" class="info-block report-block" bindtap="navigateToReportBoard">
+      <view class="section-header">
+        <text class="section-title">汇报看板</text>
+        <t-icon name="chevron-right" size="32rpx" color="#999" />
+      </view>
+      <view class="report-preview">
+        <t-icon name="article" size="36rpx" color="#00b26a" />
+        <text class="report-hint">查看成员日报/周报</text>
+      </view>
+    </view>
+
     <view class="section-header">
       <view class="section-title-row">
         <text class="section-title">待办 · {{isShared ? filteredSharedTodos.length : todos.length}}项</text>

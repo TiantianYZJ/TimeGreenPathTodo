@@ -1,0 +1,110 @@
+<view class="container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar" style="height: {{navBarHeight}}px;">
+    <view class="nav-content">
+      <view class="nav-back" bindtap="goBack">
+        <t-icon name="chevron-left" size="48rpx" color="#333" />
+      </view>
+      <text class="nav-title">{{comboName || '组合'} · 汇报看板</text>
+      <view class="nav-right" bindtap="showMemberFilter">
+        <t-icon name="user" size="40rpx" color="#666" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 日历 -->
+  <view class="calendar-wrapper">
+    <calendar
+      id="boardCalendar"
+      bind:load="handleLoad"
+      bind:change="handleDateChange"
+      bind:viewchange="handleViewChange"
+      view="{{calendarView}}"
+      min-date="{{minDate}}"
+      max-date="{{maxDate}}"
+      marks="{{marks}}"
+    />
+  </view>
+
+  <!-- tabs: 日报 / 周报 -->
+  <view class="tabs-wrapper">
+    <t-tabs theme="card" bindchange="onTabChange" value="{{currentTab}}">
+      <t-tab-panel label="日报" value="daily">
+        <view class="report-list">
+          <block wx:for="{{reports}}" wx:key="id">
+            <view class="report-item-wrapper" data-id="{{item.id}}" bindtap="navigateToDetail">
+              <t-swipe-cell>
+                <t-cell
+                  note="{{item.periodLabel || item.type}}"
+                  title="{{item.summary}}"
+                  description="👤 {{item.nickname || '匿名用户'}} · {{item.lineCount}}项内容"
+                  bordered="{{false}}"
+                />
+              </t-swipe-cell>
+            </view>
+          </block>
+          <view wx:if="{{reports.length === 0}}" class="empty-state">
+            <text class="empty-text">暂无汇报</text>
+            <text class="empty-hint">点击右下角按钮添加</text>
+          </view>
+        </view>
+      </t-tab-panel>
+
+      <t-tab-panel label="周报" value="weekly">
+        <view class="report-list">
+          <block wx:for="{{reports}}" wx:key="id">
+            <view class="report-item-wrapper" data-id="{{item.id}}" bindtap="navigateToDetail">
+              <t-swipe-cell>
+                <t-cell
+                  note="{{item.periodLabel || item.type}}"
+                  title="{{item.summary}}"
+                  description="👤 {{item.nickname || '匿名用户'}} · {{item.lineCount}}项内容"
+                  bordered="{{false}}"
+                />
+              </t-swipe-cell>
+            </view>
+          </block>
+          <view wx:if="{{reports.length === 0}}" class="empty-state">
+            <text class="empty-text">暂无汇报</text>
+            <text class="empty-hint">点击右下角按钮添加</text>
+          </view>
+        </view>
+      </t-tab-panel>
+    </t-tabs>
+  </view>
+
+  <!-- 成员筛选弹窗 -->
+  <t-popup
+    visible="{{showFilterPopup}}"
+    placement="center"
+    close-on-overlay-click="{{true}}"
+    bind:visible-change="onFilterPopupVisibleChange"
+    z-index="99999"
+  >
+    <view class="filter-popup">
+      <view class="filter-popup-header">
+        <text class="filter-popup-title">筛选成员</text>
+        <view class="filter-popup-close" bindtap="hideMemberFilter">
+          <t-icon name="close" size="40rpx" color="#999" />
+        </view>
+      </view>
+      <t-radio-group value="{{selectedMemberId}}" bind:change="onMemberFilterChange">
+        <view class="filter-option" data-value="0" bindtap="onFilterOptionTap">
+          <t-radio value="0" checked="{{selectedMemberId === '0'}}" label="全部成员" />
+        </view>
+        <block wx:for="{{members}}" wx:key="id">
+          <view class="filter-option" data-value="{{item.id}}" bindtap="onFilterOptionTap">
+            <t-radio
+              value="{{item.id}}"
+              checked="{{selectedMemberId === item.id}}"
+              label="{{item.nickname || item.username || '用户'}}"
+            />
+          </view>
+        </block>
+      </t-radio-group>
+    </view>
+  </t-popup>
+
+  <!-- 添加汇报 FAB -->
+  <t-fab icon="add" bind:click="onFabTap" style="right: 32rpx; bottom: 32rpx;" />
+</view>

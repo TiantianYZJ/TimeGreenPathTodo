@@ -1069,6 +1069,13 @@ Page({
     });
   },
 
+  navigateToReportBoard() {
+    const { comboId } = this.data;
+    wx.navigateTo({
+      url: `/packageCombo/report-board/report-board?combo_id=${comboId}`
+    });
+  },
+
   navigateToStats() {
     const { comboId } = this.data;
     wx.navigateTo({

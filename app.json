@@ -30,7 +30,8 @@
         "combo-edit/combo-edit",
         "combo-detail/combo-detail",
         "collaboration/collaboration",
-        "combo-stats/combo-stats"
+        "combo-stats/combo-stats",
+        "report-board/report-board"
       ]
     },
     {
