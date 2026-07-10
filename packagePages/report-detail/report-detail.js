@@ -48,7 +48,7 @@ Page({
           sections,
           creator: report.nickname ? { id: report.userId, nickname: report.nickname, avatar: report.avatarUrl } : null,
           comboName: report.scope === 'private' ? '' : (report.comboName || ''),
-          friendlyDate: formatFriendlyDate(report.periodDate) + (type === 'weekly' && report.periodLabel ? ` · ${report.periodLabel}` : ''),
+          friendlyDate: this.buildReportTitle(report.periodDate, type),
           formattedCreatedAt: formatDateTime(report.createdAt),
           formattedUpdatedAt: formatDateTime(report.updatedAt),
           canEdit: true,
@@ -97,6 +97,44 @@ Page({
         }
       }
     });
+  },
+
+  buildReportTitle(periodDate, type) {
+    if (!periodDate) return '';
+    const typeLabel = type === 'weekly' ? '周报' : '日报';
+    if (type === 'weekly') {
+      const range = this.getWeekRangeStr(periodDate);
+      const weekNum = this.getWeekNumber(periodDate);
+      return `${typeLabel} · ${range} · 第${weekNum}周`;
+    }
+    const friendly = formatFriendlyDate(periodDate);
+    return `${typeLabel} · ${friendly}`;
+  },
+
+  getWeekRangeStr(dateStr) {
+    if (!dateStr) return '';
+    const start = new Date(dateStr);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const sm = start.getMonth() + 1;
+    const sd = start.getDate();
+    const em = end.getMonth() + 1;
+    const ed = end.getDate();
+    return `${sm}月${sd}日 - ${em}月${ed}日`;
+  },
+
+  getWeekNumber(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    // 以周日为周起始
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const firstSunday = new Date(startOfYear);
+    firstSunday.setDate(1 - startOfYear.getDay());
+    const diff = d - firstSunday;
+    const oneWeek = 604800000;
+    const weekNum = Math.ceil(diff / oneWeek);
+    return weekNum > 0 ? weekNum : 1;
   },
 
   goBack() { wx.navigateBack(); },

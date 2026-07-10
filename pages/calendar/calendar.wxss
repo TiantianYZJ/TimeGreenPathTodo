@@ -107,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 6rpx;
-  padding: 8rpx 16rpx;
+  padding: 8rpx 24rpx;
   background: #e3f5eb;
   border-radius: 32rpx;
 }

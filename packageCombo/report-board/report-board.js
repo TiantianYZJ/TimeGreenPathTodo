@@ -62,12 +62,12 @@ Page({
     return `${y}-${m}-${d}`;
   },
 
-  getMondayOfWeek(dateStr) {
+  getWeekStart(dateStr) {
     const d = new Date(dateStr.replace(/-/g, '/'));
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return this.formatDate(d);
+    const sunday = new Date(d);
+    sunday.setDate(d.getDate() - day);
+    return this.formatDate(sunday);
   },
 
   getReportDateTitle(dateStr) {
@@ -81,19 +81,21 @@ Page({
   },
 
   getWeekNumber(dateStr) {
-    const date = new Date(dateStr.replace(/-/g, '/'));
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const diff = date - startOfYear;
+    // 以周日为周起始，计算当前是第几周
+    const d = new Date(dateStr.replace(/-/g, '/'));
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    // 计算年初第一个周日
+    const firstSunday = new Date(startOfYear);
+    firstSunday.setDate(1 - startOfYear.getDay());
+    const diff = d - firstSunday;
     const oneWeek = 604800000;
-    return Math.ceil((((startOfYear.getDay() + 1) + diff) / oneWeek));
+    const weekNum = Math.ceil(diff / oneWeek);
+    return weekNum > 0 ? weekNum : 1;
   },
 
   getWeekTitle(dateStr) {
     if (!dateStr) return '';
-    // Use Thursday as ISO week anchor for consistent week numbers
-    const d = new Date(dateStr.replace(/-/g, '/'));
-    d.setDate(d.getDate() + (4 - d.getDay()));
-    const weekNum = this.getWeekNumber(this.formatDate(d));
+    const weekNum = this.getWeekNumber(dateStr);
     return `${this.getReportDateTitle(dateStr)} · 第${weekNum}周`;
   },
 
@@ -134,12 +136,11 @@ Page({
   onTabChange(e) {
     const tab = e.detail.value;
     this.setData({ currentTab: tab, activeTabFlag: true });
+    // 不能额外调用 toggleView — 见 calendar.js onTabChange 注释
     if (tab === 'daily') {
       this.setData({ calendarView: 'month' });
-      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('month');
     } else {
       this.setData({ calendarView: 'week' });
-      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('week');
     }
     this.loadReports();
     this.updateBoardTitle();
@@ -149,7 +150,7 @@ Page({
     const { comboId, currentTab, selectedDate, selectedMemberId } = this.data;
     if (!selectedDate) return;
     const params = { combo_id: comboId, type: currentTab };
-    params.period_date = currentTab === 'daily' ? selectedDate : this.getMondayOfWeek(selectedDate);
+    params.period_date = currentTab === 'daily' ? selectedDate : this.getWeekStart(selectedDate);
     if (selectedMemberId !== '0') params.user_id = parseInt(selectedMemberId);
     try {
       wx.showLoading({ title: '加载中...' });
@@ -228,13 +229,15 @@ Page({
   onFabTap() {
     const { comboId, currentTab, selectedDate } = this.data;
     const date = selectedDate || this.formatDate(new Date());
-    const target = currentTab === 'daily' ? date : this.getMondayOfWeek(date);
+    const target = currentTab === 'daily' ? date : this.getWeekStart(date);
     wx.navigateTo({ url: `/packagePages/report-edit/report-edit?type=${currentTab}&date=${target}&combo_id=${comboId}` });
   },
 
   navigateToReportTemplates() {
+    const type = (this.data.currentTab === 'daily' || this.data.currentTab === 'weekly')
+      ? this.data.currentTab : 'daily';
     wx.navigateTo({
-      url: `/packageCombo/report-templates/report-templates?combo_id=${this.data.comboId}`
+      url: `/packageCombo/report-templates/report-templates?combo_id=${this.data.comboId}&type=${type}`
     });
   },
 

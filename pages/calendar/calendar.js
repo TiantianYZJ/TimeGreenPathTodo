@@ -33,7 +33,6 @@ Page({
     dailyReports: [],
     weeklyReports: [],
     reportDateStrings: [],
-    lockIcon: '\u{1F512}',
 
     // 日报/周报工具栏文案
     dailyReportTitle: '',
@@ -353,12 +352,15 @@ Page({
     this.setData({ currentTab: tab, activeTabFlag: true });
 
     // 切换日历视图: 日报对应月视图, 周报对应周视图
+    // 注意: 不能额外调用 this.calendar.toggleView()，因为 setData({calendarView})
+    // 会触发 wx-calendar 的 view 属性 observer → setData({transView: ...})
+    // → WXS transViewChange 处理动画 → calendarTransitionEnd 调用 _panel_.refreshView
+    // 而 toggleView 会读取已更新的 _view_ 标志位导致切换方向错误（week→month），
+    // 从而使 header info 显示"第NaN周"或丢失周数
     if (tab === 'daily') {
       this.setData({ calendarView: 'month' });
-      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('month');
     } else if (tab === 'weekly') {
       this.setData({ calendarView: 'week' });
-      if (this.calendar && this.calendar.toggleView) this.calendar.toggleView('week');
     }
 
     // 更新标题
@@ -416,11 +418,11 @@ Page({
       const dailyList = (dailyRes.data && dailyRes.data.list) || dailyRes.list || dailyRes || [];
       const dailyReports = dailyList.map(item => this.formatReportItem(item));
 
-      // 加载周报 (当前日期所在的周一)
-      const monday = this.getMondayOfWeek(this.data.selectedDate);
+      // 加载周报 (当前日期所在的周日)
+      const weekStart = this.getWeekStart(this.data.selectedDate);
       const weeklyRes = await workReportApi.getList({
         type: 'weekly',
-        period_date: monday
+        period_date: weekStart
       });
       const weeklyList = (weeklyRes.data && weeklyRes.data.list) || weeklyRes.list || weeklyRes || [];
       const weeklyReports = weeklyList.map(item => this.formatReportItem(item));
@@ -501,25 +503,29 @@ Page({
     }
   },
 
-  getMondayOfWeek(dateStr) {
+  getWeekStart(dateStr) {
     const date = new Date(dateStr);
-    const day = date.getDay(); // 0=周日, 1=周一 ...
-    const diff = day === 0 ? -6 : 1 - day; // 周一偏移
-    const monday = new Date(date);
-    monday.setDate(date.getDate() + diff);
-    const y = monday.getFullYear();
-    const m = (monday.getMonth() + 1).toString().padStart(2, '0');
-    const d = monday.getDate().toString().padStart(2, '0');
+    const day = date.getDay(); // 0=周日
+    const sunday = new Date(date);
+    sunday.setDate(date.getDate() - day);
+    const y = sunday.getFullYear();
+    const m = (sunday.getMonth() + 1).toString().padStart(2, '0');
+    const d = sunday.getDate().toString().padStart(2, '0');
     return `${y}-${m}-${d}`;
   },
 
   getWeekNumber(dateStr) {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const diff = date - startOfYear;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    // 以周日为周起始
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const firstSunday = new Date(startOfYear);
+    firstSunday.setDate(1 - startOfYear.getDay());
+    const diff = d - firstSunday;
     const oneWeek = 604800000;
-    return Math.ceil((((startOfYear.getDay() + 1) + diff) / oneWeek));
+    const weekNum = Math.ceil(diff / oneWeek);
+    return weekNum > 0 ? weekNum : 1;
   },
 
   getReportDateTitle(dateStr) {
@@ -534,11 +540,7 @@ Page({
 
   getWeekTitle(dateStr) {
     if (!dateStr) return '';
-    // Use Thursday as ISO week anchor for consistent week numbers
-    const d = new Date(dateStr);
-    d.setDate(d.getDate() + (4 - d.getDay()));
-    const thursday = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
-    const weekNum = this.getWeekNumber(thursday);
+    const weekNum = this.getWeekNumber(dateStr);
     return `${this.getReportDateTitle(dateStr)} · 第${weekNum}周`;
   },
 
@@ -555,16 +557,18 @@ Page({
         url: `/packagePages/report-edit/report-edit?type=daily&date=${selectedDateStr}`
       });
     } else if (tab === 'weekly') {
-      const monday = this.getMondayOfWeek(selectedDateStr);
+      const weekStart = this.getWeekStart(selectedDateStr);
       wx.navigateTo({
-        url: `/packagePages/report-edit/report-edit?type=weekly&date=${monday}`
+        url: `/packagePages/report-edit/report-edit?type=weekly&date=${weekStart}`
       });
     }
   },
 
   navigateToPrivateTemplates() {
+    const type = (this.data.currentTab === 'daily' || this.data.currentTab === 'weekly')
+      ? this.data.currentTab : 'daily';
     wx.navigateTo({
-      url: `/packageCombo/report-templates/report-templates?combo_id=0`
+      url: `/packageCombo/report-templates/report-templates?combo_id=0&type=${type}`
     });
   },
 });

@@ -22,6 +22,7 @@ const parseSections = (sections) => {
 const getTemplates = async (req, res) => {
   const userId = req.user.id;
   const comboId = parseInt(req.query.combo_id, 10) || 0;
+  const type = req.query.type;
 
   try {
     if (comboId > 0) {
@@ -38,10 +39,13 @@ const getTemplates = async (req, res) => {
     }
 
     const queryUserId = comboId > 0 ? 0 : userId;
-    const templates = await query(
-      'SELECT * FROM report_templates WHERE combo_id = ? AND user_id = ?',
-      [comboId, queryUserId]
-    );
+    const queryParams = [comboId, queryUserId];
+    let queryStr = 'SELECT * FROM report_templates WHERE combo_id = ? AND user_id = ?';
+    if (type && ['daily', 'weekly'].includes(type)) {
+      queryStr += ' AND type = ?';
+      queryParams.push(type);
+    }
+    const templates = await query(queryStr, queryParams);
 
     const data = templates.map((t) => ({
       ...t,

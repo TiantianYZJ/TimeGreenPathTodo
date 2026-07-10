@@ -28,8 +28,10 @@ Page({
 
   onLoad(options) {
     const { combo_id } = options;
+    const initType = (options.type === 'daily' || options.type === 'weekly') ? options.type : 'daily';
     this.setData({
       comboId: parseInt(combo_id || 0),
+      currentType: initType,
       // Start with presets immediately so the UI is never empty
       dailySections: JSON.parse(JSON.stringify(PRESET_DAILY)),
       weeklySections: JSON.parse(JSON.stringify(PRESET_WEEKLY)),

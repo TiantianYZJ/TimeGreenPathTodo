@@ -50,6 +50,16 @@
   color: #999;
 }
 
+/* ===== Big Title (像 todo-detail 一样放大加粗) ===== */
+.report-title {
+  font-size: 48rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #333;
+  word-break: break-all;
+  margin-bottom: 30rpx;
+}
+
 /* ===== Card ===== */
 .date-info {
   margin-top: 20rpx;

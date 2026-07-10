@@ -13,23 +13,8 @@
     </view>
 
     <block wx:if="{{loaded && report}}">
-      <!-- 日期 -->
-      <view class="date-info deadline date-info-priority">
-        <view class="section-header">
-          <t-icon name="time" size="32rpx" color="#999" />
-          <text class="label">报告时间</text>
-        </view>
-        <text class="value">{{friendlyDate}}</text>
-      </view>
-
-      <!-- 报告类型 -->
-      <view class="date-info date-info-priority">
-        <view class="section-header">
-          <t-icon name="tag" size="32rpx" color="#999" />
-          <text class="label">报告类型</text>
-        </view>
-        <text class="value">{{reportType === 'weekly' ? '周报' : '日报'}}</text>
-      </view>
+      <!-- 大标题：类型 · 日期 · 周数 -->
+      <text class="report-title">{{friendlyDate}}</text>
 
       <!-- 归属 -->
       <view class="date-info date-info-priority">

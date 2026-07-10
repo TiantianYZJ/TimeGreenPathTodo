@@ -99,9 +99,9 @@
             <view class="report-item-wrapper">
             <t-swipe-cell>
               <t-cell
-                note="{{item.periodLabel || '日报'}}"
+                note="{{item.lineCount}} 项内容"
                 title="{{item.summary}}"
-                description="{{lockIcon}} {{item.scopeLabel}} · {{item.lineCount}}项内容"
+                description="{{item.scopeLabel}}"
                 bordered="{{false}}"
                 bindtap="navigateToReportDetail"
                 data-id="{{item.id}}"
@@ -135,9 +135,9 @@
             <view class="report-item-wrapper">
             <t-swipe-cell>
               <t-cell
-                note="{{item.periodLabel || '周报'}}"
+                note="{{item.lineCount}} 项内容"
                 title="{{item.summary}}"
-                description="{{lockIcon}} {{item.scopeLabel}} · {{item.lineCount}}项内容"
+                description="{{item.scopeLabel}}"
                 bordered="{{false}}"
                 bindtap="navigateToReportDetail"
                 data-id="{{item.id}}"

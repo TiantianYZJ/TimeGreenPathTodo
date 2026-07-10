@@ -63,7 +63,6 @@ Page({
     isSharedCombo: false,
 
     showComboPicker: false,
-    comboPickerMode: 'private',
 
     showImportPopup: false,
     importTargetSection: 0,
@@ -83,12 +82,17 @@ Page({
     const navTitles = { daily: '写日报', weekly: '写周报' };
     wx.setNavigationBarTitle({ title: navTitles[reportType] });
     const fullDateLabel = this.formatDateWithWeekday(reportDate);
-    // Use Thursday of the week as ISO week anchor — Monday can span simple-week boundaries
-    const weekAnchor = reportType === 'weekly' ? this.addDays(reportDate, 3) : reportDate;
-    const reportWeek = this.getWeekNumber(weekAnchor);
+    const reportWeek = this.getWeekNumber(reportDate);
     const dateLabels = {
       daily: '日报 · ' + fullDateLabel,
-      weekly: '周报 · 第' + reportWeek + '周 · ' + fullDateLabel
+      weekly: reportDate ? (() => {
+        const endDate = this.addDays(reportDate, 6);
+        const sm = reportDate.substring(5, 7);
+        const sd = reportDate.substring(8, 10);
+        const em = endDate.substring(5, 7);
+        const ed = endDate.substring(8, 10);
+        return `周报 · 第${reportWeek}周 · ${parseInt(sm)}月${parseInt(sd)}日-${parseInt(em)}月${parseInt(ed)}日`;
+      })() : ''
     };
 
     const isEdit = !!reportId;
@@ -108,14 +112,15 @@ Page({
       selectedComboName: comboId ? '加载中...' : '私人'
     });
 
+    // 关键：先加载模板/报告，再检查草稿，避免草稿覆盖模板的时序问题
     if (isEdit) {
       this.loadReport(reportId);
     } else {
-      this.loadTemplates();
+      this.loadTemplates().then(() => this.checkDraft());
     }
 
     this.loadCombos();
-    this.checkDraft();
+    if (isEdit) this.checkDraft(); // 编辑态不需要等 loadReport（不涉及模板覆盖）
   },
 
   onUnload() {
@@ -195,12 +200,18 @@ Page({
         const sections = this.buildSectionsFromReport(report);
         const actualDate = report.periodDate || this.data.reportDate;
         const actualType = report.type || this.data.reportType;
-        const weekAnchor = actualType === 'weekly' ? this.addDays(actualDate, 3) : actualDate;
-        const reportWeek = this.getWeekNumber(weekAnchor);
+        const reportWeek = this.getWeekNumber(actualDate);
         const fullDateLabel = this.formatDateWithWeekday(actualDate);
         const dateLabels = {
           daily: '日报 · ' + fullDateLabel,
-          weekly: '周报 · 第' + reportWeek + '周 · ' + fullDateLabel
+          weekly: actualDate ? (() => {
+            const endDate = this.addDays(actualDate, 6);
+            const sm = actualDate.substring(5, 7);
+            const sd = actualDate.substring(8, 10);
+            const em = endDate.substring(5, 7);
+            const ed = endDate.substring(8, 10);
+            return `周报 · 第${reportWeek}周 · ${parseInt(sm)}月${parseInt(sd)}日-${parseInt(em)}月${parseInt(ed)}日`;
+          })() : ''
         };
         this.setData({
           sections,
@@ -240,12 +251,15 @@ Page({
           type: this.data.reportType
         });
         const templates = res.templates || res.data || [];
-        if (templates.length > 0) {
-          const template = templates[0];
+        // 客户端按 type 过滤作为兜底
+        const matched = templates.filter(t => t.type === this.data.reportType);
+        const template = matched.length > 0 ? matched[0] : (templates.length > 0 ? templates[0] : null);
+        if (template) {
           const sections = this.buildSectionsFromTemplate(template);
           this.setData({ sections });
           return;
         }
+        // API 返回了空数组 — 没有模板，静默使用默认（用户可能在模板页看到预设但没有保存）
       } catch (err) {
         logger.warn('REPORT', 'TEMPLATE', '加载私人模板失败，使用默认', err);
       }
@@ -260,8 +274,10 @@ Page({
         type: this.data.reportType
       });
       const templates = res.templates || res.data || [];
-      if (templates.length > 0) {
-        const template = templates[0];
+      // Filter by type on client side for safety
+      const matched = templates.filter(t => t.type === this.data.reportType);
+      const template = matched.length > 0 ? matched[0] : (templates.length > 0 ? templates[0] : null);
+      if (template) {
         const sections = this.buildSectionsFromTemplate(template);
         this.setData({ sections });
       } else {
@@ -300,21 +316,39 @@ Page({
     const type = this.data.reportType;
     const labels = SECTION_LABELS[type] || SECTION_LABELS.daily;
 
-    // Extract allowed keys from template sections (supports array-of-objects, array-of-strings, or object format)
-    let allowedKeys = Object.keys(labels);
+    // 从模板提取 sections（支持数组对象、字符串数组、对象三种格式）
+    // 保留模板中的 title，使自定义段落显示正确的标题而非 key 原名
     if (template.sections) {
-      if (Array.isArray(template.sections)) {
-        const keys = template.sections.map(s => typeof s === 'string' ? s : s.key).filter(Boolean);
-        if (keys.length > 0) allowedKeys = keys;
-      } else if (typeof template.sections === 'object') {
+      if (Array.isArray(template.sections) && template.sections.length > 0) {
+        return template.sections.map((s, i) => {
+          const key = typeof s === 'string' ? s : s.key;
+          return {
+            key,
+            title: typeof s === 'object' && s.title ? s.title : (labels[key] || key),
+            color: SECTION_COLORS[key] || '#00b26a',
+            lines: _makeLines(['']),
+            _rk: i
+          };
+        });
+      }
+      if (typeof template.sections === 'object') {
         const keys = Object.keys(template.sections);
-        if (keys.length > 0) allowedKeys = keys;
+        if (keys.length > 0) {
+          return keys.map((key, i) => ({
+            key,
+            title: template.sections[key]?.title || labels[key] || key,
+            color: SECTION_COLORS[key] || '#00b26a',
+            lines: _makeLines(['']),
+            _rk: i
+          }));
+        }
       }
     }
 
-    return allowedKeys.map((key, i) => ({
+    // 无模板时使用默认 labels
+    return Object.keys(labels).map((key, i) => ({
       key,
-      title: labels[key] || key,
+      title: labels[key],
       color: SECTION_COLORS[key] || '#00b26a',
       lines: _makeLines(['']),
       _rk: i
@@ -357,8 +391,11 @@ Page({
     this.setData({
       selectedComboId: null,
       selectedComboName: '私人',
-      isSharedCombo: false
+      isSharedCombo: false,
+      showComboPicker: false
     });
+    this.clearDraft();
+    this.loadTemplates();
   },
 
   // ========== Line Editing ==========
@@ -435,9 +472,11 @@ Page({
           type: reportType
         });
         const templates = res.templates || res.data || [];
+        const matched = templates.filter(t => t.type === reportType);
+        const template = matched.length > 0 ? matched[0] : (templates.length > 0 ? templates[0] : null);
         let targetKeys;
-        if (templates.length > 0) {
-          targetKeys = this.getSectionKeys(this.buildSectionsFromTemplate(templates[0]));
+        if (template) {
+          targetKeys = this.getSectionKeys(this.buildSectionsFromTemplate(template));
         } else {
           targetKeys = this.getSectionKeys(this.copyDefaultSections());
         }
@@ -458,9 +497,11 @@ Page({
         type: reportType
       });
       const templates = res.templates || res.data || [];
+      const matched = templates.filter(t => t.type === reportType);
+      const template = matched.length > 0 ? matched[0] : (templates.length > 0 ? templates[0] : null);
       let privateKeys;
-      if (templates.length > 0) {
-        privateKeys = this.getSectionKeys(this.buildSectionsFromTemplate(templates[0]));
+      if (template) {
+        privateKeys = this.getSectionKeys(this.buildSectionsFromTemplate(template));
       } else {
         privateKeys = this.getSectionKeys(this.copyDefaultSections());
       }
@@ -486,26 +527,54 @@ Page({
     this.setData({ showComboPicker: e.detail.visible });
   },
 
-  onComboModeChange(e) {
-    this.setData({ comboPickerMode: e.detail.value });
-  },
-
-  selectCombo(e) {
+  async selectCombo(e) {
     const { id, name, shared } = e.currentTarget.dataset;
+    const newComboId = id !== undefined ? Number(id) : null;
+
+    // 编辑态下检查目标组合模板是否兼容
+    if (this.data.reportId) {
+      const currentKeys = this.getSectionKeys(this.data.sections);
+      let targetKeys;
+
+      try {
+        const res = await reportTemplateApi.getList({
+          combo_id: newComboId || 0,
+          type: this.data.reportType
+        });
+        const templates = res.templates || res.data || [];
+        const matched = templates.filter(t => t.type === this.data.reportType);
+        const template = matched.length > 0 ? matched[0] : (templates.length > 0 ? templates[0] : null);
+        targetKeys = template
+          ? this.getSectionKeys(this.buildSectionsFromTemplate(template))
+          : this.getSectionKeys(this.copyDefaultSections());
+      } catch {
+        targetKeys = this.getSectionKeys(this.copyDefaultSections());
+      }
+
+      if (targetKeys !== currentKeys) {
+        const proceed = await new Promise(resolve => {
+          wx.showModal({
+            title: '切换确认',
+            content: '目标组合的模板结构与当前内容不一致，切换后将重置区块布局，已填写内容可能丢失。是否继续？',
+            confirmText: '继续切换',
+            cancelText: '取消',
+            success: r => resolve(r.confirm)
+          });
+        });
+        if (!proceed) return;
+      }
+    }
+
     this.setData({
-      selectedComboId: id,
+      selectedComboId: newComboId,
       selectedComboName: name,
-      isSharedCombo: shared === '1'
+      isSharedCombo: shared === '1',
+      showComboPicker: false
     });
-  },
-
-  async confirmCombo() {
-    this.setData({ showComboPicker: false });
     this.clearDraft();
-
-    // Reload templates for the new combo (includes private via API)
     await this.loadTemplates();
   },
+
 
   // ========== Todo Import ==========
 
@@ -614,6 +683,15 @@ Page({
         importedCount++;
       }
     });
+
+    // 导入后移除开头的空占位行，避免第一个条目留空
+    const targetLines = sections[importTargetSection].lines;
+    while (targetLines.length > 0 && (!targetLines[0].text || !targetLines[0].text.trim())) {
+      targetLines.shift();
+    }
+    if (targetLines.length === 0) {
+      targetLines.push(_makeLine(''));
+    }
 
     this.setData({
       sections,
@@ -755,12 +833,16 @@ Page({
 
   getWeekNumber(dateStr) {
     if (!dateStr) return '';
-    const date = new Date(dateStr.replace(/-/g, '/'));
-    if (isNaN(date.getTime())) return '';
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    const diff = date - startOfYear + (startOfYear.getTimezoneOffset() - date.getTimezoneOffset()) * 60000;
-    const dayOfYear = Math.floor(diff / 86400000);
-    return Math.floor(dayOfYear / 7) + 1;
+    const d = new Date(dateStr.replace(/-/g, '/'));
+    if (isNaN(d.getTime())) return '';
+    // 以周日为周起始
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const firstSunday = new Date(startOfYear);
+    firstSunday.setDate(1 - startOfYear.getDay());
+    const diff = d - firstSunday + (startOfYear.getTimezoneOffset() - firstSunday.getTimezoneOffset()) * 60000;
+    const oneWeek = 604800000;
+    const weekNum = Math.ceil(diff / oneWeek);
+    return weekNum > 0 ? weekNum : 1;
   },
 
   trimTrailingEmpty(lines) {
