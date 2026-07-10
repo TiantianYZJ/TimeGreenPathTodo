@@ -368,6 +368,23 @@
   box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.06);
 }
 
+.action-btn-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 32rpx;
+  gap: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.06);
+  margin-bottom: 16rpx;
+}
+
+.action-text {
+  font-size: 30rpx;
+  color: #00b26a;
+}
+
 .delete-text {
   font-size: 30rpx;
   color: #ff4d4f;

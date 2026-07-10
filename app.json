@@ -31,7 +31,8 @@
         "combo-detail/combo-detail",
         "collaboration/collaboration",
         "combo-stats/combo-stats",
-        "report-board/report-board"
+        "report-board/report-board",
+        "report-templates/report-templates"
       ]
     },
     {

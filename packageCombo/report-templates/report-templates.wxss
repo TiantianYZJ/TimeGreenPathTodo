@@ -1,0 +1,114 @@
+.page {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #e3f5eb;
+}
+
+.nav-inner {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16rpx;
+}
+
+.nav-left,
+.nav-right {
+  width: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content {
+  box-sizing: border-box;
+}
+
+.section-list {
+  padding: 20rpx 24rpx;
+}
+
+.section-card {
+  background: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+  padding: 20rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.section-title-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  background: #f7f8fa;
+  border-radius: 8rpx;
+  padding: 8rpx 16rpx;
+}
+
+.delete-icon {
+  padding: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-meta {
+  margin-top: 12rpx;
+  padding-left: 52rpx;
+}
+
+.meta-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 60rpx 0;
+  font-size: 28rpx;
+  color: #ccc;
+}
+
+.add-section-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin: 16rpx 24rpx 40rpx;
+  padding: 24rpx 0;
+  border: 2rpx dashed #00b26a;
+  border-radius: 16rpx;
+  background: #fafff5;
+}
+
+.add-text {
+  font-size: 28rpx;
+  color: #00b26a;
+  font-weight: 500;
+}

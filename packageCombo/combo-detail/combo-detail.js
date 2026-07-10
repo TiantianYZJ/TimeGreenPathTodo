@@ -1076,6 +1076,12 @@ Page({
     });
   },
 
+  navigateToReportTemplates() {
+    wx.navigateTo({
+      url: `/packageCombo/report-templates/report-templates?combo_id=${this.data.comboId}`
+    });
+  },
+
   navigateToStats() {
     const { comboId } = this.data;
     wx.navigateTo({
