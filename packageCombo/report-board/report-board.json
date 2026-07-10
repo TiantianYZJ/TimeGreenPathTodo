@@ -1,7 +1,7 @@
 {
   "navigationStyle": "custom",
   "usingComponents": {
-    "calendar": "@lspriv/wx-calendar/calendar",
+    "calendar": "@lspriv/wx-calendar/index",
     "t-tabs": "tdesign-miniprogram/tabs/tabs",
     "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
     "t-cell": "tdesign-miniprogram/cell/cell",

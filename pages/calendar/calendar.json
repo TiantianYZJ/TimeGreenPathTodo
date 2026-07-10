@@ -8,6 +8,6 @@
     "t-radio": "tdesign-miniprogram/radio/radio",
     "t-icon": "tdesign-miniprogram/icon/icon",
     "t-fab": "tdesign-miniprogram/fab/fab",
-    "calendar": "@lspriv/wx-calendar/calendar"
+    "calendar": "@lspriv/wx-calendar/index"
   }
 }
