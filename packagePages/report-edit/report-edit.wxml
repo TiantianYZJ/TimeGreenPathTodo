@@ -16,21 +16,21 @@ module.exports = {
 
   <view class="container">
 
-  <!-- 日期/周数选择器（像 add-todo picker-field 一样） -->
-  <view class="form-item">
-    <text class="question-title">{{reportType === 'weekly' ? '选择周数' : '选择日期'}}</text>
-    <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar">
-      <text>{{targetDateHint || '请选择日期'}}</text>
-      <t-icon name="calendar" size="32rpx" color="#999" />
-    </view>
-    <view wx:else class="picker-field">
-      <picker mode="selector" range="{{weekOptions}}" value="{{weekIndex}}" bindchange="onWeekChange">
-        <view class="picker-inner">
-          <text>{{weekOptions[weekIndex] || '请选择周数'}}</text>
-          <t-icon name="chevron-down" size="32rpx" color="#999" />
-        </view>
-      </picker>
-    </view>
+  <!-- 大标题（展示当前日期/周数） -->
+  <text class="page-title">{{targetDateHint}}</text>
+
+  <!-- 日期/周数选择器（像 add-todo 一样可点击修改） -->
+  <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar">
+    <text>{{targetDateHint || '请选择日期'}}</text>
+    <t-icon name="calendar" size="32rpx" color="#999" />
+  </view>
+  <view wx:else class="picker-field">
+    <picker mode="selector" range="{{weekOptions}}" value="{{weekIndex}}" bindchange="onWeekChange">
+      <view class="picker-inner">
+        <text>{{weekOptions[weekIndex] || '请选择周数'}}</text>
+        <t-icon name="chevron-down" size="32rpx" color="#999" />
+      </view>
+    </picker>
   </view>
 
   <t-calendar
