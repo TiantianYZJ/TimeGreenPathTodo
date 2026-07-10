@@ -1,5 +1,5 @@
 const { workReportApi } = require('../../utils/api.js');
-const { formatFriendlyDate } = require('../../utils/util.js');
+const { formatFriendlyDate, formatDateTime } = require('../../utils/util.js');
 
 const SECTION_COLORS = ['#00b26a', '#3498db', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c'];
 const SECTION_LABELS = {
@@ -46,6 +46,8 @@ Page({
           reportType: type,
           sections,
           friendlyDate: formatFriendlyDate(report.periodDate) + (type === 'weekly' && report.periodLabel ? ` · ${report.periodLabel}` : ''),
+          formattedCreatedAt: formatDateTime(report.createdAt),
+          formattedUpdatedAt: formatDateTime(report.updatedAt),
           canEdit: true,
           canDelete: true,
           loaded: true,

@@ -1,40 +1,52 @@
-<view class="page">
-  <!-- Content -->
-  <scroll-view class="scroll-area" scroll-y show-scrollbar="{{false}}" refresher-enabled refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh" data-id="{{report.id}}">
+<view class="container">
+  <view class="form-item">
+    <!-- 加载态 -->
     <view wx:if="{{!loaded}}" class="loading-area">
       <view class="loading-spinner" />
       <text class="loading-text">加载中...</text>
     </view>
 
+    <!-- 空态 -->
     <view wx:if="{{loaded && !report}}" class="empty-area">
       <t-icon name="file" size="80rpx" color="#ddd" />
       <text class="empty-text">报告不存在</text>
     </view>
 
     <block wx:if="{{loaded && report}}">
-      <!-- Meta Section -->
-      <view class="meta-section">
-        <view class="meta-row">
-          <text class="meta-label">日期</text>
-          <text class="meta-value">{{friendlyDate}}</text>
+      <!-- 日期 -->
+      <view class="date-info deadline">
+        <view class="section-header">
+          <t-icon name="time" size="32rpx" color="#999" />
+          <text class="label">日期</text>
         </view>
-        <view class="meta-row" wx:if="{{reportType === 'weekly' && report.periodLabel}}">
-          <text class="meta-label">周期</text>
-          <text class="meta-value">{{report.periodLabel}}</text>
+        <text class="value">{{friendlyDate}}</text>
+      </view>
+
+      <!-- 报告类型 -->
+      <view class="date-info">
+        <view class="section-header">
+          <t-icon name="edit" size="32rpx" color="#999" />
+          <text class="label">类型</text>
         </view>
-        <view class="meta-row">
-          <text class="meta-label">归属</text>
-          <view class="meta-badge-wrap">
-            <t-icon wx:if="{{report.scope === 'private'}}" name="lock-on" size="28rpx" color="#00b26a" />
-            <t-icon wx:else name="user-group" size="28rpx" color="#00b26a" />
-            <text class="meta-value">{{report.scope === 'private' ? '个人报告' : '团队报告'}}</text>
-          </view>
+        <text class="value">{{reportType === 'weekly' ? '周报' : '日报'}}</text>
+      </view>
+
+      <!-- 归属 -->
+      <view class="date-info">
+        <view class="section-header">
+          <t-icon name="user" size="32rpx" color="#999" />
+          <text class="label">归属</text>
+        </view>
+        <view class="scope-badge">
+          <t-icon wx:if="{{report.scope === 'private'}}" name="lock-on" size="28rpx" color="#00b26a" />
+          <t-icon wx:else name="user-group" size="28rpx" color="#00b26a" />
+          <text class="value">{{report.scope === 'private' ? '个人报告' : '团队报告'}}</text>
         </view>
       </view>
 
-      <!-- Section Cards -->
+      <!-- 报告内容区块 -->
       <view class="sections-area">
-        <view class="section-card" wx:for="{{sections}}" wx:key="index" wx:for-index="idx">
+        <view class="section-card" wx:for="{{sections}}" wx:key="key" wx:for-index="idx">
           <view class="section-color-tag" style="background: {{sectionColors[idx % sectionColors.length]}}" />
           <view class="section-body">
             <text class="section-title">{{item.title || '未命名区块'}}</text>
@@ -51,21 +63,36 @@
         </view>
       </view>
 
-      <!-- Time Info -->
-      <view class="time-info">
-        <text class="time-row">创建于 {{report.createdAt || '-'}}</text>
-        <text class="time-row">更新于 {{report.updatedAt || '-'}}</text>
+      <!-- 时间信息 -->
+      <view class="time-info date-info">
+        <view class="time-row">
+          <view class="time-col">
+            <view class="section-header">
+              <t-icon name="add" size="26rpx" color="#bbb" />
+              <text class="label">创建时间</text>
+            </view>
+            <text class="value time-value">{{formattedCreatedAt || '-'}}</text>
+          </view>
+          <view class="time-divider" />
+          <view class="time-col">
+            <view class="section-header">
+              <t-icon name="time" size="26rpx" color="#bbb" />
+              <text class="label">更新时间</text>
+            </view>
+            <text class="value time-value">{{formattedUpdatedAt || '-'}}</text>
+          </view>
+        </view>
       </view>
 
-      <!-- Delete Button -->
+      <!-- 删除 -->
       <view wx:if="{{canDelete}}" class="delete-area">
         <button class="delete-btn" bindtap="deleteReport">删除报告</button>
       </view>
     </block>
-  </scroll-view>
-
-  <!-- 编辑 FAB -->
-  <view wx:if="{{canEdit}}">
-    <t-fab icon="edit-1" text="编辑" bind:click="navigateToEdit" style="right: 32rpx; bottom: 32rpx;" />
   </view>
+</view>
+
+<!-- 编辑 FAB -->
+<view wx:if="{{canEdit}}">
+  <t-fab icon="edit-1" text="编辑" bind:click="navigateToEdit" style="right: 32rpx; bottom: 32rpx;" />
 </view>

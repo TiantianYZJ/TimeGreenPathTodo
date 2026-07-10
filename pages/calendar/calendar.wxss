@@ -76,7 +76,15 @@
 
 /* 报告列表样式 */
 .report-list {
-  padding-bottom: 0;
+  padding: 0 20rpx 30rpx;
+}
+
+.report-item-wrapper {
+  position: relative;
+  margin-bottom: 0rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .t-tabs {

@@ -118,7 +118,7 @@ module.exports = {
     </t-radio-group>
 
     <scroll-view class="combo-list-scroll" scroll-y>
-      <view wx:if="{{comboPickerMode === 'private'}}" class="combo-options">
+      <view wx:if="{{comboPickerMode === 'private' && _privateCompatible !== false}}" class="combo-options">
         <view
           class="combo-card {{!selectedComboId && !isSharedCombo ? 'selected' : ''}}"
           bindtap="selectPrivateCombo"
@@ -139,6 +139,7 @@ module.exports = {
           class="combo-card {{selectedComboId === item.id && isSharedCombo ? 'selected' : ''}}"
           wx:for="{{sharedCombos}}"
           wx:key="id"
+          wx:if="{{!_compatibleComboIds || utils.includes(_compatibleComboIds, item.id)}}"
           data-id="{{item.id}}"
           data-name="{{item.name}}"
           data-shared="1"
@@ -155,8 +156,8 @@ module.exports = {
         </view>
       </view>
 
-      <view wx:if="{{comboPickerMode === 'shared' && sharedCombos.length === 0}}" class="empty-combos">
-        <text>暂无共享组合</text>
+      <view wx:if="{{comboPickerMode === 'shared' && (sharedCombos.length === 0 || _filteredComboCount === 0)}}" class="empty-combos">
+        <text>{{_filteredComboCount === 0 ? '没有兼容的组合模板' : '暂无共享组合'}}</text>
       </view>
     </scroll-view>
 

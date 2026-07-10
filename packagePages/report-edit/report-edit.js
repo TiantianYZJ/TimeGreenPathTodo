@@ -358,8 +358,67 @@ Page({
 
   // ========== Combo Picker ==========
 
-  showComboPicker() {
-    this.setData({ showComboPicker: true });
+  async showComboPicker() {
+    const isEdit = !!this.data.reportId;
+    if (isEdit) {
+      wx.showLoading({ title: '检查兼容组合...' });
+      const { compatibleIds, privateCompatible } = await this._checkComboCompatibility();
+      wx.hideLoading();
+      this.setData({
+        _compatibleComboIds: compatibleIds,
+        _filteredComboCount: compatibleIds.length,
+        _privateCompatible: privateCompatible,
+        showComboPicker: true,
+      });
+    } else {
+      this.setData({ showComboPicker: true });
+    }
+  },
+
+  /**
+   * 编辑态下检查哪些组合的模板结构与当前报告一致（日报/周报共用）
+   */
+  async _checkComboCompatibility() {
+    const currentKeys = this.getSectionKeys(this.data.sections);
+    const reportType = this.data.reportType;
+    const combos = this.data.sharedCombos || [];
+    const compatibleIds = [];
+
+    const results = await Promise.all(combos.map(async (combo) => {
+      // 当前已选的组合始终兼容
+      if (String(combo.id) === String(this.data.selectedComboId)) {
+        return { id: combo.id, compatible: true };
+      }
+      try {
+        const res = await reportTemplateApi.getList({
+          combo_id: combo.id,
+          type: reportType
+        });
+        const templates = res.templates || res.data || [];
+        let targetKeys;
+        if (templates.length > 0) {
+          targetKeys = this.getSectionKeys(this.buildSectionsFromTemplate(templates[0]));
+        } else {
+          targetKeys = this.getSectionKeys(this.copyDefaultSections());
+        }
+        return { id: combo.id, compatible: targetKeys === currentKeys };
+      } catch (err) {
+        logger.warn('REPORT', 'COMBO_CHECK', `检查组合 ${combo.id} 失败`, err);
+        return { id: combo.id, compatible: false };
+      }
+    }));
+
+    results.forEach(r => { if (r.compatible) compatibleIds.push(r.id); });
+
+    // 检查私人选项
+    const defaultKeys = this.getSectionKeys(this.copyDefaultSections());
+    const privateCompatible = defaultKeys === currentKeys;
+
+    return { compatibleIds, privateCompatible };
+  },
+
+  getSectionKeys(sections) {
+    return sections.map(s => s.key).sort().join(',');
   },
 
   hideComboPicker() {

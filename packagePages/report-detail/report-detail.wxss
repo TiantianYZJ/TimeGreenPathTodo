@@ -1,16 +1,10 @@
-/* ===== Page Container ===== */
-.page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #e3f5eb;
+.form-item {
+  padding-bottom: 160rpx;
 }
 
-/* ===== Scroll Area ===== */
-.scroll-area {
-  flex: 1;
-  padding: 0 24rpx 160rpx;
-  box-sizing: border-box;
+.container {
+  padding: 30rpx;
+  padding-top: 25rpx;
 }
 
 /* ===== Loading ===== */
@@ -56,38 +50,37 @@
   color: #999;
 }
 
-/* ===== Meta Section ===== */
-.meta-section {
-  background: #fff;
+/* ===== Card ===== */
+.date-info {
+  margin-top: 20rpx;
+  margin-bottom: 20rpx;
+  padding: 25rpx;
+  background: linear-gradient(150deg, #f9f9f9 0%, #f1f1f1 100%);
   border-radius: 32rpx;
-  padding: 0 24rpx;
-  margin-top: 24rpx;
 }
 
-.meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+.date-info.deadline {
+  background: linear-gradient(150deg, #f9f9f9 0%, #f6f0c5 100%);
 }
 
-.meta-row:last-child {
-  border-bottom: none;
+.label {
+  color: #666;
+  font-size: 34rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  line-height: 34rpx;
 }
 
-.meta-label {
-  font-size: 28rpx;
-  color: #999;
-}
-
-.meta-value {
-  font-size: 28rpx;
+.value {
   color: #333;
-  font-weight: 500;
+  font-size: 34rpx;
+  word-break: break-all;
+  line-height: 1.6;
+  text-indent: 0;
+  display: inline;
 }
 
-.meta-badge-wrap {
+.scope-badge {
   display: flex;
   align-items: center;
   gap: 8rpx;
@@ -99,7 +92,7 @@
 }
 
 .section-card {
-  background: #fff;
+  background: linear-gradient(150deg, #f9f9f9 0%, #f1f1f1 100%);
   border-radius: 32rpx;
   display: flex;
   overflow: hidden;
@@ -118,7 +111,7 @@
 
 .section-title {
   display: block;
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #333;
   margin-bottom: 16rpx;
@@ -132,7 +125,7 @@
 
 .section-line {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12rpx;
 }
 
@@ -141,7 +134,6 @@
   height: 10rpx;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 10rpx;
 }
 
 .line-text {
@@ -160,22 +152,35 @@
 
 /* ===== Time Info ===== */
 .time-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-  margin-top: 40rpx;
-  padding-bottom: 20rpx;
+  margin-top: 24rpx;
 }
 
 .time-row {
-  font-size: 24rpx;
-  color: #bbb;
+  display: flex;
+  align-items: center;
+}
+
+.time-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.time-divider {
+  width: 2rpx;
+  height: 48rpx;
+  background: #e0e0e0;
+  margin: 0 24rpx;
+  flex-shrink: 0;
+}
+
+.time-value {
+  font-size: 26rpx;
+  color: #999;
 }
 
 /* ===== Delete Button ===== */
 .delete-area {
-  margin-top: 24rpx;
+  margin-top: 40rpx;
   padding-bottom: 48rpx;
 }
 
@@ -197,8 +202,16 @@
   border: none;
 }
 
-/* TDesign component overrides */
-page {
-  --td-cell-bg-color: #e3f5eb;
-  --td-radio-bg-color: transparent;
+/* ===== Section Header: 统一卡片图标+标签排布 ===== */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.section-header .label {
+  margin-right: 0;
+  margin-bottom: 0;
+  display: inline;
 }
