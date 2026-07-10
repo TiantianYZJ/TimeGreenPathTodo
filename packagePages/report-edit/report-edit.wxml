@@ -19,8 +19,10 @@ module.exports = {
   <!-- 大标题（展示当前日期/周数） -->
   <text class="page-title">{{targetDateHint}}</text>
 
+  <text class="question-title">报告时间</text>
+
   <!-- 日期/周数选择器（像 add-todo picker-field 一样） -->
-  <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar" hover-class="picker-field-active" hover-stay-time="100">
+  <view wx:if="{{reportType === 'daily'}}" class="picker-field" bindtap="showCalendar">
     <text class="picker-field-text">{{targetDateHint || '请选择日期'}}</text>
     <t-icon name="calendar" size="32rpx" color="#999" />
   </view>
@@ -45,8 +47,8 @@ module.exports = {
   />
 
   <view wx:if="{{reportType === 'weekly' && !reportId}}" class="weekly-hint">
-    <t-icon name="tips"/>
-    <text class="weekly-hint-text">周报：一周从周日开始，本周为第{{reportWeek}}周</text>
+    <t-icon name="info-circle" color="#00b26a" size="32rpx"/>
+    <text class="weekly-hint-text">一周从周日开始，本周为第{{reportWeek}}周</text>
   </view>
 
   <!-- 汇报到选择器 -->

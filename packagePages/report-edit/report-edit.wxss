@@ -21,7 +21,7 @@
 .picker-field {
   padding: 26rpx 32rpx;
   margin-left: 24rpx;
-  margin-bottom: 24rpx;
+  margin-bottom: 12rpx;
   font-size: 32rpx;
   background: #f8f8f8;
   border-radius: 32rpx;
@@ -41,11 +41,6 @@
 .picker-native {
   width: 100%;
   display: block;
-}
-
-/* 点击反馈 */
-.picker-field-active {
-  background: #e8e8e8;
 }
 
 /* ========== 表单项（对标 add-todo） ========== */
@@ -224,10 +219,12 @@
 .weekly-hint {
   display: flex;
   align-items: center;
-  padding: 20rpx;
+  padding: 12rpx 24rpx;
+  margin-left: 24rpx;
   background: #f0faf5;
-  border-radius: 12rpx;
+  border-radius: 32rpx;
   margin-bottom: 24rpx;
+  gap: 12rpx;
 }
 
 .weekly-hint-icon {
