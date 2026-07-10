@@ -5,7 +5,7 @@
       <view class="nav-back" bindtap="goBack">
         <t-icon name="chevron-left" size="48rpx" color="#333" />
       </view>
-      <text class="nav-title">{{comboName || '组合'} · 汇报看板</text>
+      <text class="nav-title">{{comboName || '组合'}} · 汇报看板</text>
       <view class="nav-right" bindtap="showMemberFilter">
         <t-icon name="user" size="40rpx" color="#666" />
       </view>
