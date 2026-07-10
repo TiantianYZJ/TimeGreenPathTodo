@@ -305,6 +305,13 @@ Page({
     }
   },
 
+  // ========== 日报/周报模板设置 ==========
+  navigateToPrivateTemplates() {
+    wx.navigateTo({
+      url: `/packageCombo/report-templates/report-templates?combo_id=0`
+    });
+  },
+
   // ========== 分享 ==========
   onShareAppMessage() {
     return {

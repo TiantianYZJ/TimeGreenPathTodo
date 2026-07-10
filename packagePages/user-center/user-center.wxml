@@ -106,6 +106,17 @@
       </view>
     </view>
 
+    <!-- 汇报模板设置 -->
+    <view class="report-templates-section" bindtap="navigateToPrivateTemplates">
+      <view class="report-templates-card">
+        <view class="report-templates-left">
+          <t-icon name="edit" size="36rpx" color="#00b26a" />
+          <text class="report-templates-text">日报/周报模板设置</text>
+        </view>
+        <t-icon name="chevron-right" size="36rpx" color="#ccc" />
+      </view>
+    </view>
+
     <!-- 账号信息（可折叠） -->
     <view class="collapse-section">
       <view class="collapse-header" bindtap="toggleInfo">
