@@ -214,3 +214,74 @@
 .date-info-priority .section-header {
   margin-bottom: 0;
 }
+
+/* ===== Copy Popup ===== */
+.copy-popup-content {
+  width: 560rpx;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24rpx) saturate(180%);
+  -webkit-backdrop-filter: blur(24rpx) saturate(180%);
+  border-radius: 32rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.copy-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 32rpx 20rpx;
+}
+
+.copy-popup-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.copy-popup-close {
+  padding: 8rpx;
+}
+
+.copy-popup-scroll {
+  max-height: 600rpx;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+}
+
+.copy-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 20rpx;
+  margin-bottom: 8rpx;
+  background: #f8f8f8;
+  border-radius: 24rpx;
+  transition: all 0.2s ease;
+}
+
+.copy-popup-item:active {
+  transform: scale(0.97);
+}
+
+.copy-popup-item.checked {
+  background: #e3f5eb;
+}
+
+.copy-popup-item-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.copy-popup-item-count {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.copy-popup-footer {
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom, 0rpx));
+}

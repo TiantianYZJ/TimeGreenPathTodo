@@ -20,6 +20,8 @@ Page({
     refreshing: false,
     sectionLabels: SECTION_LABELS,
     creator: null,
+    showCopyPopup: false,
+    checkedSections: {},
   },
 
   onLoad(options) {
@@ -135,6 +137,53 @@ Page({
     const oneWeek = 604800000;
     const weekNum = Math.floor(diff / oneWeek) + 1;
     return weekNum > 0 ? weekNum : 1;
+  },
+
+  // ===== Copy FAB =====
+  toggleCopyPopup() {
+    // 每次打开时重置所有选项为选中
+    const checked = {};
+    this.data.sections.forEach(s => { checked[s.key] = true; });
+    this.setData({
+      showCopyPopup: !this.data.showCopyPopup,
+      checkedSections: checked,
+    });
+  },
+  closeCopyPopup() {
+    this.setData({ showCopyPopup: false });
+  },
+  onCopyPopupVisibleChange(e) {
+    if (!e.detail.visible) this.setData({ showCopyPopup: false });
+  },
+  onCheckboxChange(e) {
+    const { key } = e.currentTarget.dataset;
+    const checked = { ...this.data.checkedSections };
+    checked[key] = !checked[key];
+    this.setData({ checkedSections: checked });
+  },
+  copyCheckedContent() {
+    const { sections, checkedSections, report } = this.data;
+    const checked = sections.filter(s => checkedSections[s.key]);
+    if (!checked.length) {
+      wx.showToast({ title: '请至少选择一项', icon: 'none' });
+      return;
+    }
+    const parts = [];
+    checked.forEach(s => {
+      const lines = s.lines && s.lines.length
+        ? s.lines.map((l, i) => `${i + 1}、${l}`).join('\n')
+        : '';
+      parts.push(`${s.title}：\n${lines}`);
+    });
+    const text = parts.join('\n\n');
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: '已复制', icon: 'success' });
+        this.setData({ showCopyPopup: false });
+      },
+      fail: () => wx.showToast({ title: '复制失败', icon: 'none' }),
+    });
   },
 
   goBack() { wx.navigateBack(); },

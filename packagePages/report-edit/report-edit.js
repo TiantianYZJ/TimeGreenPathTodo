@@ -98,7 +98,7 @@ Page({
         const sd = reportDate.substring(8, 10);
         const em = endDate.substring(5, 7);
         const ed = endDate.substring(8, 10);
-        return `周报 · 第${reportWeek}周 · ${parseInt(sm)}月${parseInt(sd)}日-${parseInt(em)}月${parseInt(ed)}日`;
+        return `周报 · 第${reportWeek}周`;
       })() : ''
     };
 
@@ -294,7 +294,7 @@ Page({
       reportDate: date,
       reportWeek: weekNum,
       weekIndex: idx,
-      targetDateHint: `周报 · 第${weekNum}周 · ${parseInt(sm)}月${parseInt(sd)}日-${parseInt(em)}月${parseInt(ed)}日`
+      targetDateHint: `周报 · 第${weekNum}周`
     });
     this.clearDraft();
   },

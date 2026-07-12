@@ -1,5 +1,18 @@
 const { authApi, setToken, getToken, clearToken } = require('../../utils/api.js');
 
+// QR 授权会话有效期（与服务端 SESSION_TTL 保持一致）
+const QR_AUTH_TTL = 5 * 60 * 1000;
+
+function getPendingQrAuth() {
+  const auth = wx.getStorageSync('pendingQrAuth');
+  if (!auth || !auth.sceneId) return null;
+  if (Date.now() - auth.timestamp > QR_AUTH_TTL) {
+    wx.removeStorageSync('pendingQrAuth');
+    return null;
+  }
+  return auth;
+}
+
 const userAgreementContent = `
 **生效日期：2026年6月29日**
 
@@ -197,9 +210,17 @@ Page({
     const token = getToken();
 
     if (options && options.scene) {
+      const sceneId = decodeURIComponent(options.scene);
+
+      // 持久化 QR 授权上下文，即使页面被销毁也能恢复
+      wx.setStorageSync('pendingQrAuth', {
+        sceneId,
+        timestamp: Date.now()
+      });
+
       this.setData({
         isQrCodeMode: true,
-        sceneId: decodeURIComponent(options.scene),
+        sceneId,
         qrStep: 'detect'
       });
 
@@ -210,18 +231,67 @@ Page({
       }
 
       this.reportScanned();
-    } else if (token) {
+      return;
+    }
+
+    // 非扫码进入：检查是否有待处理的 QR 授权
+    const pending = getPendingQrAuth();
+    if (pending) {
+      if (!token) {
+        this.setData({
+          isQrCodeMode: true,
+          sceneId: pending.sceneId,
+          qrStep: 'need_login'
+        });
+        this.reportScanned();
+      } else {
+        this.setData({
+          isQrCodeMode: true,
+          sceneId: pending.sceneId,
+        });
+        this.handleLoginSuccessForAuth();
+      }
+      return;
+    }
+
+    // 真正的新页面打开，且没有待处理的授权
+    if (token) {
       wx.switchTab({ url: '/pages/todo/todo' });
     }
   },
 
   onShow() {
-    if (!this.data.isQrCodeMode) return;
+    // 使用页面数据判断 QR 模式（最快路径）
+    if (this.data.isQrCodeMode) {
+      const token = getToken();
+      if (this.data.qrStep === 'need_login' && token) {
+        this.handleLoginSuccessForAuth();
+      }
+      return;
+    }
+
+    // 页面数据丢失但存储中仍有待处理 QR 授权：恢复状态
+    const pending = getPendingQrAuth();
+    if (!pending) return;
 
     const token = getToken();
-    if (this.data.qrStep === 'need_login' && token) {
-      this.handleLoginSuccessForAuth();
+    if (!token) {
+      // 用户仍未登录，还原 QR 登录流程
+      this.setData({
+        isQrCodeMode: true,
+        sceneId: pending.sceneId,
+        qrStep: 'need_login'
+      });
+      this.reportScanned();
+      return;
     }
+
+    // 用户已登录 -> 直接跳转到确认/填资料页
+    this.setData({
+      isQrCodeMode: true,
+      sceneId: pending.sceneId,
+    });
+    this.handleLoginSuccessForAuth();
   },
 
   reportScanned() {
@@ -278,6 +348,9 @@ Page({
       const result = await authApi.confirmQrCodeLogin(this.data.sceneId);
 
       if (result.success) {
+        // 授权成功，清除待处理 QR 授权
+        wx.removeStorageSync('pendingQrAuth');
+
         this.setData({
           authConfirmed: true,
           qrStep: 'success',
@@ -357,9 +430,12 @@ Page({
         });
       } else {
         this.setData({ loading: false });
+        const pendingQrAuth = getPendingQrAuth();
         const pendingShareData = wx.getStorageSync('pendingShareData');
         const hasPendingShare = pendingShareData && (Date.now() - pendingShareData.timestamp < 10 * 60 * 1000);
-        if (hasPendingShare) {
+        if (pendingQrAuth) {
+          wx.redirectTo({ url: '/packagePages/login/login' });
+        } else if (hasPendingShare) {
           wx.navigateBack();
         } else {
           wx.switchTab({ url: '/pages/todo/todo' });
@@ -383,9 +459,12 @@ Page({
         currentUserInfo: wx.getStorageSync('user') || {}
       });
     } else {
+      const pendingQrAuth = getPendingQrAuth();
       const pendingShareData = wx.getStorageSync('pendingShareData');
       const hasPendingShare = pendingShareData && (Date.now() - pendingShareData.timestamp < 10 * 60 * 1000);
-      if (hasPendingShare) {
+      if (pendingQrAuth) {
+        wx.redirectTo({ url: '/packagePages/login/login' });
+      } else if (hasPendingShare) {
         wx.navigateBack();
       } else {
         wx.switchTab({ url: '/pages/todo/todo' });
@@ -486,11 +565,15 @@ Page({
           } else {
             wx.showToast({ title: '登录成功', icon: 'success' });
 
+            const pendingQrAuth = getPendingQrAuth();
             const pendingShareData = wx.getStorageSync('pendingShareData');
             const hasPendingShare = pendingShareData && (Date.now() - pendingShareData.timestamp < 10 * 60 * 1000);
 
             setTimeout(() => {
-              if (hasPendingShare) {
+              if (pendingQrAuth) {
+                // 有待处理的扫码授权，重定向到 QR 确认页
+                wx.redirectTo({ url: '/packagePages/login/login' });
+              } else if (hasPendingShare) {
                 wx.navigateBack();
               } else {
                 wx.switchTab({ url: '/pages/todo/todo' });
@@ -511,6 +594,9 @@ Page({
   },
 
   goBackToApp() {
+    // 无论用户是从成功页返回还是取消授权，都清理待处理 QR 上下文
+    wx.removeStorageSync('pendingQrAuth');
+
     wx.navigateBack({ delta: 1 }).catch(() => {
       wx.switchTab({ url: '/pages/todo/todo' });
     });

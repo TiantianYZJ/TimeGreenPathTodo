@@ -15,37 +15,52 @@ let accessTokenCache = {
   expiresAt: 0
 };
 
+let accessTokenPromise = null;
+
 async function getAccessToken() {
   const now = Date.now();
-  
+
   if (accessTokenCache.token && accessTokenCache.expiresAt > now + 60000) {
+    accessTokenPromise = null;
     return accessTokenCache.token;
   }
-  
-  try {
-    const response = await axios.get('https://api.weixin.qq.com/cgi-bin/token', {
-      params: {
-        grant_type: 'client_credential',
-        appid: APPID,
-        secret: SECRET
+
+  if (accessTokenPromise) {
+    return accessTokenPromise;
+  }
+
+  accessTokenPromise = (async () => {
+    try {
+      const response = await axios.get('https://api.weixin.qq.com/cgi-bin/token', {
+        params: {
+          grant_type: 'client_credential',
+          appid: APPID,
+          secret: SECRET
+        }
+      });
+
+      const { access_token, expires_in, errcode, errmsg } = response.data;
+
+      if (errcode) {
+        logger.wechatError('access_token', '获取access_token失败', { errcode, errmsg });
+        throw new Error(errmsg);
       }
-    });
-    
-    const { access_token, expires_in, errcode, errmsg } = response.data;
-    
-    if (errcode) {
-      logger.wechatError('access_token', '获取access_token失败', { errcode, errmsg });
-      throw new Error(errmsg);
+
+      accessTokenCache.token = access_token;
+      accessTokenCache.expiresAt = Date.now() + expires_in * 1000;
+
+      logger.wechatApi('access_token', 'access_token已更新', { expiresIn: expires_in });
+      return access_token;
+    } catch (err) {
+      logger.wechatError('access_token', '获取access_token错误', { error: err.message });
+      throw err;
     }
-    
-    accessTokenCache.token = access_token;
-    accessTokenCache.expiresAt = now + expires_in * 1000;
-    
-    logger.wechatApi('access_token', 'access_token已更新', { expiresIn: expires_in });
-    return access_token;
-  } catch (err) {
-    logger.wechatError('access_token', '获取access_token错误', { error: err.message });
-    throw err;
+  })();
+
+  try {
+    return await accessTokenPromise;
+  } finally {
+    accessTokenPromise = null;
   }
 }
 
