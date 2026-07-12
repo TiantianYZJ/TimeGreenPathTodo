@@ -183,13 +183,14 @@ const create = async (req, res) => {
     const users = await query('SELECT todo_limit FROM users WHERE id = ?', [userId]);
     const todoLimit = users[0]?.todo_limit || 100;
     
-    if (countResult[0].count >= todoLimit) {
+        const newTotal = countResult[0].count + 1 + countNestedSubtasks(subtasks);
+    if (newTotal > todoLimit) {
       return res.status(400).json({
         success: false,
         message: `已达到待办上限(${todoLimit}个)，可在 更多-右下角 联系客服`
       });
     }
-    
+
     const finalTodoId = todoId || generateTodoId();
     const imagesJson = images && images.length > 0 ? JSON.stringify(images) : null;
 
@@ -378,44 +379,89 @@ const update = async (req, res) => {
     
     updateFields.push('updated_at = NOW()');
     updateValues.push(id, userId);
-    
-    await query(
-      `UPDATE todos SET ${updateFields.join(', ')} WHERE todo_id = ? AND user_id = ?`,
-      updateValues
-    );
-    
-    if (tagIds !== undefined) {
-      await query('DELETE FROM todo_tags WHERE todo_id = ?', [id]);
-      
-      if (tagIds.length > 0) {
-        const tagValues = tagIds.map(tagId => [id, tagId]);
-        await query(
-          'INSERT INTO todo_tags (todo_id, tag_id) VALUES ?',
-          [tagValues]
-        );
-      }
-    }
-    
-    // 处理子待办：subtasks 存在时表示全量更新（增删改，嵌套递归）
+
+    // 有子待办时需要原子性：父待办更新 + 标签 + 子待办在同一事务中
     if (subtasks !== undefined && Array.isArray(subtasks)) {
+      // 检查 todo limit：只计算新增的子待办
+      const newSubtaskCount = countNestedSubtasks(subtasks);
+      if (newSubtaskCount > 0) {
+        const countResult = await query(
+          'SELECT COUNT(*) as count FROM todos WHERE user_id = ? AND is_deleted = 0',
+          [userId]
+        );
+        const users = await query('SELECT todo_limit FROM users WHERE id = ?', [userId]);
+        const todoLimit = users[0]?.todo_limit || 100;
+        if (countResult[0].count + newSubtaskCount > todoLimit) {
+          return res.status(400).json({
+            success: false,
+            message: `已达到待办上限(${todoLimit}个)，可在 更多-右下角 联系客服`
+          });
+        }
+      }
+
       const inherited = {
         setDate: setDate !== undefined ? setDate : existingTodo.set_date,
         setTime: setTime !== undefined ? setTime : existingTodo.set_time,
         priority: priority !== undefined ? priority : existingTodo.priority || 'p2',
         comboId: comboId !== undefined ? comboId : existingTodo.combo_id
       };
+      let newSubtaskResults = [];
+
       await transaction(async (conn) => {
-        await syncSubtodosInTx(conn, userId, id, subtasks, inherited);
+        const tQuery = (sql, params) => new Promise((resolve, reject) => {
+          conn.query(sql, params, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+
+        await tQuery(
+          `UPDATE todos SET ${updateFields.join(', ')} WHERE todo_id = ? AND user_id = ?`,
+          updateValues
+        );
+
+        if (tagIds !== undefined) {
+          await tQuery('DELETE FROM todo_tags WHERE todo_id = ?', [id]);
+          if (tagIds.length > 0) {
+            const tagValues = tagIds.map(tagId => [id, tagId]);
+            await tQuery('INSERT INTO todo_tags (todo_id, tag_id) VALUES ?', [tagValues]);
+          }
+        }
+
+        await syncSubtodosInTx(conn, userId, id, subtasks, inherited, newSubtaskResults);
+      });
+
+      const updatedTodo = await query('SELECT * FROM todos WHERE todo_id = ?', [id]);
+
+      res.json({
+        success: true,
+        message: '待办更新成功',
+        todo: formatTodo(updatedTodo[0]),
+        newSubtodos: newSubtaskResults.length > 0 ? newSubtaskResults : undefined
+      });
+    } else {
+      // 无子待办：走原有流程
+      await query(
+        `UPDATE todos SET ${updateFields.join(', ')} WHERE todo_id = ? AND user_id = ?`,
+        updateValues
+      );
+
+      if (tagIds !== undefined) {
+        await query('DELETE FROM todo_tags WHERE todo_id = ?', [id]);
+        if (tagIds.length > 0) {
+          const tagValues = tagIds.map(tagId => [id, tagId]);
+          await query('INSERT INTO todo_tags (todo_id, tag_id) VALUES ?', [tagValues]);
+        }
+      }
+
+      const updatedTodo = await query('SELECT * FROM todos WHERE todo_id = ?', [id]);
+
+      res.json({
+        success: true,
+        message: '待办更新成功',
+        todo: formatTodo(updatedTodo[0])
       });
     }
-
-    const updatedTodo = await query('SELECT * FROM todos WHERE todo_id = ?', [id]);
-    
-    res.json({
-      success: true,
-      message: '待办更新成功',
-      todo: formatTodo(updatedTodo[0])
-    });
   } catch (err) {
     logger.todoError('更新', '更新待办失败', { userId, id, error: err.message });
     res.status(500).json({
@@ -519,14 +565,28 @@ async function softDeleteTodoTree(conn, userId, todoIds) {
 }
 
 /**
+ * 递归计算嵌套子待办的总数
+ */
+function countNestedSubtasks(subtasks) {
+  if (!subtasks || !Array.isArray(subtasks)) return 0;
+  let count = 0;
+  for (const s of subtasks) {
+    if (!s.id) count++; // 无 id 表示新建
+    count += countNestedSubtasks(s.subtasks);
+  }
+  return count;
+}
+
+/**
  * 递归同步子待办：增/删/改，支持无限嵌套（在事务中使用）
  * @param {object} conn - 事务连接对象
  * @param {number} userId
  * @param {string} parentTodoId - 父待办的 todo_id
  * @param {Array} subtasks - 子待办数组（支持嵌套 subtasks）
  * @param {object} inherited - 从父待办继承的字段
+ * @param {Array} newResults - 输出：收集新创建的子待办信息
  */
-async function syncSubtodosInTx(conn, userId, parentTodoId, subtasks, inherited) {
+async function syncSubtodosInTx(conn, userId, parentTodoId, subtasks, inherited, newResults) {
   const tQuery = (sql, params) => new Promise((resolve, reject) => {
     conn.query(sql, params, (err, result) => {
       if (err) reject(err);
@@ -548,6 +608,8 @@ async function syncSubtodosInTx(conn, userId, parentTodoId, subtasks, inherited)
     if (subtask.id) {
       const subUpdateFields = ['version = version + 1', 'updated_at = NOW()'];
       const subUpdateValues = [];
+      subUpdateFields.push('parent_id = ?');
+      subUpdateValues.push(parentTodoId);
       subUpdateFields.push('text = ?');
       subUpdateValues.push(subtask.text.trim());
       if (subtask.completed !== undefined) {
@@ -560,10 +622,10 @@ async function syncSubtodosInTx(conn, userId, parentTodoId, subtasks, inherited)
       );
       // 递归处理现有子待办的嵌套子待办
       if (subtask.subtasks && Array.isArray(subtask.subtasks) && subtask.subtasks.length > 0) {
-        await syncSubtodosInTx(conn, userId, subtask.id, subtask.subtasks, inherited);
+        await syncSubtodosInTx(conn, userId, subtask.id, subtask.subtasks, inherited, newResults);
       }
     } else {
-      await insertSubtodosInTx(conn, userId, parentTodoId, [subtask], inherited, []);
+      await insertSubtodosInTx(conn, userId, parentTodoId, [subtask], inherited, newResults || []);
     }
   }
 
@@ -578,6 +640,18 @@ const deleteTodo = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // 先检查待办是否存在
+    const existing = await query(
+      'SELECT id FROM todos WHERE todo_id = ? AND user_id = ? AND is_deleted = 0',
+      [id, userId]
+    );
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '待办不存在'
+      });
+    }
+
     // 递归软删除所有后代，确保不产生飘零数据
     await transaction(async (conn) => {
       await softDeleteTodoTree(conn, userId, [id]);
