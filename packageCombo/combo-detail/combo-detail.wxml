@@ -122,7 +122,7 @@
       </view>
       <view class="info-block posts-block" bindtap="navigateToComboPosts">
         <view class="section-header">
-          <text class="section-title">帖子圈</text>
+          <text class="section-title">组内动态</text>
           <t-icon name="chevron-right" size="32rpx" color="#999" />
         </view>
       </view>

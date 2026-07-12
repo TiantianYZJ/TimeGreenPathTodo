@@ -5,7 +5,7 @@
     "t-loading": "tdesign-miniprogram/loading/loading",
     "post-card": "/components/post-card/post-card"
   },
-  "navigationBarTitleText": "帖子圈",
+  "navigationBarTitleText": "组内动态",
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark"
 }
