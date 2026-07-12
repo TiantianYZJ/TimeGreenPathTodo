@@ -24,14 +24,17 @@ function initUpload({ filename, contentType, size, visitorToken }) {
 }
 
 /**
- * Upload file bytes to R2 pre-signed URL
+ * Upload file bytes via backend proxy to R2 pre-signed URL
  */
 function uploadToR2(uploadUrl, filePath) {
   return new Promise((resolve, reject) => {
+    const token = wx.getStorageSync('authToken');
     wx.uploadFile({
-      url: uploadUrl,
+      url: `https://api.yzjtiantian.cn/upload/proxy`,
       filePath,
       name: 'file',
+      header: { 'Authorization': `Bearer ${token}` },
+      formData: { uploadUrl },
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res);
