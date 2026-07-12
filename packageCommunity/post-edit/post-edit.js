@@ -136,7 +136,8 @@ Page({
               selectedTodoIds: draft.selectedTodoIds || [], selectedTodoTexts, selectedTodoPriorities,
               selectedComboCode: draft.selectedComboCode || null,
               selectedComboName: draft.selectedComboName || '',
-              location: draft.location || null
+              location: draft.location || null,
+              attachedFiles: draft.attachedFiles || []
             });
             this.updateMentionCard(draft.body || '');
           } else {
@@ -172,11 +173,14 @@ Page({
   },
 
   onUnload() {
-    const { attachedFiles: unloadFiles } = this.data;
-    if (unloadFiles && unloadFiles.length > 0) {
-      for (const f of unloadFiles) {
-        if (f.id && f.owner_token) {
-          deleteFile({ fileId: f.id, ownerToken: f.owner_token }).catch(() => {});
+    // 编辑模式下保留现有文件（属于帖子），仅清理新上传的未保存文件
+    if (!this.data.editMode) {
+      const { attachedFiles: unloadFiles } = this.data;
+      if (unloadFiles && unloadFiles.length > 0) {
+        for (const f of unloadFiles) {
+          if (f.id && f.owner_token) {
+            deleteFile({ fileId: f.id, ownerToken: f.owner_token }).catch(() => {});
+          }
         }
       }
     }
@@ -211,6 +215,7 @@ Page({
         editMode: true, editPostId: postId,
         title: cached.title || '', body: cached.body || '',
         fileList, imageUrls: cached.images || [],
+        attachedFiles: cached.files || [],
         selectedTodoIds: cached.todoIds || [], selectedTodoTexts, selectedTodoPriorities,
         selectedComboCode: cached.shareCode || null,
         selectedComboName: comboName,
@@ -242,6 +247,7 @@ Page({
           editMode: true, editPostId: postId,
           title: post.title || '', body: post.body || '',
           fileList, imageUrls: post.images || [],
+          attachedFiles: post.files || [],
           selectedTodoIds: post.todoIds || [], selectedTodoTexts, selectedTodoPriorities,
           selectedComboCode: post.shareCode || null,
           selectedComboName: comboName,
@@ -767,8 +773,11 @@ Page({
     this.setData({ submitting: true });
     try {
       const body = this.convertMentionsInText(this.data.body || '');
+      const postId = this.data.editMode
+        ? this.data.editPostId
+        : `post_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
       const payload = {
-        postId: `post_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+        postId,
         title: this.data.title, body: body || null,
         images: this.data.imageUrls.length > 0 ? this.data.imageUrls : null,
         todoIds: this.data.selectedTodoIds.length > 0 ? this.data.selectedTodoIds : null,
@@ -797,11 +806,14 @@ Page({
   },
 
   goBack() {
-    const { attachedFiles: goBackFiles } = this.data;
-    if (goBackFiles && goBackFiles.length > 0) {
-      for (const f of goBackFiles) {
-        if (f.id && f.owner_token) {
-          deleteFile({ fileId: f.id, ownerToken: f.owner_token }).catch(() => {});
+    // 编辑模式下保留现有文件（属于帖子），仅清理新上传的未保存文件
+    if (!this.data.editMode) {
+      const { attachedFiles: goBackFiles } = this.data;
+      if (goBackFiles && goBackFiles.length > 0) {
+        for (const f of goBackFiles) {
+          if (f.id && f.owner_token) {
+            deleteFile({ fileId: f.id, ownerToken: f.owner_token }).catch(() => {});
+          }
         }
       }
     }
