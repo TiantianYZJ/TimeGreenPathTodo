@@ -33,6 +33,50 @@ async function parseBadges(row) {
   return { badgeTitles: result.badgeTitles, badgeColors: result.badgeColors };
 }
 
+/**
+ * 从 postsController 内格式化投票数据（避免循环引用 pollController）
+ */
+async function formatPostPoll(pollId, userId) {
+  if (!pollId) return null;
+  const polls = await query('SELECT * FROM post_polls WHERE post_id = ? AND is_deleted = 0', [pollId]);
+  if (polls.length === 0) return null;
+  const poll = polls[0];
+
+  const options = await query(
+    'SELECT id, text, is_other, sort_order, vote_count FROM post_poll_options WHERE poll_id = ? ORDER BY sort_order',
+    [poll.id]
+  );
+
+  const now = new Date();
+  const endTime = poll.end_time ? new Date(poll.end_time) : null;
+  const isEnded = !!poll.is_closed || (endTime && now > endTime);
+
+  const userVotes = await query(
+    'SELECT option_id FROM post_poll_votes WHERE poll_id = ? AND user_id = ?',
+    [poll.id, userId]
+  );
+  const userVotedOptionIds = userVotes.map(v => v.option_id);
+
+  return {
+    pollId: poll.id,
+    title: poll.title,
+    type: poll.type,
+    isAnonymous: !!poll.is_anonymous,
+    allowOther: !!poll.allow_other,
+    totalVotes: poll.total_votes,
+    endTime: poll.end_time || null,
+    isEnded,
+    isVoted: userVotedOptionIds.length > 0,
+    userVotedOptionIds,
+    options: options.map(o => ({
+      optionId: o.id,
+      text: o.text,
+      voteCount: o.vote_count,
+      isOther: !!o.is_other
+    }))
+  };
+}
+
 async function formatPost(row, userId) {
   const images = row.images ? JSON.parse(row.images) : [];
   const todoIds = row.todo_ids ? JSON.parse(row.todo_ids) : [];
@@ -59,6 +103,7 @@ async function formatPost(row, userId) {
     shareComboName: row.share_combo_name || null,
     comboId: row.combo_id || null,
     files,
+    poll: await formatPostPoll(row.id, userId),
     ipProvince,
     location: locationObj,
     likesCount: row.likes_count,
@@ -308,6 +353,9 @@ const deletePost = async (req, res) => {
     }
 
     await query('UPDATE posts SET is_deleted = 1 WHERE post_id = ?', [postId]);
+
+    // Cascade: 帖子软删除,投票体也标记删除
+    await query('UPDATE post_polls SET is_deleted = 1 WHERE post_id = ?', [posts[0].id]);
 
     // Cascade soft-delete: mark all comments on this post as deleted
     await query('UPDATE post_comments SET is_deleted = 1 WHERE post_id = ?', [posts[0].id]);
