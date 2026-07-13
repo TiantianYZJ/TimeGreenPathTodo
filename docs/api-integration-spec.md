@@ -82,6 +82,7 @@ Token 有效期：**7 天**。
 | 401 | 未认证 | Token 缺失或已过期 |
 | 403 | 无权限 | 非管理员/非资源所有者 |
 | 404 | 资源不存在 | 数据未找到 |
+| 409 | 版本冲突 | 乐观锁冲突，需刷新后重试。响应体含 `currentVersion` 和 `serverData` |
 | 500 | 服务端错误 | 服务器内部异常 |
 
 ### 1.5 分页模式
@@ -280,13 +281,25 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "text": "待办内容",
-  "priority": "p3",
+  "text": "买年货",
+  "priority": "p1",
   "setDate": "2026-07-12",
   "comboId": null,
   "parentId": null,
   "remarks": "备注",
-  "tagIds": [1, 2]
+  "tagIds": [1, 2],
+  "subtasks": [
+    {
+      "text": "买零食",
+      "subtasks": [
+        { "text": "洽洽原味瓜子" },
+        { "text": "焦糖味瓜子" }
+      ]
+    },
+    {
+      "text": "买春联"
+    }
+  ]
 }
 ```
 
@@ -296,11 +309,14 @@ Content-Type: application/json
 | `priority` | string | 否 | `p1`~`p4`，默认 `p3` |
 | `setDate` | string | 否 | `YYYY-MM-DD` |
 | `comboId` | number | 否 | 所属组合 ID |
-| `parentId` | number | 否 | 父待办 ID（子任务） |
+| `parentId` | string | 否 | 父待办 ID（子任务） |
 | `remarks` | string | 否 | 备注 |
 | `tagIds` | number[] | 否 | 标签 ID 数组 |
+| `subtasks` | SubtaskInput[] | 否 | 嵌套子待办（无限层级），不传或传 `[]` 时行为不变 |
 
-**响应：**
+> **子待办字段说明：** 子待办只需传 `text` 和可选 `subtasks`。`setDate`、`setTime`、`priority` 创建时自动从父待办继承，无需传入。
+
+**响应（不传 subtasks 时）：**
 
 ```json
 {
@@ -310,12 +326,55 @@ Content-Type: application/json
 }
 ```
 
+**响应（含子待办时）：**
+
+```json
+{
+  "success": true,
+  "message": "待办创建成功",
+  "todo": {
+    "id": "todo_1720000000000_abc123",
+    "text": "买年货",
+    "parentId": null,
+    "completed": 0,
+    "...": "其他待办字段"
+  },
+  "subtasks": [
+    {
+      "id": "todo_1720000000000_def456",
+      "text": "买零食",
+      "parentId": "todo_1720000000000_abc123",
+      "completed": 0,
+      "priority": "p1",
+      "version": 1
+    },
+    {
+      "id": "todo_1720000000000_ghi789",
+      "text": "买春联",
+      "parentId": "todo_1720000000000_abc123",
+      "completed": 0,
+      "priority": "p1",
+      "version": 1
+    }
+  ]
+}
+```
+
+> `subtasks` 数组包含所有新创建的子待办（扁平列表，含嵌套的孙待办）。**前端应缓存返回的 `id`**，后续编辑时必须传入。
+
 ### 3.3 获取待办详情
 
 ```http
 GET /todos/:id
 Authorization: Bearer <token>
 ```
+
+**响应中的子待办字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `parentId` | string \| null | 父待办 ID。`null` 表示根级待办 |
+| `subtasks` | SubtodoItem[] | 直接子任务列表（仅一级，不递归），由 `GET /todos/list?parent_id={id}` 获取子树 |
 
 ### 3.4 更新待办
 
@@ -326,13 +385,87 @@ Content-Type: application/json
 
 {
   "text": "新内容",
-  "completed": 1,
+  "completed": true,
   "priority": "p1",
   "setDate": "2026-07-13",
   "remarks": "新备注",
-  "tagIds": [1]
+  "tagIds": [1],
+  "version": 3,
+  "subtasks": [
+    {
+      "id": "todo_1720000000000_def456",
+      "text": "编辑了旧子待办的文字"
+    },
+    {
+      "id": "todo_1720000000000_ghi789",
+      "text": "另一个旧子待办",
+      "completed": true
+    },
+    {
+      "text": "全新子待办（无 id）",
+      "subtasks": [
+        { "text": "新子待办的嵌套" }
+      ]
+    }
+  ]
 }
 ```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `text` | string | 否 | 新内容 |
+| `completed` | boolean | 否 | `true`=完成，`false`=取消完成 |
+| `priority` | string | 否 | `p1`~`p4` |
+| `setDate` | string | 否 | `YYYY-MM-DD` |
+| `setTime` | string | 否 | `HH:mm` |
+| `remarks` | string | 否 | 备注 |
+| `tagIds` | number[] | 否 | 标签 ID 数组 |
+| `comboId` | number | 否 | 所属组合 ID |
+| `parentId` | string | 否 | 移动到新父待办 |
+| `version` | number | 否 | **乐观锁版本号**，从 `todo.version` 获取。不传时不校验版本 |
+| `subtasks` | SubtaskInput[] | 否 | **子待办全量替换**（见下方说明），不传时子待办不受影响 |
+
+> **`subtasks` 更新语义（全量替换）：**
+>
+> `subtasks` 数组即当前父待办下所有子待办的**完整列表**。后端自动计算差异：
+>
+> - **有 `id` 的** — 更新已有子待办（`text` 必改，`completed` 可选）
+> - **无 `id` 的** — 创建新子待办
+> - **数据库中存在、但请求中未出现的 `id`** — 递归软删除（含所有后代）
+>
+> 编辑时必须把完整子树传回，否则不在列表中的子待办会被删除。
+> 新增的子待办无需父待办 ID 或继承字段，后端自动从父待办继承。
+
+**响应（不含子待办操作时）：**
+
+```json
+{
+  "success": true,
+  "message": "待办更新成功",
+  "todo": { "所有待办字段" }
+}
+```
+
+**响应（含子待办操作时）：**
+
+```json
+{
+  "success": true,
+  "message": "待办更新成功",
+  "todo": { "所有待办字段" },
+  "newSubtodos": [
+    {
+      "id": "todo_1720000000000_jkl012",
+      "text": "全新子待办",
+      "parentId": "todo_1720000000000_abc123",
+      "completed": 0,
+      "version": 1
+    }
+  ]
+}
+```
+
+> `newSubtodos` 仅在本次请求确实创建了新的子待办时出现。前端应缓存返回的 `id`。
 
 ### 3.5 删除待办（软删除）
 
@@ -340,6 +473,8 @@ Content-Type: application/json
 DELETE /todos/:id
 Authorization: Bearer <token>
 ```
+
+删除待办时**递归软删除所有后代**（子待办、孙待办……），不会产生飘零数据。
 
 ### 3.6 批量移动待办
 
@@ -736,6 +871,241 @@ Authorization: Bearer <token>
 ```http
 GET /posts/:postId/visitors?page=1&pageSize=20
 Authorization: Bearer <token>
+```
+
+### 7.9 创建投票
+
+```http
+POST /posts/:postId/poll
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "最喜欢的编程语言？",
+  "type": 0,
+  "allowOther": true,
+  "isAnonymous": false,
+  "endTime": "2026-07-20 23:59:59",
+  "options": [
+    { "text": "JavaScript", "isOther": false },
+    { "text": "Python", "isOther": false },
+    { "text": "Rust", "isOther": false }
+  ]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `title` | string | 是 | 投票标题（最长 200 字） |
+| `type` | number | 否 | `0`=单选，`1`=多选（默认 `0`） |
+| `allowOther` | boolean | 否 | 是否包含"其他，请输入..."选项 |
+| `isAnonymous` | boolean | 否 | 是否匿名投票（默认 `false`） |
+| `endTime` | string | 否 | 截止时间 `YYYY-MM-DD HH:mm:ss`，不传表示无限制 |
+| `options` | object[] | 是 | 选项列表（2~20 个） |
+| `options[].text` | string | 是 | 选项文本（最长 100 字） |
+| `options[].isOther` | boolean | 是 | 是否为"其他"输入选项 |
+
+**权限：** 仅帖主可调用。一个帖子只能有一个投票。
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": { "pollId": 1 }
+}
+```
+
+### 7.10 获取投票详情
+
+```http
+GET /posts/:postId/poll
+Authorization: Bearer <token>
+```
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "poll": {
+      "pollId": 1,
+      "title": "最喜欢的编程语言？",
+      "type": 0,
+      "isAnonymous": false,
+      "allowOther": true,
+      "totalVotes": 10,
+      "endTime": "2026-07-20 23:59:59",
+      "isEnded": false,
+      "isVoted": false,
+      "userVotedOptionIds": [],
+      "options": [
+        { "optionId": 1, "text": "JavaScript", "voteCount": 5, "isOther": false },
+        { "optionId": 2, "text": "Python", "voteCount": 3, "isOther": false },
+        { "optionId": 3, "text": "其他", "voteCount": 2, "isOther": true }
+      ]
+    },
+    "otherDetails": [
+      {
+        "userId": 1,
+        "nickname": "用户A",
+        "avatar": "https://...",
+        "customText": "Go 语言",
+        "createdAt": "2026-07-13 10:00:00"
+      }
+    ]
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `poll.pollId` | number | 投票 ID |
+| `poll.title` | string | 投票标题 |
+| `poll.type` | number | `0`=单选，`1`=多选 |
+| `poll.isAnonymous` | boolean | 是否匿名 |
+| `poll.allowOther` | boolean | 是否允许"其他"输入 |
+| `poll.totalVotes` | number | 参与投票总人数（去重） |
+| `poll.endTime` | string\|null | 截止时间 |
+| `poll.isEnded` | boolean | 是否已结束（超时或手动关闭） |
+| `poll.isVoted` | boolean | 当前用户是否已投票 |
+| `poll.userVotedOptionIds` | number[] | 当前用户投票的选项 ID 列表 |
+| `poll.options[]` | object[] | 选项列表 |
+| `otherDetails` | object[] | "其他"选项详情（见下方权限说明） |
+
+> **匿名投票可见性：** `isAnonymous=true` 时，仅帖主和管理员能看到 `otherDetails`，普通用户收到空数组 `[]`。
+>
+> `otherDetails` 包含投票者的 `userId` / `nickname` / `avatar` / `customText` / `createdAt`，仅当帖子有"其他"选项且有人填写时非空。
+
+帖子列表（`/posts/list`、`/posts/user/:userId`、`/posts/combo/:comboId`）和帖子详情（`/posts/:postId`）响应中的 `poll` 字段与之结构一致（不含 `otherDetails`），无投票时 `poll: null`。
+
+### 7.11 投票 / 改票
+
+```http
+POST /posts/:postId/poll/vote
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "optionIds": [1, 3],
+  "otherTexts": { "3": "Go 语言" }
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `optionIds` | number[] | 是 | 选择的选项 ID 列表。单选传单个元素，多选传 1~全部 |
+| `otherTexts` | object | 否 | `{ "optionId": "文本" }`。仅当选中 `isOther=true` 的选项时必填 |
+
+**规则：**
+- 不能给自己的帖子投票
+- 单选投票 `type=0` 时，`optionIds` 只能传一个元素
+- 已结束的投票不可投票
+- 同一用户重复请求即为**改票**（旧票被替换）
+
+**权限：** 所有已登录用户（帖主除外）。
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "poll": { "...投票详情(同 getPoll)" }
+  }
+}
+```
+
+### 7.12 关闭投票
+
+```http
+POST /posts/:postId/poll/close
+Authorization: Bearer <token>
+```
+
+**权限：** 帖主或管理员。
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "poll": { "...投票详情，isEnded: true" }
+  }
+}
+```
+
+### 7.13 编辑投票
+
+```http
+PATCH /posts/:postId/poll
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "新标题",
+  "type": 1,
+  "allowOther": false,
+  "isAnonymous": true,
+  "endTime": "2026-07-25 23:59:59",
+  "options": [
+    { "text": "新选项A", "isOther": false },
+    { "text": "新选项B", "isOther": false },
+    { "text": "新选项C", "isOther": false }
+  ]
+}
+```
+
+**权限：** 仅帖主。
+
+**编辑规则：**
+
+| 当前状态 | 允许修改的字段 |
+|----------|---------------|
+| 无投票记录 | 全部字段（title, type, allowOther, isAnonymous, endTime, options） |
+| 已有投票记录 | 仅 `endTime` 和 `isAnonymous` 开关，其余字段传入即拒绝 |
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "poll": { "...投票详情" }
+  }
+}
+```
+
+### 7.14 获取"其他"选项详情
+
+```http
+GET /posts/:postId/poll/other-details
+Authorization: Bearer <token>
+```
+
+**权限：** 帖主、管理员、已投票用户可查看。
+
+> 匿名投票（`isAnonymous=true`）下，仅帖主和管理员可查看，普通投票者返回 `403`。
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "userId": 1,
+        "nickname": "用户A",
+        "avatar": "https://...",
+        "customText": "Go 语言",
+        "createdAt": "2026-07-13 10:00:00"
+      }
+    ]
+  }
+}
 ```
 
 ---
@@ -1334,10 +1704,46 @@ interface TodoCreateRequest {
   text: string;
   priority?: Priority;
   setDate?: string;
+  setTime?: string;
   comboId?: number | null;
-  parentId?: number | null;
+  parentId?: string | null;
   remarks?: string;
   tagIds?: number[];
+  subtasks?: SubtaskInput[];
+}
+
+interface TodoUpdateRequest {
+  text?: string;
+  completed?: boolean;
+  priority?: Priority;
+  setDate?: string;
+  setTime?: string;
+  comboId?: number | null;
+  parentId?: string | null;
+  remarks?: string;
+  tagIds?: number[];
+  version?: number;
+  subtasks?: SubtaskInput[];
+}
+
+interface SubtaskInput {
+  /** 更新已有子待办时必须传。新增时不传 */
+  id?: string;
+  /** 子待办内容 */
+  text: string;
+  /** 完成状态（仅在更新时使用） */
+  completed?: boolean;
+  /** 嵌套子待办，无限层级 */
+  subtasks?: SubtaskInput[];
+}
+
+interface SubtodoItem {
+  id: string;
+  text: string;
+  parentId: string;
+  completed: number;
+  priority: string;
+  version: number;
 }
 
 // ========== 标签 ==========
@@ -1409,6 +1815,7 @@ interface Post {
   isLiked: boolean;
   isEdited: boolean;
   isDeleted: boolean;
+  poll: PostPoll | null;
   createdAt: string;
   updatedAt: string;
   user: {
@@ -1430,6 +1837,66 @@ interface PostCreateRequest {
   location?: GeoLocation | null;
   comboId?: number | null;
   files?: PostFile[];
+}
+
+// ========== 投票 (Poll) ==========
+
+interface PostPoll {
+  pollId: number;
+  title: string;
+  type: 0 | 1;             // 0=单选, 1=多选
+  isAnonymous: boolean;
+  allowOther: boolean;
+  totalVotes: number;
+  endTime: string | null;
+  isEnded: boolean;
+  isVoted: boolean;
+  userVotedOptionIds: number[];
+  options: PostPollOption[];
+}
+
+interface PostPollOption {
+  optionId: number;
+  text: string;
+  voteCount: number;
+  isOther: boolean;
+}
+
+interface PostPollOtherDetail {
+  userId: number;
+  nickname: string;
+  avatar: string | null;
+  customText: string;
+  createdAt: string;
+}
+
+interface PostPollCreateRequest {
+  title: string;
+  type?: 0 | 1;
+  allowOther?: boolean;
+  isAnonymous?: boolean;
+  endTime?: string | null;
+  options: Array<{
+    text: string;
+    isOther: boolean;
+  }>;
+}
+
+interface PostPollVoteRequest {
+  optionIds: number[];
+  otherTexts?: Record<string, string>;
+}
+
+interface PostPollUpdateRequest {
+  title?: string;
+  type?: 0 | 1;
+  allowOther?: boolean;
+  isAnonymous?: boolean;
+  endTime?: string | null;
+  options?: Array<{
+    text: string;
+    isOther: boolean;
+  }>;
 }
 
 interface GeoLocation {
@@ -1482,7 +1949,7 @@ interface FileUploadResponse {
 | 标签 | `/tags` | 全量 | list, create, **/:id** |
 | 组合 | `/combos` | 全量 | list, create, **/:id**, members, role |
 | 协作 | `/collab` | 全量 | join, request, shared/*, member, leave |
-| 帖子 | `/posts` | 全量 | list, create, combo/:comboId, user/:userId, **/:postId** |
+| 帖子 | `/posts` | 全量 | list, create, combo/:comboId, user/:userId, **/:postId**<br>**/:postId/poll**, **/:postId/poll/vote**, **/:postId/poll/close**, **/:postId/poll/other-details** |
 | 点赞 | `/likes` | 全量 | toggle, **/:postId/users** |
 | 帖子评论 | `/post-comments` | 全量 | **/:postId**, create, delete, like |
 | 评论 | `/comments` | 全量 | **/:sharedTodoId**, create, delete |
